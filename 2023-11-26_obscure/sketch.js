@@ -10,6 +10,10 @@
 // A point force is applied to each particle at their initial position
 // So when the mouse stops moving, the particles settle back at "home"
 //
+// Once lines are back at rest, a new color circle is drawn
+//
+// Uses the c2.js library for physics simulations: https://github.com/ren-yuan/c2.js/tree/main
+//
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
