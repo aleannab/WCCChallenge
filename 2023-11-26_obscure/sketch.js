@@ -1,3 +1,18 @@
+// Created for the #WCCChallenge - Topic: Obscure
+// Move mouse around to reveal obscured circle
+// Click to pause/play sketch
+//
+// Bezier curves are drawn using particles as control points
+// At rest, the control points create a vertical line
+// The thick stroke of the adjacent lines give the illusion of a pure black square
+//
+// A repelling force is applied to the particles when there is mouse movement
+// A point force is applied to each particle at their initial position
+// So when the mouse stops moving, the particles settle back at "home"
+//
+// See other submissions here: https://openprocessing.org/curation/78544
+// Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
+
 let gWorld;
 
 let colorPalette = ['#4466ff', '#aa33ff', '#ee0000', '#008800', '#dd1188'];
