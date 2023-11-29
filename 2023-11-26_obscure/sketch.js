@@ -1,6 +1,6 @@
 let gWorld;
-let gRowPadding = 20;
-let gColPadding = 20;
+let gRowPadding = 50;
+let gColPadding = 10;
 let gRowCount;
 let gColCount;
 let gParticles = [];
@@ -14,7 +14,7 @@ function setup() {
   createWeb();
 
   stroke(0);
-  strokeWeight(25);
+  strokeWeight(20);
 }
 
 function draw() {
@@ -50,6 +50,7 @@ function draw() {
 
   noFill();
   stroke(0);
+  rect(0, 0, width, height);
   for (let i = 0; i < gColCount; i++) {
     beginShape();
     let firstParticle = gParticles[getPIndex(i, 0)];
@@ -63,6 +64,7 @@ function draw() {
     curveVertex(firstParticle.particle.position.x, height + 100);
     endShape();
   }
+  console.log(getFrameRate());
 }
 
 function createParticle(posX, posY) {
