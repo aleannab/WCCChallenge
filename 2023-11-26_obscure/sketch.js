@@ -1,9 +1,13 @@
 let gWorld;
+
+let colorPalette = ['#4466ff', '#aa33ff', '#ee0000', '#008800', '#dd1188'];
+
 let gRowPadding = 50;
 let gColPadding = 10;
 let gRowCount;
 let gColCount;
 let gParticles = [];
+let gCircleColor;
 
 function setup() {
   createCanvas(0.9 * windowWidth, 1.0 * windowHeight);
@@ -15,11 +19,13 @@ function setup() {
 
   stroke(0);
   strokeWeight(20);
+
+  gCircleColor = random(colorPalette);
 }
 
 function draw() {
   background('#FFFFFF');
-  fill('#FF0000');
+  fill(gCircleColor);
   noStroke();
   circle(width - mouseX, height - mouseY, 200);
 
@@ -37,6 +43,8 @@ function draw() {
       }
     });
   }
+
+  let isHome = true;
   gParticles.forEach((ref) => {
     let staticStrength = 5;
     if (ref.isStatic) {
@@ -44,7 +52,17 @@ function draw() {
     }
     let staticForce = new c2.PointField(new c2.Point(ref.initX, ref.initY), staticStrength);
     staticForce.apply(ref.particle);
+
+    let diff = abs(ref.particle.position.x - ref.initX);
+
+    if (isHome && diff > 20) {
+      isHome = false;
+    }
   });
+
+  if (isHome) {
+    gCircleColor = random(colorPalette);
+  }
 
   gWorld.update();
 
@@ -64,7 +82,6 @@ function draw() {
     curveVertex(firstParticle.particle.position.x, height + 100);
     endShape();
   }
-  console.log(getFrameRate());
 }
 
 function createParticle(posX, posY) {
