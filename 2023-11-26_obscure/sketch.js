@@ -7,79 +7,45 @@ let gColPadding = 10;
 let gRowCount;
 let gColCount;
 let gParticles = [];
+
 let gCircleColor;
 let gCircleDiameter;
 
-let gInitPosForce = 10;
+let gHomeForce = 10;
+let gMouseForce = -30;
 
 function setup() {
+  // init sizes
   let length = windowWidth < windowHeight ? windowWidth : windowHeight;
   createCanvas(length, length);
   colorMode(HSL, 360, 100, 100);
-
   gCircleDiameter = 0.6 * length;
 
   gWorld = new c2.World(new c2.Rect(0, 0, width, height));
   createWeb();
 
-  stroke(0);
+  // init line/fill parameters
   strokeWeight(20);
-
-  gCircleColor = random(colorPalette);
+  setRandomCircleColor();
 }
 
 function draw() {
-  background('#FFFFFF');
-  fill(gCircleColor);
-  noStroke();
-  circle(width - mouseX, height - mouseY, gCircleDiameter);
+  background(255);
 
-  let hasMoved = abs(movedX) > 1 && abs(movedY) > 1;
+  drawCircle();
 
-  if (hasMoved) {
-    let mouseForce = new c2.PointField(new c2.Point(mouseX, mouseY), -50);
+  // repels lines away from mouse if there's movement
+  applyMouseForce();
 
-    gParticles.forEach((ref) => {
-      if (!ref.isStatic) {
-        mouseForce.apply(ref.particle);
-      }
-    });
-  }
-
-  let isHome = true;
-  gParticles.forEach((ref) => {
-    let staticForce = new c2.PointField(new c2.Point(ref.initX, ref.initY), gInitPosForce);
-    staticForce.apply(ref.particle);
-
-    let diff = abs(ref.particle.position.x - ref.initX);
-
-    if (isHome && diff > 20) {
-      isHome = false;
-    }
-  });
-
-  if (isHome) {
-    gCircleColor = random(colorPalette);
+  // calls line control points back home
+  if (applyHomeForce()) {
+    // if all are close enough to home, pick a new color
+    setRandomCircleColor();
   }
 
   gWorld.update();
 
-  noFill();
-  stroke(0);
-  rect(0, 0, width, height);
-  for (let i = 0; i < gColCount; i++) {
-    beginShape();
-    let firstParticle = gParticles[getPIndex(i, 0)];
-
-    curveVertex(firstParticle.particle.position.x, -100);
-    for (let j = 0; j < gRowCount; j++) {
-      let p = gParticles[getPIndex(i, j)];
-      curveVertex(p.particle.position.x, p.particle.position.y);
-      //circle(p.particle.position.x, p.particle.position.y, 10);
-    }
-    curveVertex(firstParticle.particle.position.x, height + 100);
-    endShape();
-  }
+  drawLines();
 }
 
 function mouseClicked() {
@@ -124,4 +90,63 @@ function createWeb(parent, level) {
       gParticles.push(particleRef);
     }
   }
+}
+
+function drawCircle() {
+  fill(gCircleColor);
+  noStroke();
+  circle(width - mouseX, height - mouseY, gCircleDiameter);
+}
+
+function drawLines() {
+  noFill();
+  stroke(0);
+  rect(0, 0, width, height);
+  for (let i = 0; i < gColCount; i++) {
+    beginShape();
+    let firstParticle = gParticles[getPIndex(i, 0)];
+
+    curveVertex(firstParticle.particle.position.x, -100);
+    for (let j = 0; j < gRowCount; j++) {
+      let p = gParticles[getPIndex(i, j)];
+      curveVertex(p.particle.position.x, p.particle.position.y);
+    }
+    curveVertex(firstParticle.particle.position.x, height + 100);
+    endShape();
+  }
+}
+
+function applyMouseForce() {
+  // apply mouse force only if mouse has moved
+  let hasMoved = abs(movedX) > 1 && abs(movedY) > 1;
+
+  if (hasMoved) {
+    let mouseForce = new c2.PointField(new c2.Point(mouseX, mouseY), gMouseForce);
+
+    gParticles.forEach((ref) => {
+      if (!ref.isStatic) {
+        mouseForce.apply(ref.particle);
+      }
+    });
+  }
+}
+
+function applyHomeForce() {
+  // apply home force to points
+  // return true if all are close enough to home
+  let isHome = true;
+  gParticles.forEach((ref) => {
+    let staticForce = new c2.PointField(new c2.Point(ref.initX, ref.initY), gHomeForce);
+    staticForce.apply(ref.particle);
+
+    let diff = abs(ref.particle.position.x - ref.initX);
+    if (isHome && diff > 20) {
+      isHome = false;
+    }
+  });
+  return isHome;
+}
+
+function setRandomCircleColor() {
+  gCircleColor = random(colorPalette);
 }
