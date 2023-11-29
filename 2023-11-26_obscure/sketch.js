@@ -8,11 +8,16 @@ let gRowCount;
 let gColCount;
 let gParticles = [];
 let gCircleColor;
+let gCircleDiameter;
+
+let gInitPosForce = 10;
 
 function setup() {
-  createCanvas(0.9 * windowWidth, 1.0 * windowHeight);
+  let length = windowWidth < windowHeight ? windowWidth : windowHeight;
+  createCanvas(length, length);
   colorMode(HSL, 360, 100, 100);
-  ellipseMode(RADIUS);
+
+  gCircleDiameter = 0.6 * length;
 
   gWorld = new c2.World(new c2.Rect(0, 0, width, height));
   createWeb();
@@ -27,18 +32,15 @@ function draw() {
   background('#FFFFFF');
   fill(gCircleColor);
   noStroke();
-  circle(width - mouseX, height - mouseY, 200);
+  circle(width - mouseX, height - mouseY, gCircleDiameter);
 
   let hasMoved = abs(movedX) > 1 && abs(movedY) > 1;
 
   if (hasMoved) {
-    let mouseForce = new c2.PointField(new c2.Point(mouseX, mouseY), -30);
+    let mouseForce = new c2.PointField(new c2.Point(mouseX, mouseY), -50);
 
     gParticles.forEach((ref) => {
-      let staticStrength = 5;
-      if (ref.isStatic) {
-        staticStrength = 20;
-      } else {
+      if (!ref.isStatic) {
         mouseForce.apply(ref.particle);
       }
     });
@@ -46,11 +48,7 @@ function draw() {
 
   let isHome = true;
   gParticles.forEach((ref) => {
-    let staticStrength = 5;
-    if (ref.isStatic) {
-      staticStrength = 20;
-    }
-    let staticForce = new c2.PointField(new c2.Point(ref.initX, ref.initY), staticStrength);
+    let staticForce = new c2.PointField(new c2.Point(ref.initX, ref.initY), gInitPosForce);
     staticForce.apply(ref.particle);
 
     let diff = abs(ref.particle.position.x - ref.initX);
@@ -81,6 +79,14 @@ function draw() {
     }
     curveVertex(firstParticle.particle.position.x, height + 100);
     endShape();
+  }
+}
+
+function mouseClicked() {
+  if (isLooping()) {
+    noLoop();
+  } else {
+    loop();
   }
 }
 
