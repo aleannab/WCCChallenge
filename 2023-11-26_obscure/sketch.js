@@ -1,6 +1,6 @@
 // Created for the #WCCChallenge - Topic: Obscure
 // Move mouse around to reveal obscured circle
-// Click to pause/play sketch
+// Space key to pause/play sketch.
 //
 // Bezier curves are drawn using particles as control points
 // At rest, the control points create a vertical line
@@ -30,12 +30,12 @@ let gParticles = [];
 let gCircleColor;
 let gCircleDiameter;
 
-let gHomeForce = 10;
-let gMouseForce = -30;
+let gHomeForce = 5;
+let gMouseForce = -15;
 
 function setup() {
   // init sizes
-  let length = windowWidth < windowHeight ? windowWidth : windowHeight;
+  let length = 0.9 * (windowWidth < windowHeight ? windowWidth : windowHeight);
   createCanvas(length, length);
   colorMode(HSL, 360, 100, 100);
   gCircleDiameter = 0.6 * length;
@@ -67,7 +67,7 @@ function draw() {
   drawLines();
 }
 
-function mouseClicked() {
+function keyPressed() {
   if (isLooping()) {
     noLoop();
   } else {
@@ -137,7 +137,7 @@ function drawLines() {
 
 function applyMouseForce() {
   // apply mouse force only if mouse has moved
-  let hasMoved = abs(movedX) > 1 && abs(movedY) > 1;
+  let hasMoved = abs(movedX) > 1 || abs(movedY) > 1;
 
   if (hasMoved) {
     let mouseForce = new c2.PointField(new c2.Point(mouseX, mouseY), gMouseForce);
