@@ -8,28 +8,29 @@
 let gWorld;
 let gSlugs = [];
 
-let gIsDebug = false;
+let gIsDebug = true;
+let gBuffer = 500;
+let resetTime = 0;
 
 function setup() {
   // init sizes
   let length = 0.9 * (windowWidth < windowHeight ? windowWidth : windowHeight);
   createCanvas(windowWidth, windowHeight);
+  gWorld = new c2.World(new c2.Rect(-gBuffer, -gBuffer, width + 2 * gBuffer, height + gBuffer));
 
-  gWorld = new c2.World(new c2.Rect(0, 0, width, height));
-
-  gSlugs.push(createSlug());
+  gSlugs.push(createSlug(0, height / 2));
 }
 
 function draw() {
   background(255);
 
-  let time = 0.0005 * millis();
-  stroke(0);
-  noFill();
-  circle(width / 2, height / 2, 400);
+  let time = 0.05 * (millis() - resetTime);
 
-  gSlugs[0].head.position.x = mouseX; //200 * sin(time) + width / 2;
-  gSlugs[0].head.position.y = mouseY; //200 * cos(time) + height / 2;
+  let newX = -100 + time;
+  gSlugs[0].head.position.x = -100 + time;
+  gSlugs[0].head.position.y = height / 2 + 10 * sin(time * 0.1);
+
+  if (newX > width + gBuffer) resetTime = millis();
 
   gWorld.update();
 
@@ -39,7 +40,7 @@ function draw() {
 }
 
 function createSlug(posX, posY) {
-  return new Slug(new c2.Vector(width / 2, height / 2));
+  return new Slug(new c2.Vector(posX, posY));
 }
 
 class Slug {
@@ -47,9 +48,10 @@ class Slug {
     this.pos = pos;
     this.width = 25;
     this.halfWidth = this.width / 2;
-    this.segmentCount = 15;
-    this.segmentLength = 10;
+    this.segmentCount = 10;
+    this.segmentLength = 20;
     this.points = [];
+    this.drawPoints = [];
     this.springs = [];
     this.head;
 
@@ -57,36 +59,42 @@ class Slug {
   }
 
   createBody() {
-    let topHalf = [];
-    let bottomHalf = [];
     let prevSegment = [];
-
-    let shouldAdd = false;
-    let everyVar = 3;
+    let prevTop = null;
+    let posX = this.pos.x;
+    let posY = this.pos.y;
+    let lengthScalar = 1;
     for (let i = 0; i < this.segmentCount; i++) {
-      let currentPos = new c2.Vector(this.pos.x - i * this.segmentLength, this.pos.y);
       let currentSegment = [];
-      shouldAdd = i % everyVar === 0;
+      let currentHair = null;
 
       if (i === 0) {
-        this.head = this.createParticle(currentPos.x, currentPos.y, true);
+        this.head = this.createParticle(posX, posY, true);
         currentSegment.push(this.head);
+        this.drawPoints.push(this.head);
       } else {
-        let top = this.createParticle(currentPos.x, currentPos.y - this.halfWidth);
-        if (shouldAdd) topHalf.push(top);
-        let bottom = this.createParticle(currentPos.x, currentPos.y + this.halfWidth);
-        if (shouldAdd) bottomHalf.push(bottom);
+        let top = this.createParticle(posX, posY - this.halfWidth);
+        let mid = this.createParticle(posX, posY);
+        this.drawPoints.push(mid);
+        let bottom = this.createParticle(posX, posY + this.halfWidth);
         currentSegment.push.apply(currentSegment, [top, bottom]);
-        this.createSpring(currentSegment[0], currentSegment[1]);
-        this.createSpringsFromSegments(currentSegment, prevSegment);
+        this.createSpring(top, mid, lengthScalar);
+        this.createSpring(mid, bottom, lengthScalar);
+        this.createSpringsFromSegments(currentSegment, prevSegment, lengthScalar);
+
+        if (i > 1) {
+          let hair = this.createParticle(posX - this.width, posY - 2 * this.width);
+          this.createSpring(top, hair);
+          if (prevTop) {
+            this.createSpring(prevTop, hair, 1);
+          }
+          prevTop = top;
+        }
       }
 
       prevSegment = currentSegment;
+      posX -= this.segmentLength;
     }
-
-    this.points.push.apply(this.points, topHalf.reverse());
-    this.points.push(this.head);
-    this.points.push.apply(this.points, bottomHalf);
   }
 
   createParticle(posX, posY, isFixed = false) {
@@ -95,22 +103,23 @@ class Slug {
     p.mass = 1; //p.radius;
     if (isFixed) p.fix();
     gWorld.addParticle(p);
+    this.points.push(p);
 
     return p;
   }
 
   addSegment(pos) {}
 
-  createSpringsFromSegments(currentSegment, prevSegment, forceWeight = 1.0) {
+  createSpringsFromSegments(currentSegment, prevSegment, lengthScalar = 1.0) {
     for (let curPt of currentSegment) {
       for (let prevPt of prevSegment) {
-        this.createSpring(curPt, prevPt, forceWeight);
+        this.createSpring(curPt, prevPt, lengthScalar);
       }
     }
   }
 
-  createSpring(p1, p2, forceWeight = 1.0) {
-    let spring = new c2.Spring(p1, p2, forceWeight);
+  createSpring(p1, p2, force = 1.0) {
+    let spring = new c2.Spring(p1, p2, force);
     spring.length = p1.position.distance(p2.position);
     gWorld.addSpring(spring);
     this.springs.push(spring);
@@ -119,17 +128,15 @@ class Slug {
   draw() {
     noStroke();
     fill(0);
-    beginShape();
-    let firstPt = this.points[0];
-    let lastPt = this.points[this.points.length - 1];
-    curveVertex(firstPt.position.x, firstPt.position.y);
-    for (let i = 0; i < this.points.length; i++) {
-      let curPt = this.points[i];
-      curveVertex(curPt.position.x, curPt.position.y);
+    let r = 10;
+    let halfLength = floor(this.drawPoints.length / 2);
+    let shouldAdd = true;
+    for (let i = 0; i < this.drawPoints.length; i++) {
+      let curPt = this.drawPoints[i];
+      circle(curPt.position.x, curPt.position.y, r);
+      r += 1 * (shouldAdd ? 1 : -1);
+      if (i === halfLength) shouldAdd = false;
     }
-    curveVertex(firstPt.position.x, firstPt.position.y);
-    curveVertex(firstPt.position.x, firstPt.position.y);
-    endShape();
     if (gIsDebug) {
       noFill();
       stroke(255, 0, 0, 255);
