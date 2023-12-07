@@ -9,7 +9,7 @@ let gWorld;
 let gSlugs = [];
 
 let gIsDebug = true;
-let gBuffer = 500;
+let gBuffer = 50;
 let resetTime = 0;
 
 function setup() {
@@ -18,20 +18,25 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   gWorld = new c2.World(new c2.Rect(-gBuffer, -gBuffer, width + 2 * gBuffer, height + gBuffer));
 
-  gSlugs.push(createSlug(0, height / 2));
+  createSlug(random(100, width), -20);
+
+  quadTree = new c2.QuadTree(new c2.Rect(0, 0, width, height));
+  let collision = new c2.Collision(quadTree);
+  //collision.iteration = 2;
+  gWorld.addInteractionForce(collision);
+
+  let constForce = new c2.ConstForce(0, 3);
+  gWorld.addForce(constForce);
 }
 
 function draw() {
   background(255);
 
-  let time = 0.05 * (millis() - resetTime);
-
-  let newX = -100 + time;
-  gSlugs[0].head.position.x = -100 + time;
-  gSlugs[0].head.position.y = height / 2 + 10 * sin(time * 0.1);
-
-  if (newX > width + gBuffer) resetTime = millis();
-
+  let time = millis() - resetTime;
+  if (time > 5000) {
+    createSlug(random(0, width), -gBuffer / 2);
+    resetTime = millis();
+  }
   gWorld.update();
 
   gSlugs.forEach((slug) => {
@@ -40,7 +45,13 @@ function draw() {
 }
 
 function createSlug(posX, posY) {
-  return new Slug(new c2.Vector(posX, posY));
+  gSlugs.push(new Slug(new c2.Vector(posX, posY)));
+}
+
+function keyPressed() {
+  if (key == 'd') {
+    gIsDebug = !gIsDebug;
+  }
 }
 
 class Slug {
@@ -55,18 +66,18 @@ class Slug {
     this.springs = [];
     this.head;
 
-    this.createBody();
+    this.color = color(random(0, 255), random(0, 255), random(0, 255));
+
+    this.createBody(20, 10);
   }
 
-  createBody() {
+  createBody(segLength, segCount) {
     let prevSegment = [];
-    let prevTop = null;
     let posX = this.pos.x;
     let posY = this.pos.y;
     let lengthScalar = 1;
-    for (let i = 0; i < this.segmentCount; i++) {
+    for (let i = 0; i < segCount; i++) {
       let currentSegment = [];
-      let currentHair = null;
 
       if (i === 0) {
         this.head = this.createParticle(posX, posY, true);
@@ -74,33 +85,21 @@ class Slug {
         this.drawPoints.push(this.head);
       } else {
         let top = this.createParticle(posX, posY - this.halfWidth);
-        let mid = this.createParticle(posX, posY);
-        this.drawPoints.push(mid);
         let bottom = this.createParticle(posX, posY + this.halfWidth);
         currentSegment.push.apply(currentSegment, [top, bottom]);
-        this.createSpring(top, mid, lengthScalar);
-        this.createSpring(mid, bottom, lengthScalar);
+        this.createSpring(top, bottom, lengthScalar);
         this.createSpringsFromSegments(currentSegment, prevSegment, lengthScalar);
-
-        if (i > 1) {
-          let hair = this.createParticle(posX - this.width, posY - 2 * this.width);
-          this.createSpring(top, hair);
-          if (prevTop) {
-            this.createSpring(prevTop, hair, 1);
-          }
-          prevTop = top;
-        }
       }
 
       prevSegment = currentSegment;
-      posX -= this.segmentLength;
+      posX -= segLength;
     }
   }
 
   createParticle(posX, posY, isFixed = false) {
     let p = new c2.Particle(posX, posY);
-    p.radius = 2;
-    p.mass = 1; //p.radius;
+    p.radius = 8;
+    p.mass = p.radius;
     if (isFixed) p.fix();
     gWorld.addParticle(p);
     this.points.push(p);
@@ -118,27 +117,29 @@ class Slug {
     }
   }
 
-  createSpring(p1, p2, force = 1.0) {
+  createSpring(p1, p2, lengthScalar = 1, force = 0.5) {
     let spring = new c2.Spring(p1, p2, force);
-    spring.length = p1.position.distance(p2.position);
+    spring.length = lengthScalar * p1.position.distance(p2.position);
     gWorld.addSpring(spring);
     this.springs.push(spring);
   }
 
   draw() {
     noStroke();
-    fill(0);
-    let r = 10;
+    fill(this.color);
+    let r = 20;
     let halfLength = floor(this.drawPoints.length / 2);
     let shouldAdd = true;
-    for (let i = 0; i < this.drawPoints.length; i++) {
+    for (let i = 1; i < this.drawPoints.length; i++) {
       let curPt = this.drawPoints[i];
       circle(curPt.position.x, curPt.position.y, r);
-      r += 1 * (shouldAdd ? 1 : -1);
+      r += 5 * (shouldAdd ? 1 : -1);
       if (i === halfLength) shouldAdd = false;
     }
+
     if (gIsDebug) {
       noFill();
+      strokeWeight(1);
       stroke(255, 0, 0, 255);
       for (let point of this.points) {
         circle(point.position.x, point.position.y, 5);
