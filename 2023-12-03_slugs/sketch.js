@@ -8,8 +8,8 @@
 let gWorld;
 let gSlugs = [];
 
-let gIsDebug = false;
-let gBuffer = 50;
+let gIsDebug = true;
+let gBuffer = 200;
 let gResetTime = 0;
 
 let gBgColor = '#09090b';
@@ -40,14 +40,14 @@ function setup() {
 function draw() {
   background(gBgColor);
 
-  //if (!gIsDebug) {
-  let time = millis() - gResetTime;
-  if (time > 1000 && gSlugs.length < 100) {
-    createSlug(random(0, width), -gBuffer / 2);
-    gResetTime = millis();
+  if (!gIsDebug) {
+    let time = millis() - gResetTime;
+    if (time > 1500 && gSlugs.length < 100) {
+      createSlug(random(gBuffer, width), -30);
+      gResetTime = millis();
+    }
+    gWorld.update();
   }
-  gWorld.update();
-  //}
 
   gSlugs.forEach((slug) => {
     slug.draw();
@@ -71,6 +71,7 @@ class Slug {
     this.halfWidth = this.width / 2;
     this.segmentCount = floor(random(5, 10));
     this.segmentLength = random(0.8, 1.2) * this.width;
+    this.drawPoints = [];
     this.points = [];
     this.springs = [];
     this.circleSize = random(gCircleSizes);
@@ -86,30 +87,80 @@ class Slug {
     let prevSegment = [];
     let posX = this.pos.x;
     let posY = this.pos.y;
-    let lengthScalar = 1;
+
+    // let slugPoints = [];
+    // slugPoints.push(this.createParticle(posX, posY)); // 0
+    // slugPoints.push(this.createParticle(posX + 30, posY)); //1
+    // slugPoints.push(this.createParticle(posX + 60, posY)); //2
+    // slugPoints.push(this.createParticle(posX + 80, posY)); //3
+    // slugPoints.push(this.createParticle(posX + 90, posY - 10)); //4
+    // slugPoints.push(this.createParticle(posX + 80, posY - 15)); //5
+    // slugPoints.push(this.createParticle(posX + 60, posY - 10)); //6
+    // slugPoints.push(this.createParticle(posX + 40, posY - 20)); //7
+    // slugPoints.push(this.createParticle(posX + 30, posY - 15)); //8
+
+    // // for (let i = 0; i < slugPoints.length; i++) {
+    // //   for (let j = 0; j < slugPoints.length; j++) {
+    // //     if (i === j) continue;
+    // //     this.createSpring(slugPoints[i], slugPoints[j]);
+    // //   }
+    // // }
+    // for (let i = 1; i < slugPoints.length; i++) {
+    //   this.createSpring(slugPoints[i], slugPoints[i - 1]);
+    // }
+    // this.createSpring(slugPoints[0], slugPoints[4]);
+    // this.createSpring(slugPoints[0], slugPoints[6]);
+    // this.createSpring(slugPoints[0], slugPoints[8]);
+    // this.createSpring(slugPoints[1], slugPoints[3]);
+    // this.createSpring(slugPoints[1], slugPoints[6]);
+    // this.createSpring(slugPoints[1], slugPoints[7]);
+    // this.createSpring(slugPoints[1], slugPoints[8]);
+    // this.createSpring(slugPoints[2], slugPoints[5]);
+    // this.createSpring(slugPoints[2], slugPoints[6]);
+    // this.createSpring(slugPoints[2], slugPoints[7]);
+    // this.createSpring(slugPoints[2], slugPoints[8]);
+    // this.createSpring(slugPoints[3], slugPoints[5]);
+    // this.createSpring(slugPoints[3], slugPoints[6]);
+    // this.createSpring(slugPoints[5], slugPoints[7]);
+
+    // this.drawPoints = this.points;
+
+    let head;
+    let topPoints = [];
+    let bottomPoints = [];
+    let tail;
 
     for (let i = 0; i < segCount; i++) {
       let currentSegment = [];
 
       if (i === 0) {
-        currentSegment.push(this.createParticle(posX, posY, true));
+        head = this.createParticle(posX, posY, false);
+        currentSegment.push(head);
       } else if (i === segCount - 1) {
-        currentSegment.push(this.createParticle(posX, posY, false));
-        this.createSpringsFromSegments(currentSegment, prevSegment, lengthScalar);
+        tail = this.createParticle(posX, posY, false);
+        currentSegment.push(tail);
+        this.createSpringsFromSegments(currentSegment, prevSegment);
       } else {
         let top = this.createParticle(posX, posY - this.halfWidth);
+        topPoints.push(top);
         let bottom = this.createParticle(posX, posY + this.halfWidth);
+        bottomPoints.push(bottom);
         currentSegment.push.apply(currentSegment, [top, bottom]);
-        this.createSpring(top, bottom, lengthScalar, 1);
-        this.createSpringsFromSegments(currentSegment, prevSegment, lengthScalar);
+        this.createSpring(top, bottom, 1, 1.2);
+        this.createSpringsFromSegments(currentSegment, prevSegment);
       }
       prevSegment = currentSegment;
       posX -= segLength;
     }
+    this.createSpring(head, tail, 0.8, 1.5);
+
+    this.drawPoints = [tail, ...topPoints.reverse(), head, ...bottomPoints];
   }
 
   createParticle(posX, posY, isFixed = false) {
-    let p = new c2.Particle(posX, posY);
+    let offsetX = 0; // random(-0.2, 0.2) * this.width;
+    let offsetY = 0; //random(-0.2, 0.2) * this.segmentLength;
+    let p = new c2.Particle(posX + offsetX, posY + offsetY);
     p.radius = 10;
     p.mass = random(0.9, 1.1) * this.mass; //random(1, 5); //1; //p.radius;
     if (isFixed) p.fix();
@@ -121,19 +172,19 @@ class Slug {
 
   addSegment(pos) {}
 
-  createSpringsFromSegments(currentSegment, prevSegment, lengthScalar = 1.0) {
+  createSpringsFromSegments(currentSegment, prevSegment) {
     for (let curPt of currentSegment) {
       for (let prevPt of prevSegment) {
-        this.createSpring(curPt, prevPt, lengthScalar);
+        this.createSpring(curPt, prevPt);
       }
     }
   }
 
-  createSpring(p1, p2, lengthScalar = 1, force = 0.3) {
-    let spring = new c2.Spring(p1, p2, 0.5); //1);
-    spring.length = lengthScalar * p1.position.distance(p2.position);
-    spring.stiffness = 0.1; // Adjust stiffness value
-    spring.damping = 1; // Adjust damping value
+  createSpring(p1, p2, min = 1, max = 1, force = 0.3) {
+    let spring = new c2.Spring(p1, p2, force);
+    spring.length = dist(p1.position.x, p1.position.y, p2.position.x, p2.position.y);
+    console.log(spring.length);
+    spring.range(0.5 * spring.length, 5 * spring.length);
     gWorld.addSpring(spring);
     this.springs.push(spring);
   }
@@ -143,21 +194,18 @@ class Slug {
     noStroke();
     fill(this.color);
     for (let point of this.points) {
-      circle(point.position.x, point.position.y, this.circleSize);
+      circle(point.position.x, point.position.y, 2); //this.circleSize);
     }
     //} else {
     noFill();
     stroke(this.color);
     strokeWeight(1);
     beginShape();
-    let first = this.points[0];
-    let last = this.points[this.points.length - 1];
-    curveVertex(first.position.x, first.position.y);
-    for (let point of this.points) {
+    for (let point of this.drawPoints) {
       curveVertex(point.position.x, point.position.y);
     }
-    curveVertex(last.position.x, last.position.y);
-    endShape();
+
+    endShape(CLOSE);
     //}
 
     if (gIsDebug) {
@@ -165,9 +213,8 @@ class Slug {
       strokeWeight(1);
       stroke(255, 0, 0, 255);
       for (let point of this.points) {
-        circle(point.position.x, point.position.y, 5);
+        circle(point.position.x, point.position.y, 1);
       }
-
       for (let spring of this.springs) {
         line(spring.p1.position.x, spring.p1.position.y, spring.p2.position.x, spring.p2.position.y);
       }
