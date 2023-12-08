@@ -84,74 +84,35 @@ class Slug {
   }
 
   createBody(segLength, segCount) {
-    let prevSegment = [];
     let posX = this.pos.x;
     let posY = this.pos.y;
 
-    // let slugPoints = [];
-    // slugPoints.push(this.createParticle(posX, posY)); // 0
-    // slugPoints.push(this.createParticle(posX + 30, posY)); //1
-    // slugPoints.push(this.createParticle(posX + 60, posY)); //2
-    // slugPoints.push(this.createParticle(posX + 80, posY)); //3
-    // slugPoints.push(this.createParticle(posX + 90, posY - 10)); //4
-    // slugPoints.push(this.createParticle(posX + 80, posY - 15)); //5
-    // slugPoints.push(this.createParticle(posX + 60, posY - 10)); //6
-    // slugPoints.push(this.createParticle(posX + 40, posY - 20)); //7
-    // slugPoints.push(this.createParticle(posX + 30, posY - 15)); //8
-
-    // // for (let i = 0; i < slugPoints.length; i++) {
-    // //   for (let j = 0; j < slugPoints.length; j++) {
-    // //     if (i === j) continue;
-    // //     this.createSpring(slugPoints[i], slugPoints[j]);
-    // //   }
-    // // }
-    // for (let i = 1; i < slugPoints.length; i++) {
-    //   this.createSpring(slugPoints[i], slugPoints[i - 1]);
-    // }
-    // this.createSpring(slugPoints[0], slugPoints[4]);
-    // this.createSpring(slugPoints[0], slugPoints[6]);
-    // this.createSpring(slugPoints[0], slugPoints[8]);
-    // this.createSpring(slugPoints[1], slugPoints[3]);
-    // this.createSpring(slugPoints[1], slugPoints[6]);
-    // this.createSpring(slugPoints[1], slugPoints[7]);
-    // this.createSpring(slugPoints[1], slugPoints[8]);
-    // this.createSpring(slugPoints[2], slugPoints[5]);
-    // this.createSpring(slugPoints[2], slugPoints[6]);
-    // this.createSpring(slugPoints[2], slugPoints[7]);
-    // this.createSpring(slugPoints[2], slugPoints[8]);
-    // this.createSpring(slugPoints[3], slugPoints[5]);
-    // this.createSpring(slugPoints[3], slugPoints[6]);
-    // this.createSpring(slugPoints[5], slugPoints[7]);
-
-    // this.drawPoints = this.points;
-
-    let head;
     let topPoints = [];
     let bottomPoints = [];
-    let tail;
+
+    let head = this.createParticle(posX, posY - this.halfWidth, false);
+
+    let currentSegment = [];
+    let prevSegment = [head];
+    posX -= 0.5 * segLength;
 
     for (let i = 0; i < segCount; i++) {
-      let currentSegment = [];
-
-      if (i === 0) {
-        head = this.createParticle(posX, posY, false);
-        currentSegment.push(head);
-      } else if (i === segCount - 1) {
-        tail = this.createParticle(posX, posY, false);
-        currentSegment.push(tail);
-        this.createSpringsFromSegments(currentSegment, prevSegment);
-      } else {
-        let top = this.createParticle(posX, posY - this.halfWidth);
-        topPoints.push(top);
-        let bottom = this.createParticle(posX, posY + this.halfWidth);
-        bottomPoints.push(bottom);
-        currentSegment.push.apply(currentSegment, [top, bottom]);
-        this.createSpring(top, bottom, 1, 1.2);
-        this.createSpringsFromSegments(currentSegment, prevSegment);
-      }
+      let tailAdj = i === segCount - 1 ? 0.5 : 1;
+      let top = this.createParticle(posX, posY - tailAdj - this.width * tailAdj);
+      topPoints.push(top);
+      let bottom = this.createParticle(posX, posY);
+      bottomPoints.push(bottom);
+      currentSegment.push.apply(currentSegment, [top, bottom]);
+      this.createSpring(top, bottom, 1, 1.2);
+      this.createSpringsFromSegments(currentSegment, prevSegment);
       prevSegment = currentSegment;
+      currentSegment = [];
       posX -= segLength;
     }
+
+    let tail = this.createParticle(posX, posY, false);
+    currentSegment.push(tail);
+    this.createSpringsFromSegments(currentSegment, prevSegment);
     this.createSpring(head, tail, 0.8, 1.5);
 
     this.drawPoints = [tail, ...topPoints.reverse(), head, ...bottomPoints];
@@ -183,20 +144,12 @@ class Slug {
   createSpring(p1, p2, min = 1, max = 1, force = 0.3) {
     let spring = new c2.Spring(p1, p2, force);
     spring.length = dist(p1.position.x, p1.position.y, p2.position.x, p2.position.y);
-    console.log(spring.length);
     spring.range(0.5 * spring.length, 5 * spring.length);
     gWorld.addSpring(spring);
     this.springs.push(spring);
   }
 
   draw() {
-    //if (this.isDots) {
-    noStroke();
-    fill(this.color);
-    for (let point of this.points) {
-      circle(point.position.x, point.position.y, 2); //this.circleSize);
-    }
-    //} else {
     noFill();
     stroke(this.color);
     strokeWeight(1);
@@ -206,7 +159,6 @@ class Slug {
     }
 
     endShape(CLOSE);
-    //}
 
     if (gIsDebug) {
       noFill();
