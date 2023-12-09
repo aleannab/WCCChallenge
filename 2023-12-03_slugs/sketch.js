@@ -41,11 +41,18 @@ function draw() {
   background(gBgColor);
 
   if (!gIsDebug) {
-    let time = millis() - gResetTime;
-    if (time > 1500 && gSlugs.length < 100) {
-      createSlug(random(gBuffer, width), -30);
-      gResetTime = millis();
+    let lastSlug = gSlugs[gSlugs.length - 1];
+
+    if (lastSlug.allSegments[0].points[0].position.y > 25) {
+      let time = millis() - gResetTime;
+      if (time > 1500 && gSlugs.length < 100) {
+        createSlug(random(gBuffer, width), -30);
+        gResetTime = millis();
+      }
+    } else {
+      console.log('ALL DONE');
     }
+
     gWorld.update();
   }
 
@@ -76,7 +83,7 @@ class Slug {
 
     this.color = random(gSlugPalette);
 
-    let segmentCount = floor(random(5, 10));
+    let segmentCount = floor(random(5, 8));
     let segmentHeight = random(15, 25);
     let segmentLength = segmentHeight;
 
@@ -95,7 +102,6 @@ class Slug {
     this.headSegment = new SlugSegment([head]);
     this.allSegments.push(this.headSegment);
 
-    let currentSeg = [];
     let prevSeg = this.headSegment;
     posX -= 0.5 * segLength;
 
@@ -114,7 +120,6 @@ class Slug {
     let tail = this.createParticle(posX, posY, false);
     this.tailSegment = new SlugSegment([tail]);
     this.createSpringsFromSegments(this.tailSegment, prevSeg);
-    //this.createSpring(head, tail, 0.8, 1.5);
     this.allSegments.push(this.tailSegment);
 
     let topPoints = [];
@@ -146,10 +151,11 @@ class Slug {
     }
   }
 
-  createSpring(p1, p2, min = 1, max = 1, force = 0.3) {
+  createSpring(p1, p2, min = 1, max = 1, force = 0.4) {
     let spring = new c2.Spring(p1, p2, force);
     spring.length = dist(p1.position.x, p1.position.y, p2.position.x, p2.position.y);
-    spring.range(0.5 * spring.length, 5 * spring.length);
+
+    spring.range(0.6 * spring.length, 5 * spring.length);
     gWorld.addSpring(spring);
     this.springs.push(spring);
   }
