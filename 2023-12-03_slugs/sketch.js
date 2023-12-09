@@ -8,7 +8,7 @@
 let gWorld;
 let gSlugs = [];
 
-let gIsDebug = true;
+let gIsDebug = false;
 let gBuffer = 200;
 let gResetTime = 0;
 
@@ -17,6 +17,7 @@ let gSlugPalette = ['#79b7ba', '#9f1fde', '#fb6a0c', '#8de28e', '#e3dee6'];
 let gCircleSizes = [9, 12, 15];
 
 function setup() {
+  randomSeed(1);
   // init sizes
   let scalar = 0.9;
   createCanvas(scalar * windowWidth, scalar * windowHeight);
@@ -26,15 +27,14 @@ function setup() {
     createSlug(width / 2, height / 2);
   } else {
     createSlug(random(100, width), -20);
+    let constForce = new c2.ConstForce(0, 1);
+    gWorld.addForce(constForce);
   }
 
   quadTree = new c2.QuadTree(new c2.Rect(0, 0, width, height));
   let collision = new c2.Collision(quadTree);
   collision.iterations = 5;
   gWorld.addInteractionForce(collision);
-
-  let constForce = new c2.ConstForce(0, 1);
-  gWorld.addForce(constForce);
 }
 
 function draw() {
@@ -78,9 +78,11 @@ class Slug {
 
     let segmentCount = floor(random(5, 10));
     let segmentHeight = random(15, 25);
-    let segmentLength = random(0.8, 1.2) * segmentHeight;
+    let segmentLength = segmentHeight;
 
     this.createBody(segmentLength, segmentHeight, segmentCount);
+
+    this.lineCount = random(2, 5);
   }
 
   createBody(segLength, segHeight, segCount) {
@@ -112,7 +114,7 @@ class Slug {
     let tail = this.createParticle(posX, posY, false);
     this.tailSegment = new SlugSegment([tail]);
     this.createSpringsFromSegments(this.tailSegment, prevSeg);
-    this.createSpring(head, tail, 0.8, 1.5);
+    //this.createSpring(head, tail, 0.8, 1.5);
     this.allSegments.push(this.tailSegment);
 
     let topPoints = [];
@@ -161,36 +163,35 @@ class Slug {
       curveVertex(point.position.x, point.position.y);
     }
     endShape(CLOSE);
-    let lineCount = 3;
-    for (let i = 0; i < lineCount + 1; i++) {
-      let percentage = map(i, 0, lineCount, 0, 1.0);
+    for (let i = 0; i < this.lineCount + 1; i++) {
+      let percentage = map(i, 0, this.lineCount, 0, 1.0);
       beginShape();
       curveVertex(this.headSegment.points[0].position.x, this.headSegment.points[0].position.y);
       for (let segment of this.allSegments) {
         let pY =
           segment.points.length === 1
             ? segment.points[0].position.y
-            : map(percentage, 0, 1, segment.points[0].position.y, segment.points[1].position.y);
+            : map(percentage, 0, 1, segment.points[0].position.y, segment.points[1].position.y, true);
         curveVertex(segment.points[0].position.x, pY);
       }
       curveVertex(this.tailSegment.points[0].position.x, this.tailSegment.points[0].position.y);
       endShape();
     }
 
-    // if (gIsDebug) {
-    //   noFill();
-    //   strokeWeight(1);
-    //   stroke(255, 0, 0, 255);
-    //   // for (let point of this.points) {
-    //   //   circle(point.position.x, point.position.y, 1);
-    //   // }
-    //   for (let seg of this.allSegments) {
-    //     seg.drawPoints();
-    //   }
-    //   for (let spring of this.springs) {
-    //     line(spring.p1.position.x, spring.p1.position.y, spring.p2.position.x, spring.p2.position.y);
-    //   }
-    // }
+    if (gIsDebug) {
+      noFill();
+      strokeWeight(1);
+      stroke(255, 0, 0, 255);
+      // for (let point of this.points) {
+      //   circle(point.position.x, point.position.y, 1);
+      // }
+      for (let seg of this.allSegments) {
+        seg.drawPoints();
+      }
+      for (let spring of this.springs) {
+        line(spring.p1.position.x, spring.p1.position.y, spring.p2.position.x, spring.p2.position.y);
+      }
+    }
   }
 }
 
