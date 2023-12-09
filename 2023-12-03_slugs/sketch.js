@@ -14,43 +14,46 @@ let gResetTime = 0;
 
 let gBgColor = '#09090b';
 let gSlugPalette = ['#79b7ba', '#9f1fde', '#fb6a0c', '#8de28e', '#e3dee6'];
-let gCircleSizes = [9, 12, 15];
+
+const gConstraints = {
+  segmentCount: {
+    min: 5,
+    max: 8,
+  },
+  segmentSize: {
+    min: 15,
+    max: 25,
+  },
+  lineCount: {
+    min: 3,
+    max: 5,
+  },
+};
 
 function setup() {
-  randomSeed(1);
-  // init sizes
+  randomSeed(100);
   let scalar = 0.9;
   createCanvas(scalar * windowWidth, scalar * windowHeight);
   gWorld = new c2.World(new c2.Rect(0, -gBuffer, width, height + gBuffer));
 
   if (gIsDebug) {
-    createSlug(width / 2, height / 2);
+    createSlug(0.5 * width, 0.5 * height);
   } else {
-    createSlug(random(100, width), -20);
-    let constForce = new c2.ConstForce(0, 1);
-    gWorld.addForce(constForce);
+    createSlug(random(100, width));
+    addWorldForces(); // gravity and collision
   }
-
-  quadTree = new c2.QuadTree(new c2.Rect(0, 0, width, height));
-  let collision = new c2.Collision(quadTree);
-  collision.iterations = 5;
-  gWorld.addInteractionForce(collision);
 }
 
 function draw() {
   background(gBgColor);
 
   if (!gIsDebug) {
-    let lastSlug = gSlugs[gSlugs.length - 1];
-
-    if (lastSlug.allSegments[0].points[0].position.y > 25) {
+    if (checkBounds()) {
       let time = millis() - gResetTime;
       if (time > 1500 && gSlugs.length < 100) {
-        createSlug(random(gBuffer, width), -30);
+        createSlug(random(gBuffer, width));
         gResetTime = millis();
       }
-    } else {
-      console.log('ALL DONE');
     }
 
     gWorld.update();
@@ -61,7 +64,21 @@ function draw() {
   });
 }
 
-function createSlug(posX, posY) {
+function addWorldForces() {
+  let constForce = new c2.ConstForce(0, 1);
+  gWorld.addForce(constForce);
+  quadTree = new c2.QuadTree(new c2.Rect(0, 0, width, height));
+  let collision = new c2.Collision(quadTree);
+  collision.iterations = 5;
+  gWorld.addInteractionForce(collision);
+}
+
+function checkBounds() {
+  let lastSlug = gSlugs[gSlugs.length - 1];
+  return lastSlug.allSegments[0].points[0].position.y > 40;
+}
+
+function createSlug(posX, posY = 30) {
   gSlugs.push(new Slug(new c2.Vector(posX, posY)));
 }
 
@@ -73,7 +90,6 @@ function keyPressed() {
 
 class Slug {
   constructor(pos) {
-    this.initPos = pos;
     this.allSegments = [];
     this.headSegment;
     this.tailSegment;
@@ -83,45 +99,42 @@ class Slug {
 
     this.color = random(gSlugPalette);
 
-    let segmentCount = floor(random(5, 8));
-    let segmentHeight = random(15, 25);
-    let segmentLength = segmentHeight;
+    let segmentCount = floor(random(gConstraints.segmentCount.min, gConstraints.segmentCount.max));
+    let segmentSize = random(gConstraints.segmentSize.min, gConstraints.segmentSize.max);
 
-    this.createBody(segmentLength, segmentHeight, segmentCount);
+    this.createBody(pos.x, pos.y, segmentSize, segmentCount);
 
-    this.lineCount = random(2, 5);
+    this.lineCount = random(gConstraints.lineCount.min, gConstraints.lineCount.max);
   }
 
-  createBody(segLength, segHeight, segCount) {
-    let posX = this.initPos.x;
-    let posY = this.initPos.y;
+  createBody(posX, posY, segSize, segCount) {
+    let halfHeight = 0.5 * segSize;
 
-    let halfHeight = segHeight / 2;
-
-    let head = this.createParticle(posX, posY - halfHeight, false);
-    this.headSegment = new SlugSegment([head]);
-    this.allSegments.push(this.headSegment);
+    // Create head
+    let head = this.createParticle(posX, posY - halfHeight);
+    this.headSegment = this.createSegment([head]);
 
     let prevSeg = this.headSegment;
-    posX -= 0.5 * segLength;
+    posX -= halfHeight;
 
+    // Create middle segments
     for (let i = 0; i < segCount; i++) {
-      let tailAdj = i === segCount - 1 ? 0.5 : 1;
-      let top = this.createParticle(posX, posY - tailAdj * (1 + segHeight));
+      let tailAdj = i === segCount - 1 ? 0.5 : 1; // use half height for last segment
+
+      let top = this.createParticle(posX, posY - tailAdj * (1 + segSize));
       let bottom = this.createParticle(posX, posY);
-      let currentSeg = new SlugSegment([top, bottom]);
-      this.createSpring(currentSeg.points[0], currentSeg.points[1]);
-      this.createSpringsFromSegments(currentSeg, prevSeg);
-      this.allSegments.push(currentSeg);
-      posX -= segLength;
+      let currentSeg = this.createSegment([top, bottom], prevSeg);
+
+      posX -= segSize;
       prevSeg = currentSeg;
     }
 
-    let tail = this.createParticle(posX, posY, false);
-    this.tailSegment = new SlugSegment([tail]);
-    this.createSpringsFromSegments(this.tailSegment, prevSeg);
-    this.allSegments.push(this.tailSegment);
+    // Create tail
+    let tail = this.createParticle(posX, posY);
+    this.tailSegment = this.createSegment([tail], prevSeg);
+    this.createSpring(head, tail);
 
+    // Reorder points for drawing purposes
     let topPoints = [];
     let bottomPoints = [];
     for (let seg of this.allSegments) {
@@ -131,13 +144,22 @@ class Slug {
     this.drawPoints = [tail, ...topPoints.reverse(), head, ...bottomPoints];
   }
 
-  createParticle(posX, posY, isFixed = false) {
-    let offsetX = 0; // random(-0.2, 0.2) * this.width;
-    let offsetY = 0; //random(-0.2, 0.2) * this.segmentLength;
-    let p = new c2.Particle(posX + offsetX, posY + offsetY);
+  createSegment(points, prevSeg = null) {
+    let segment = new SlugSegment(points);
+    this.allSegments.push(segment);
+
+    if (points.length > 1) this.createSpring(segment.points[0], segment.points[1]);
+
+    if (prevSeg) this.createSpringsFromSegments(segment, prevSeg);
+
+    return segment;
+  }
+
+  createParticle(posX, posY) {
+    let offsetY = random(-0.2, 0.2) * gConstraints.segmentSize.max;
+    let p = new c2.Particle(posX, posY + offsetY);
     p.radius = 10;
-    p.mass = random(0.9, 1.1) * this.mass; //random(1, 5); //1; //p.radius;
-    if (isFixed) p.fix();
+    p.mass = random(0.9, 1.1) * this.mass;
     gWorld.addParticle(p);
 
     return p;
@@ -164,11 +186,15 @@ class Slug {
     noFill();
     stroke(this.color);
     strokeWeight(1);
+
+    // draw outline
     beginShape();
     for (let point of this.drawPoints) {
       curveVertex(point.position.x, point.position.y);
     }
     endShape(CLOSE);
+
+    // draw internal lines
     for (let i = 0; i < this.lineCount + 1; i++) {
       let percentage = map(i, 0, this.lineCount, 0, 1.0);
       beginShape();
@@ -184,13 +210,11 @@ class Slug {
       endShape();
     }
 
+    // draw points and springs
     if (gIsDebug) {
       noFill();
       strokeWeight(1);
       stroke(255, 0, 0, 255);
-      // for (let point of this.points) {
-      //   circle(point.position.x, point.position.y, 1);
-      // }
       for (let seg of this.allSegments) {
         seg.drawPoints();
       }
