@@ -66,55 +66,61 @@ function keyPressed() {
 
 class Slug {
   constructor(pos) {
-    this.pos = pos;
-    this.width = random(15, 25);
-    this.halfWidth = this.width / 2;
-    this.segmentCount = floor(random(5, 10));
-    this.segmentLength = random(0.8, 1.2) * this.width;
-    this.drawPoints = [];
-    this.points = [];
+    this.initPos = pos;
+    this.allSegments = [];
+    this.headSegment;
+    this.tailSegment;
+
     this.springs = [];
-    this.circleSize = random(gCircleSizes);
     this.mass = random(1, 5);
-    this.isDots = false; //random(0, 1) > 0.5;
 
     this.color = random(gSlugPalette);
 
-    this.createBody(this.segmentLength, this.segmentCount);
+    let segmentCount = floor(random(5, 10));
+    let segmentHeight = random(15, 25);
+    let segmentLength = random(0.8, 1.2) * segmentHeight;
+
+    this.createBody(segmentLength, segmentHeight, segmentCount);
   }
 
-  createBody(segLength, segCount) {
-    let posX = this.pos.x;
-    let posY = this.pos.y;
+  createBody(segLength, segHeight, segCount) {
+    let posX = this.initPos.x;
+    let posY = this.initPos.y;
 
-    let topPoints = [];
-    let bottomPoints = [];
+    let halfHeight = segHeight / 2;
 
-    let head = this.createParticle(posX, posY - this.halfWidth, false);
+    let head = this.createParticle(posX, posY - halfHeight, false);
+    this.headSegment = new SlugSegment([head]);
+    this.allSegments.push(this.headSegment);
 
-    let currentSegment = [];
-    let prevSegment = [head];
+    let currentSeg = [];
+    let prevSeg = this.headSegment;
     posX -= 0.5 * segLength;
 
     for (let i = 0; i < segCount; i++) {
       let tailAdj = i === segCount - 1 ? 0.5 : 1;
-      let top = this.createParticle(posX, posY - tailAdj - this.width * tailAdj);
-      topPoints.push(top);
+      let top = this.createParticle(posX, posY - tailAdj * (1 + segHeight));
       let bottom = this.createParticle(posX, posY);
-      bottomPoints.push(bottom);
-      currentSegment.push.apply(currentSegment, [top, bottom]);
-      this.createSpring(top, bottom, 1, 1.2);
-      this.createSpringsFromSegments(currentSegment, prevSegment);
-      prevSegment = currentSegment;
-      currentSegment = [];
+      let currentSeg = new SlugSegment([top, bottom]);
+      this.createSpring(currentSeg.points[0], currentSeg.points[1]);
+      this.createSpringsFromSegments(currentSeg, prevSeg);
+      this.allSegments.push(currentSeg);
       posX -= segLength;
+      prevSeg = currentSeg;
     }
 
     let tail = this.createParticle(posX, posY, false);
-    currentSegment.push(tail);
-    this.createSpringsFromSegments(currentSegment, prevSegment);
+    this.tailSegment = new SlugSegment([tail]);
+    this.createSpringsFromSegments(this.tailSegment, prevSeg);
     this.createSpring(head, tail, 0.8, 1.5);
+    this.allSegments.push(this.tailSegment);
 
+    let topPoints = [];
+    let bottomPoints = [];
+    for (let seg of this.allSegments) {
+      topPoints.push(seg.points[0]);
+      if (seg.points.length > 1) bottomPoints.push(seg.points[1]);
+    }
     this.drawPoints = [tail, ...topPoints.reverse(), head, ...bottomPoints];
   }
 
@@ -126,16 +132,13 @@ class Slug {
     p.mass = random(0.9, 1.1) * this.mass; //random(1, 5); //1; //p.radius;
     if (isFixed) p.fix();
     gWorld.addParticle(p);
-    this.points.push(p);
 
     return p;
   }
 
-  addSegment(pos) {}
-
-  createSpringsFromSegments(currentSegment, prevSegment) {
-    for (let curPt of currentSegment) {
-      for (let prevPt of prevSegment) {
+  createSpringsFromSegments(currentSeg, prevSeg) {
+    for (let curPt of currentSeg.points) {
+      for (let prevPt of prevSeg.points) {
         this.createSpring(curPt, prevPt);
       }
     }
@@ -157,19 +160,48 @@ class Slug {
     for (let point of this.drawPoints) {
       curveVertex(point.position.x, point.position.y);
     }
-
     endShape(CLOSE);
+    let lineCount = 3;
+    for (let i = 0; i < lineCount + 1; i++) {
+      let percentage = map(i, 0, lineCount, 0, 1.0);
+      beginShape();
+      curveVertex(this.headSegment.points[0].position.x, this.headSegment.points[0].position.y);
+      for (let segment of this.allSegments) {
+        let pY =
+          segment.points.length === 1
+            ? segment.points[0].position.y
+            : map(percentage, 0, 1, segment.points[0].position.y, segment.points[1].position.y);
+        curveVertex(segment.points[0].position.x, pY);
+      }
+      curveVertex(this.tailSegment.points[0].position.x, this.tailSegment.points[0].position.y);
+      endShape();
+    }
 
-    if (gIsDebug) {
-      noFill();
-      strokeWeight(1);
-      stroke(255, 0, 0, 255);
-      for (let point of this.points) {
-        circle(point.position.x, point.position.y, 1);
-      }
-      for (let spring of this.springs) {
-        line(spring.p1.position.x, spring.p1.position.y, spring.p2.position.x, spring.p2.position.y);
-      }
+    // if (gIsDebug) {
+    //   noFill();
+    //   strokeWeight(1);
+    //   stroke(255, 0, 0, 255);
+    //   // for (let point of this.points) {
+    //   //   circle(point.position.x, point.position.y, 1);
+    //   // }
+    //   for (let seg of this.allSegments) {
+    //     seg.drawPoints();
+    //   }
+    //   for (let spring of this.springs) {
+    //     line(spring.p1.position.x, spring.p1.position.y, spring.p2.position.x, spring.p2.position.y);
+    //   }
+    // }
+  }
+}
+
+class SlugSegment {
+  constructor(points) {
+    this.points = points;
+  }
+
+  drawPoints() {
+    for (let point of this.points) {
+      circle(point.position.x, point.position.y, 1);
     }
   }
 }
