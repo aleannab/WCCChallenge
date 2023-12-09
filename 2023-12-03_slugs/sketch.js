@@ -1,5 +1,11 @@
 // Created for the #WCCChallenge - Topic: Slugs
 //
+// When the topic of slugs was chosen, I knew I wanted to play around with soft body physics.
+// I was inspired by some creative code blobby sketches by Roni Kaufman and Juhani Halkomaki
+// that I discovered through this article: https://www.gorillasun.de/blog/soft-body-physics-and-blobs/
+//
+// My color palette is inspired by nudibranch sea slugs. They are otherworldly and stunning! Look them up if you're not familiar.
+//
 // Uses the c2.js library for physics simulations: https://github.com/ren-yuan/c2.js/tree/main
 //
 // See other submissions here: https://openprocessing.org/curation/78544
@@ -9,10 +15,10 @@ let gWorld;
 let gSlugs = [];
 
 let gIsDebug = false;
-let gBuffer = 200;
+let gBuffer;
 let gResetTime = 0;
 
-let gBgColor = '#09090b';
+let gBgColor = '#1E1E29';
 let gSlugPalette = ['#79b7ba', '#9f1fde', '#fb6a0c', '#8de28e', '#e3dee6'];
 
 const gConstraints = {
@@ -22,18 +28,26 @@ const gConstraints = {
   },
   segmentSize: {
     min: 15,
-    max: 25,
+    max: 30,
   },
   lineCount: {
     min: 3,
     max: 5,
   },
+  slugMass: {
+    min: 2,
+    max: 4,
+  },
+  slugMassVar: {
+    min: 0.9,
+    max: 1.2,
+  },
 };
 
 function setup() {
-  randomSeed(100);
-  let scalar = 0.9;
-  createCanvas(scalar * windowWidth, scalar * windowHeight);
+  let length = 0.9 * (windowWidth < windowHeight ? windowWidth : windowHeight);
+  createCanvas(length, length);
+  gBuffer = 1.2 * gConstraints.segmentSize.max * gConstraints.segmentCount.max;
   gWorld = new c2.World(new c2.Rect(0, -gBuffer, width, height + gBuffer));
 
   if (gIsDebug) {
@@ -49,8 +63,8 @@ function draw() {
 
   if (!gIsDebug) {
     if (checkBounds()) {
-      let time = millis() - gResetTime;
-      if (time > 1500 && gSlugs.length < 100) {
+      let t = millis() - gResetTime;
+      if (t > 1500 && gSlugs.length < 100) {
         createSlug(random(gBuffer, width));
         gResetTime = millis();
       }
@@ -78,7 +92,7 @@ function checkBounds() {
   return lastSlug.allSegments[0].points[0].position.y > 40;
 }
 
-function createSlug(posX, posY = 30) {
+function createSlug(posX, posY = -30) {
   gSlugs.push(new Slug(new c2.Vector(posX, posY)));
 }
 
@@ -95,20 +109,20 @@ class Slug {
     this.tailSegment;
 
     this.springs = [];
-    this.mass = random(1, 5);
+    this.mass = random(gConstraints.slugMass.min, gConstraints.slugMass.max);
 
     this.color = random(gSlugPalette);
 
     let segmentCount = floor(random(gConstraints.segmentCount.min, gConstraints.segmentCount.max));
-    let segmentSize = random(gConstraints.segmentSize.min, gConstraints.segmentSize.max);
+    this.segmentSize = random(gConstraints.segmentSize.min, gConstraints.segmentSize.max);
 
-    this.createBody(pos.x, pos.y, segmentSize, segmentCount);
+    this.createBody(pos.x, pos.y, segmentCount);
 
     this.lineCount = random(gConstraints.lineCount.min, gConstraints.lineCount.max);
   }
 
-  createBody(posX, posY, segSize, segCount) {
-    let halfHeight = 0.5 * segSize;
+  createBody(posX, posY, segCount) {
+    let halfHeight = 0.5 * this.segmentSize;
 
     // Create head
     let head = this.createParticle(posX, posY - halfHeight);
@@ -121,11 +135,11 @@ class Slug {
     for (let i = 0; i < segCount; i++) {
       let tailAdj = i === segCount - 1 ? 0.5 : 1; // use half height for last segment
 
-      let top = this.createParticle(posX, posY - tailAdj * (1 + segSize));
+      let top = this.createParticle(posX, posY - tailAdj * (1 + this.segmentSize));
       let bottom = this.createParticle(posX, posY);
       let currentSeg = this.createSegment([top, bottom], prevSeg);
 
-      posX -= segSize;
+      posX -= this.segmentSize;
       prevSeg = currentSeg;
     }
 
@@ -158,8 +172,8 @@ class Slug {
   createParticle(posX, posY) {
     let offsetY = random(-0.2, 0.2) * gConstraints.segmentSize.max;
     let p = new c2.Particle(posX, posY + offsetY);
-    p.radius = 10;
-    p.mass = random(0.9, 1.1) * this.mass;
+    p.radius = 0.5 * this.segmentSize;
+    p.mass = random(gConstraints.slugMassVar.min, gConstraints.slugMassVar.max) * this.mass;
     gWorld.addParticle(p);
 
     return p;
