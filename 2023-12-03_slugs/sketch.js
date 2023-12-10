@@ -53,7 +53,7 @@ function setup() {
   if (gIsDebug) {
     createSlug(0.5 * width, 0.5 * height);
   } else {
-    createSlug(random(100, width));
+    createSlug();
     addWorldForces(); // gravity and collision
   }
 }
@@ -65,7 +65,7 @@ function draw() {
     if (checkBounds()) {
       let t = millis() - gResetTime;
       if (t > 1500 && gSlugs.length < 100) {
-        createSlug(random(gBuffer, width));
+        createSlug();
         gResetTime = millis();
       }
     }
@@ -89,10 +89,10 @@ function addWorldForces() {
 
 function checkBounds() {
   let lastSlug = gSlugs[gSlugs.length - 1];
-  return lastSlug.allSegments[0].points[0].position.y > 40;
+  return lastSlug.allSegments[0].points[0].position.y > 2 * gConstraints.segmentSize.max;
 }
 
-function createSlug(posX, posY = -30) {
+function createSlug(posX = -1, posY = -30) {
   gSlugs.push(new Slug(new c2.Vector(posX, posY)));
 }
 
@@ -115,6 +115,10 @@ class Slug {
 
     let segmentCount = floor(random(gConstraints.segmentCount.min, gConstraints.segmentCount.max));
     this.segmentSize = random(gConstraints.segmentSize.min, gConstraints.segmentSize.max);
+
+    if (pos.x < 0) {
+      pos.x = random(segmentCount * this.segmentSize, width);
+    }
 
     this.createBody(pos.x, pos.y, segmentCount);
 
@@ -170,9 +174,9 @@ class Slug {
   }
 
   createParticle(posX, posY) {
-    let offsetY = random(-0.2, 0.2) * gConstraints.segmentSize.max;
+    let offsetY = random(-0.2, 0.2) * this.segmentSize;
     let p = new c2.Particle(posX, posY + offsetY);
-    p.radius = 0.5 * this.segmentSize;
+    p.radius = 0.55 * this.segmentSize;
     p.mass = random(gConstraints.slugMassVar.min, gConstraints.slugMassVar.max) * this.mass;
     gWorld.addParticle(p);
 
