@@ -16,6 +16,7 @@ let gSlugs = [];
 
 let gIsDebug = false;
 let gBuffer;
+let gBoundY;
 let gResetTime = 0;
 
 let gBgColor = '#1E1E29';
@@ -49,6 +50,8 @@ function setup() {
   createCanvas(length, length);
   gBuffer = 1.2 * gConstraints.segmentSize.max * gConstraints.segmentCount.max;
   gWorld = new c2.World(new c2.Rect(0, -gBuffer, width, height + gBuffer));
+
+  gBoundY = 2 * gConstraints.segmentSize.max;
 
   if (gIsDebug) {
     createSlug(0.5 * width, 0.5 * height);
@@ -89,7 +92,10 @@ function addWorldForces() {
 
 function checkBounds() {
   let lastSlug = gSlugs[gSlugs.length - 1];
-  return lastSlug.allSegments[0].points[0].position.y > 2 * gConstraints.segmentSize.max;
+  let bound = 2 * gConstraints.segmentSize.max;
+  let headCheck = lastSlug.headSegment.points[0].position.y > gBoundY;
+  let tailCheck = lastSlug.tailSegment.points[0].position.y > gBoundY;
+  return headCheck && tailCheck;
 }
 
 function createSlug(posX = -1, posY = -30) {
