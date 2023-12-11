@@ -4,6 +4,9 @@
 // I was inspired by some creative code blobby sketches by Roni Kaufman and Juhani Halkomaki
 // that I discovered through this article: https://www.gorillasun.de/blog/soft-body-physics-and-blobs/
 //
+// If you're interested in viewing the underlying spring system you can turn on debug mode by pressing 'd'
+// (Note: debug mode also prevents new slugs from spawning, but you can always toggle it if you want to add more)
+//
 // My color palette is inspired by nudibranch sea slugs. They are otherworldly and stunning! Look them up if you're not familiar.
 //
 // Uses the c2.js library for physics simulations: https://github.com/ren-yuan/c2.js/tree/main
@@ -24,7 +27,7 @@ let gSlugPalette = ['#79b7ba', '#9f1fde', '#fb6a0c', '#8de28e', '#e3dee6'];
 
 const gConstraints = {
   segmentCount: {
-    min: 5,
+    min: 4,
     max: 8,
   },
   segmentSize: {
@@ -53,12 +56,8 @@ function setup() {
 
   gBoundY = 2 * gConstraints.segmentSize.max;
 
-  if (gIsDebug) {
-    createSlug(0.5 * width, 0.5 * height);
-  } else {
-    createSlug();
-    addWorldForces(); // gravity and collision
-  }
+  createSlug();
+  addWorldForces(); // gravity and collision
 }
 
 function draw() {
@@ -72,9 +71,9 @@ function draw() {
         gResetTime = millis();
       }
     }
-
-    gWorld.update();
   }
+
+  gWorld.update();
 
   gSlugs.forEach((slug) => {
     slug.draw();
@@ -107,7 +106,6 @@ function keyPressed() {
     gIsDebug = !gIsDebug;
   }
 }
-
 class Slug {
   constructor(pos) {
     this.allSegments = [];
@@ -156,7 +154,6 @@ class Slug {
     // Create tail
     let tail = this.createParticle(posX, posY);
     this.tailSegment = this.createSegment([tail], prevSeg);
-    this.createSpring(head, tail);
 
     // Reorder points for drawing purposes
     let topPoints = [];
