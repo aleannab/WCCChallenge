@@ -3,31 +3,38 @@ let gRightPt;
 
 let gAllBlocks = [];
 
-let gWallDistMin = 50;
+let gWallDistMin;
+let gWallHeightInc;
 
 let gIsDebug = false;
 
 function setup() {
+  // randomSeed(908);
   createCanvas(windowWidth, windowHeight);
-  colorMode(HSB);
+  colorMode(HSL);
 
-  gLeftPt = new c2.Vector(0.1 * windowWidth, 0.7 * windowHeight);
+  gLeftPt = new c2.Vector(0, 0.7 * windowHeight);
 
-  gRightPt = new c2.Vector(0.9 * windowWidth, 0.7 * windowHeight);
+  gRightPt = new c2.Vector(windowWidth, 0.7 * windowHeight);
 
-  let yp = windowHeight * 0.1;
+  gWallDistMin = random(0.1, 0.25) * windowWidth;
+
+  let yp = height;
   let upper = [];
   let mid = [];
   let lower = [];
-  for (let i = 0; i < 20; i++) {
+  let count = random(5, 30);
+  gWallHeightInc = (0.8 * height) / count;
+  for (let i = 0; i < count; i++) {
     let block = new BuildingBlock(yp);
     if (block.level > 0) upper.push(block);
     else if (block.level < 0) lower.push(block);
     else mid.push(block);
-    yp += random(25, 100);
+    yp -= random(0.8, 1.2) * gWallHeightInc;
   }
 
-  gAllBlocks = [...upper, ...lower, ...mid];
+  gAllBlocks = [...upper, ...lower.reverse(), ...mid.reverse()];
+
   noFill();
 }
 
@@ -55,12 +62,12 @@ class BuildingBlock {
   constructor(yp) {
     this.boundLines = [];
     // center corner
-    let centerUpperPt = new c2.Vector(random(0.3, 0.7) * width, yp);
-    let centerLowerPt = new c2.Vector(centerUpperPt.x, centerUpperPt.y - random(50, 300));
+    let centerUpperPt = new c2.Vector(random(2 * gWallDistMin, width - 2 * gWallDistMin), yp);
+    let centerLowerPt = new c2.Vector(centerUpperPt.x, centerUpperPt.y - random(0.5, 2.5) * gWallHeightInc);
     this.centerLine = new Line(centerUpperPt, centerLowerPt);
 
     // left side
-    let leftPosX = floor(random(gLeftPt.x + gWallDistMin, centerUpperPt.x - gWallDistMin));
+    let leftPosX = random(gLeftPt.x + gWallDistMin, centerUpperPt.x - gWallDistMin);
     this.leftCornerLine = this.getCornerLine(leftPosX, this.centerLine, gLeftPt);
 
     // right side
@@ -73,10 +80,11 @@ class BuildingBlock {
     //floor
     this.floorPt = this.getIntersectionPt(new Line(this.leftCornerLine.p0, gRightPt), new Line(this.rightCornerLine.p0, gLeftPt), true);
 
-    let leftWall = new Wall(this.leftCornerLine.p0, this.centerLine.p0, this.centerLine.p1, this.leftCornerLine.p1);
-    let rightWall = new Wall(this.centerLine.p0, this.rightCornerLine.p0, this.rightCornerLine.p1, this.centerLine.p1);
-    let floorWall = new Wall(this.leftCornerLine.p0, this.centerLine.p0, this.rightCornerLine.p0, this.floorPt);
-    let ceilingWall = new Wall(this.leftCornerLine.p1, this.centerLine.p1, this.rightCornerLine.p1, this.ceilingPt);
+    this.color = color(random(0, 360), 40, 80);
+    let ceilingWall = new Wall(this.leftCornerLine.p1, this.centerLine.p1, this.rightCornerLine.p1, this.ceilingPt, this.color, 1);
+    let leftWall = new Wall(this.leftCornerLine.p0, this.centerLine.p0, this.centerLine.p1, this.leftCornerLine.p1, this.color, 0.9);
+    let rightWall = new Wall(this.centerLine.p0, this.rightCornerLine.p0, this.rightCornerLine.p1, this.centerLine.p1, this.color, 0.8);
+    let floorWall = new Wall(this.leftCornerLine.p0, this.centerLine.p0, this.rightCornerLine.p0, this.floorPt, this.color, 0.7);
 
     if (centerUpperPt.y > gLeftPt.y && centerLowerPt.y > gLeftPt.y) {
       this.allWalls = [ceilingWall, leftWall, rightWall];
@@ -88,7 +96,6 @@ class BuildingBlock {
       this.allWalls = [leftWall, rightWall];
       this.level = 0;
     }
-    this.color = color(random(0, 360), 50, 200);
   }
 
   getCornerLine(ptX, line, perspectivePt) {
@@ -117,7 +124,7 @@ class BuildingBlock {
     stroke(255, 0, 0);
     strokeWeight(0.5);
 
-    if (true) this.drawBoundLines();
+    if (gIsDebug) this.drawBoundLines();
 
     fill(this.color);
     for (let wall of this.allWalls) {
@@ -135,11 +142,13 @@ class BuildingBlock {
 }
 
 class Wall {
-  constructor(p0, p1, p2, p3) {
+  constructor(p0, p1, p2, p3, c, shade) {
     Object.assign(this, { p0, p1, p2, p3 });
+    this.color = color(hue(c), saturation(c), lightness(c) * shade);
   }
 
   draw() {
+    fill(this.color);
     quad(this.p0.x, this.p0.y, this.p1.x, this.p1.y, this.p2.x, this.p2.y, this.p3.x, this.p3.y);
   }
 }
