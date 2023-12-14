@@ -2,6 +2,8 @@ let gLeftPt;
 let gRightPt;
 
 let gAllBlocks = [];
+let gBgGround = [];
+let gBgSky = [];
 
 let gDistFromPointMin;
 let gWallHeightInc;
@@ -17,14 +19,14 @@ function setup() {
 
   gWindowColor = color(0, 0.1);
   // set points for two point perspective calculations
-  gLeftPt = new c2.Vector(0, 0.7 * windowHeight);
-  gRightPt = new c2.Vector(windowWidth, 0.7 * windowHeight);
-  gDistFromPointMin = windowWidth * random(0.08, 0.15);
+  gLeftPt = new c2.Vector(0, 0.6 * windowHeight);
+  gRightPt = new c2.Vector(windowWidth, 0.6 * windowHeight);
+  gDistFromPointMin = windowWidth * 0.3;
 
-  let yp = height;
+  let yp = 0.95 * height;
   let [upper, mid, lower] = [[], [], []];
-  let count = random(10, 20);
-  gWallHeightInc = (0.8 * height) / count;
+  let count = random(10, 30);
+  gWallHeightInc = (0.7 * height) / count;
   gWindowHeight = 0.8 * gWallHeightInc;
   for (let i = 0; i < count; i++) {
     let block = new BuildingBlock(yp);
@@ -32,14 +34,32 @@ function setup() {
     yp -= random(0.8, 1.2) * gWallHeightInc;
   }
 
+  for (let i = 0; i < 50; i++) {
+    if (i < 10) gBgGround.push(new c2.Vector(random(-width, 2 * width), random(gLeftPt.y, height)));
+    gBgSky.push(new c2.Vector(random(-width, 2 * width), random(-0.2 * height, gLeftPt.y)));
+  }
+
   gAllBlocks = [...upper, ...lower.reverse(), ...mid.reverse()];
 
   noFill();
+  noLoop();
 }
 
 // Create a draw function
 function draw() {
-  background(255);
+  background(90);
+
+  // draw background
+  noStroke();
+  for (let ground of gBgGround) {
+    fill(random(30, 35), 20, 40, 0.05);
+    triangle(ground.x, ground.y, gLeftPt.x, gLeftPt.y, gRightPt.x, gRightPt.y);
+  }
+
+  for (let sky of gBgSky) {
+    fill(random(180, 250), 60, 80, 0.05);
+    triangle(sky.x, sky.y, gLeftPt.x, gLeftPt.y, gRightPt.x, gRightPt.y);
+  }
 
   // perspective lines
   strokeWeight(1); // draw horizon line
@@ -184,6 +204,7 @@ class Wall {
 
   draw() {
     fill(this.color);
+    strokeWeight(1);
     quad(
       this.allPoints[0].x,
       this.allPoints[0].y,
@@ -196,6 +217,7 @@ class Wall {
     );
 
     fill(gWindowColor);
+    strokeWeight(0.5);
     for (let window of this.allWindows) {
       quad(this.allPoints[0].x, window[0], this.allPoints[1].x, window[1], this.allPoints[2].x, window[2], this.allPoints[3].x, window[3]);
     }
