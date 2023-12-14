@@ -3,37 +3,32 @@ let gRightPt;
 
 let gAllBlocks = [];
 
-let gWallDistMin;
+let gDistFromPointMin;
 let gWallHeightInc;
 
-let gWindowHeight = 50;
+let gWindowHeight;
 let gIsDebug = false;
 
+let gWindowColor;
+
 function setup() {
-  // randomSeed(908);
   createCanvas(windowWidth, windowHeight);
   colorMode(HSL);
 
+  gWindowColor = color(0, 0.1);
+  // set points for two point perspective calculations
   gLeftPt = new c2.Vector(0, 0.7 * windowHeight);
-
   gRightPt = new c2.Vector(windowWidth, 0.7 * windowHeight);
-
-  gWallDistMin = 0.1 * windowWidth; //random(0.1, 0.25) * windowWidth;
-
-  //TODO: remove
-  //randomSeed(1);
+  gDistFromPointMin = windowWidth * random(0.08, 0.15);
 
   let yp = height;
-  let upper = [];
-  let mid = [];
-  let lower = [];
-  let count = 10; //random(5, 30);
+  let [upper, mid, lower] = [[], [], []];
+  let count = random(10, 20);
   gWallHeightInc = (0.8 * height) / count;
+  gWindowHeight = 0.8 * gWallHeightInc;
   for (let i = 0; i < count; i++) {
     let block = new BuildingBlock(yp);
-    if (block.level > 0) upper.push(block);
-    else if (block.level < 0) lower.push(block);
-    else mid.push(block);
+    block.level > 0 ? upper.push(block) : block.level < 0 ? lower.push(block) : mid.push(block);
     yp -= random(0.8, 1.2) * gWallHeightInc;
   }
 
@@ -66,56 +61,45 @@ class BuildingBlock {
   constructor(yp) {
     this.boundLines = [];
     // center corner
-    let centerUpperPt = new c2.Vector(random(2 * gWallDistMin, width - 2 * gWallDistMin), yp);
-    let centerLowerPt = new c2.Vector(centerUpperPt.x, centerUpperPt.y - random(0.5, 2.5) * gWallHeightInc);
-    this.centerLine = new Line(centerUpperPt, centerLowerPt);
-
-    this.centerLineHeight = centerUpperPt.y - centerLowerPt.y;
+    const centerUpperPt = new c2.Vector(random(2 * gDistFromPointMin, width - 2 * gDistFromPointMin), yp);
+    const centerLowerPt = new c2.Vector(centerUpperPt.x, centerUpperPt.y - random(0.5, 2.5) * gWallHeightInc);
+    const centerLine = new Line(centerUpperPt, centerLowerPt);
+    const centerLineHeight = centerUpperPt.y - centerLowerPt.y;
 
     // left side
-    let leftPosX = random(gLeftPt.x + gWallDistMin, centerUpperPt.x - gWallDistMin);
-    this.leftCornerLine = this.getCornerLine(leftPosX, this.centerLine, gLeftPt);
+    const leftPosX = random(gLeftPt.x + gDistFromPointMin, centerUpperPt.x - gDistFromPointMin);
+    const leftCornerLine = this.getCornerLine(leftPosX, centerLine, gLeftPt);
 
     // right side
-    let rightPosX = floor(random(centerUpperPt.x + gWallDistMin, gRightPt.x - gWallDistMin));
-    this.rightCornerLine = this.getCornerLine(rightPosX, this.centerLine, gRightPt);
+    const rightPosX = floor(random(centerUpperPt.x + gDistFromPointMin, gRightPt.x - gDistFromPointMin));
+    const rightCornerLine = this.getCornerLine(rightPosX, centerLine, gRightPt);
 
     // ceiling
-    this.ceilingPt = this.getIntersectionPt(new Line(this.leftCornerLine.p1, gRightPt), new Line(this.rightCornerLine.p1, gLeftPt), true);
+    const ceilingPt = this.getIntersectionPt(new Line(leftCornerLine.p1, gRightPt), new Line(rightCornerLine.p1, gLeftPt), true);
+    const floorPt = this.getIntersectionPt(new Line(leftCornerLine.p0, gRightPt), new Line(rightCornerLine.p0, gLeftPt), true);
 
-    //floor
-    this.floorPt = this.getIntersectionPt(new Line(this.leftCornerLine.p0, gRightPt), new Line(this.rightCornerLine.p0, gLeftPt), true);
+    const cHue = random(0, 360);
+    const cSat = 40;
+    const cLig = 80;
+    const adjWindowHeight = (1 - abs(centerUpperPt.x - width / 2) / (width / 2)) * gWindowHeight;
+    const windowCount = floor(centerLineHeight / adjWindowHeight) - 1;
 
-    this.color = color(random(0, 360), 40, 80);
-    this.percentInc = random(0.1, 0.4);
-    this.adjWindowHeight = (1 - abs(centerUpperPt.x - width / 2) / (width / 2)) * gWindowHeight; // (1 - abs(centerUpperPt.x - width / 2) / (width / 2)) * gWindowHeight;
-    this.windowCount = floor(this.centerLineHeight / this.adjWindowHeight) - 1;
-    let ceilingWall = new Wall(this.leftCornerLine.p1, this.centerLine.p1, this.rightCornerLine.p1, this.ceilingPt, this.color, 1, false);
-    let leftWall = new Wall(
-      this.leftCornerLine.p0,
-      this.centerLine.p0,
-      this.centerLine.p1,
-      this.leftCornerLine.p1,
-      this.color,
-      0.9,
-      true,
-      this.windowCount,
-      this.centerLineHeight,
-      this.adjWindowHeight
+    const ceilingWall = new Wall([leftCornerLine.p1, centerLine.p1, rightCornerLine.p1, ceilingPt], color(cHue, cSat, cLig));
+    const leftWall = new Wall(
+      [leftCornerLine.p0, centerLine.p0, centerLine.p1, leftCornerLine.p1],
+      color(cHue, cSat, cLig * 0.9),
+      windowCount,
+      centerLineHeight,
+      adjWindowHeight
     );
-    let rightWall = new Wall(
-      this.rightCornerLine.p0,
-      this.centerLine.p0,
-      this.centerLine.p1,
-      this.rightCornerLine.p1,
-      this.color,
-      0.8,
-      true,
-      this.windowCount,
-      this.centerLineHeight,
-      this.adjWindowHeight
+    const rightWall = new Wall(
+      [rightCornerLine.p0, centerLine.p0, centerLine.p1, rightCornerLine.p1],
+      color(cHue, cSat, cLig * 0.8),
+      windowCount,
+      centerLineHeight,
+      adjWindowHeight
     );
-    let floorWall = new Wall(this.leftCornerLine.p0, this.centerLine.p0, this.rightCornerLine.p0, this.floorPt, this.color, 0.7, false);
+    const floorWall = new Wall([leftCornerLine.p0, centerLine.p0, rightCornerLine.p0, floorPt], color(cHue, cSat, cLig * 0.7));
 
     if (centerUpperPt.y > gLeftPt.y && centerLowerPt.y > gLeftPt.y) {
       this.allWalls = [ceilingWall, leftWall, rightWall];
@@ -157,7 +141,6 @@ class BuildingBlock {
 
     if (gIsDebug) this.drawBoundLines();
 
-    fill(this.color);
     for (let wall of this.allWalls) {
       stroke(0);
       wall.draw();
@@ -173,31 +156,26 @@ class BuildingBlock {
 }
 
 class Wall {
-  constructor(p0, p1, p2, p3, c, shade, isSide = true, count = 0, wallHeight = 0, windowHeight = 0) {
-    Object.assign(this, { p0, p1, p2, p3 });
-    this.color = color(hue(c), saturation(c), lightness(c) * shade);
-    this.windowColor = color(0, 0.15);
-    this.isSide = isSide;
-    this.windowCount = count - 1;
+  constructor(points, c, windowCount = 0, wallHeight = 0, windowHeight = 0) {
+    this.allPoints = points;
+    this.color = c;
 
     this.allWindows = [];
-    if (this.isSide) {
-      console.log(windowHeight);
-      let farHeight = p0.y - p3.y;
+    if (windowCount > 0) {
+      const farHeight = this.allPoints[0].y - this.allPoints[3].y;
+      const windowPercent = windowHeight / wallHeight;
 
-      let windowPercent = windowHeight / wallHeight;
+      const spaceAvailable = wallHeight - windowHeight * windowCount;
+      const extraInc = spaceAvailable / windowCount;
 
-      let left = wallHeight - windowHeight * this.windowCount;
-      let incLeft = left / this.windowCount;
-
-      let adjWindowHeight = farHeight * windowPercent;
-      let percentInc = (incLeft + windowHeight) / wallHeight;
-      let percent = incLeft / wallHeight;
-      for (let i = 0; i < this.windowCount; i++) {
-        let adj0y = lerp(this.p0.y, this.p3.y, percent);
-        let adj1y = lerp(this.p1.y, this.p2.y, percent);
-        let adj2y = adj1y - windowHeight;
-        let adj3y = adj0y - adjWindowHeight;
+      const adjWindowHeight = farHeight * windowPercent;
+      const percentInc = (extraInc + windowHeight) / wallHeight;
+      let percent = (0.5 * extraInc) / wallHeight;
+      for (let i = 0; i < windowCount; i++) {
+        const adj0y = lerp(this.allPoints[0].y, this.allPoints[3].y, percent);
+        const adj1y = lerp(this.allPoints[1].y, this.allPoints[2].y, percent);
+        const adj2y = adj1y - windowHeight;
+        const adj3y = adj0y - adjWindowHeight;
         this.allWindows.push([adj0y, adj1y, adj2y, adj3y]);
         percent += percentInc;
       }
@@ -206,11 +184,20 @@ class Wall {
 
   draw() {
     fill(this.color);
-    quad(this.p0.x, this.p0.y, this.p1.x, this.p1.y, this.p2.x, this.p2.y, this.p3.x, this.p3.y);
+    quad(
+      this.allPoints[0].x,
+      this.allPoints[0].y,
+      this.allPoints[1].x,
+      this.allPoints[1].y,
+      this.allPoints[2].x,
+      this.allPoints[2].y,
+      this.allPoints[3].x,
+      this.allPoints[3].y
+    );
 
-    fill(this.windowColor);
+    fill(gWindowColor);
     for (let window of this.allWindows) {
-      quad(this.p0.x, window[0], this.p1.x, window[1], this.p2.x, window[2], this.p3.x, window[3]);
+      quad(this.allPoints[0].x, window[0], this.allPoints[1].x, window[1], this.allPoints[2].x, window[2], this.allPoints[3].x, window[3]);
     }
   }
 }
