@@ -7,6 +7,7 @@ let gBgSky = [];
 
 let gDistFromPointMin;
 let gWallHeightInc;
+let gWallDistMin;
 
 let gWindowHeight;
 let gIsDebug = false;
@@ -21,13 +22,14 @@ function setup() {
   // set points for two point perspective calculations
   gLeftPt = new c2.Vector(0, 0.6 * windowHeight);
   gRightPt = new c2.Vector(windowWidth, 0.6 * windowHeight);
-  gDistFromPointMin = windowWidth * 0.3;
+  gDistFromPointMin = windowWidth * 0.2;
+  gWallDistMin = windowWidth * 0.1;
 
   let yp = 0.95 * height;
   let [upper, mid, lower] = [[], [], []];
   let count = random(10, 30);
   gWallHeightInc = (0.7 * height) / count;
-  gWindowHeight = 0.8 * gWallHeightInc;
+  gWindowHeight = 20; //0.5 * gWallHeightInc;
   for (let i = 0; i < count; i++) {
     let block = new BuildingBlock(yp);
     block.level > 0 ? upper.push(block) : block.level < 0 ? lower.push(block) : mid.push(block);
@@ -35,7 +37,7 @@ function setup() {
   }
 
   for (let i = 0; i < 50; i++) {
-    if (i < 10) gBgGround.push(new c2.Vector(random(-width, 2 * width), random(gLeftPt.y, height)));
+    gBgGround.push(new c2.Vector(random(-width, 2 * width), random(gLeftPt.y, height)));
     gBgSky.push(new c2.Vector(random(-width, 2 * width), random(-0.2 * height, gLeftPt.y)));
   }
 
@@ -52,12 +54,12 @@ function draw() {
   // draw background
   noStroke();
   for (let ground of gBgGround) {
-    fill(random(30, 35), 20, 40, 0.05);
+    fill(random(30, 35), 0, 60, 0.05);
     triangle(ground.x, ground.y, gLeftPt.x, gLeftPt.y, gRightPt.x, gRightPt.y);
   }
 
   for (let sky of gBgSky) {
-    fill(random(180, 250), 60, 80, 0.05);
+    fill(random(180, 250), 60, 80, 0.2);
     triangle(sky.x, sky.y, gLeftPt.x, gLeftPt.y, gRightPt.x, gRightPt.y);
   }
 
@@ -87,11 +89,11 @@ class BuildingBlock {
     const centerLineHeight = centerUpperPt.y - centerLowerPt.y;
 
     // left side
-    const leftPosX = random(gLeftPt.x + gDistFromPointMin, centerUpperPt.x - gDistFromPointMin);
+    const leftPosX = random(gLeftPt.x + gDistFromPointMin, centerUpperPt.x - gWallDistMin);
     const leftCornerLine = this.getCornerLine(leftPosX, centerLine, gLeftPt);
 
     // right side
-    const rightPosX = floor(random(centerUpperPt.x + gDistFromPointMin, gRightPt.x - gDistFromPointMin));
+    const rightPosX = floor(random(centerUpperPt.x + gWallDistMin, gRightPt.x - gDistFromPointMin));
     const rightCornerLine = this.getCornerLine(rightPosX, centerLine, gRightPt);
 
     // ceiling
