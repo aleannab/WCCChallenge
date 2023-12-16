@@ -9,14 +9,13 @@ let gDistFromPointMin;
 let gWallHeightInc;
 let gWallDistMin;
 
-let gWindowHeight;
+let gWindowLength;
+let gWindowSpacing;
 let gIsDebug = false;
 
 let gWindowColor;
 
 function setup() {
-  randomSeed(5);
-
   createCanvas(windowWidth, windowHeight);
   colorMode(HSL);
 
@@ -36,9 +35,10 @@ function setup() {
   // create and stack building blocks
   let yp = 0.95 * height;
   let [upper, mid, lower] = [[], [], []];
-  let count = 1; //random(10, 30);
+  let count = random(15, 30);
   gWallHeightInc = (0.7 * height) / count;
-  gWindowHeight = 100; //20; //0.5 * gWallHeightInc;
+  gWindowSize = 0.6 * gWallHeightInc;
+  gWindowSpacing = 0.2 * gWindowSize;
   for (let i = 0; i < count; i++) {
     let block = new BuildingBlock(yp);
     block.level > 0 ? upper.push(block) : block.level < 0 ? lower.push(block) : mid.push(block);
@@ -120,11 +120,11 @@ class BuildingBlock {
     const cLig = 80;
 
     // create walls
-    const createWall = (points, colorMultiplier) => new Wall(points, color(cHue, cSat, cLig * colorMultiplier));
-    const ceilingWall = createWall([leftCornerLine.p1, centerLine.p1, rightCornerLine.p1, ceilingPt], 1.0);
-    const leftWall = createWall([leftCornerLine.p1, leftCornerLine.p0, centerLine.p0, centerLine.p1], 0.9);
-    const rightWall = createWall([centerLine.p1, centerLine.p0, rightCornerLine.p0, rightCornerLine.p1], 0.8);
-    const floorWall = createWall([leftCornerLine.p0, centerLine.p0, rightCornerLine.p0, floorPt], 0.7);
+    const createWall = (points, colorMultiplier, hasWindows) => new Wall(points, color(cHue, cSat, cLig * colorMultiplier), hasWindows);
+    const ceilingWall = createWall([leftCornerLine.p1, centerLine.p1, rightCornerLine.p1, ceilingPt], 1.0, false);
+    const leftWall = createWall([leftCornerLine.p1, leftCornerLine.p0, centerLine.p0, centerLine.p1], 0.9, true);
+    const rightWall = createWall([centerLine.p1, centerLine.p0, rightCornerLine.p0, rightCornerLine.p1], 0.8, true);
+    const floorWall = createWall([leftCornerLine.p0, centerLine.p0, rightCornerLine.p0, floorPt], 0.7, false);
 
     // order walls for rendering purposes
     const isAboveLeftPt = centerUpperPt.y > gLeftPt.y && centerLowerPt.y > gLeftPt.y;
@@ -177,93 +177,81 @@ class BuildingBlock {
 }
 
 class Wall {
-  constructor(points, c) {
+  constructor(points, c, hasWindows = false) {
     this.allPoints = points;
     this.color = c;
 
     this.allWindows = [];
-    // calculate window parameters (size is based on how close wall is to center)
-    const heightL = this.allPoints[1].y - this.allPoints[0].y;
-    const heightR = this.allPoints[2].y - this.allPoints[3].y;
-    const isHeightLMax = heightL > heightR;
-    let heightMax;
-    let posXMax;
-    if (isHeightLMax) {
-      heightMax = heightL;
-      posXMax = this.allPoints[0].x;
-    } else {
-      heightMax = heightR;
-      posXMax = this.allPoints[2].x;
-    }
-
-    const windowSizeScalar = 1 - abs(posXMax - width / 2) / (width / 2);
-    const windowHeight = windowSizeScalar * gWindowHeight;
-    const ratioWindowToWall = windowHeight / heightMax;
-    const windowCount = floor(heightMax / windowHeight) - 1;
-
-    if (windowCount > 0) {
-      const windowHeightL = isHeightLMax ? windowHeight : ratioWindowToWall * heightL;
-      const windowHeightR = isHeightLMax ? ratioWindowToWall * heightR : windowHeight;
-
-      const spaceAvailable = heightL - windowHeightL * windowCount;
-      const extraInc = spaceAvailable / windowCount;
-
-      const percentInc = (extraInc + windowHeightL) / heightL;
-      let percent = (0.5 * extraInc) / heightL;
-      for (let i = 0; i < windowCount; i++) {
-        const adj1y = lerp(this.allPoints[1].y, this.allPoints[0].y, percent);
-        const adj0y = adj1y - windowHeightL;
-        const adj2y = lerp(this.allPoints[2].y, this.allPoints[3].y, percent);
-        const adj3y = adj2y - windowHeightR;
-        this.allWindows.push([adj0y, adj1y, adj2y, adj3y]);
-        console.log(adj1y + ', ' + adj0y + ', ' + adj2y + ', ' + adj3y);
-        percent += percentInc;
-        //break;
+    if (hasWindows) {
+      // calculate window parameters (size is based on how close wall is to center)
+      const heightL = abs(this.allPoints[1].y - this.allPoints[0].y);
+      const heightR = abs(this.allPoints[2].y - this.allPoints[3].y);
+      const isHeightLMax = heightL > heightR;
+      let heightMax;
+      let posXMax;
+      if (isHeightLMax) {
+        heightMax = heightL;
+        posXMax = this.allPoints[0].x;
+      } else {
+        heightMax = heightR;
+        posXMax = this.allPoints[2].x;
       }
-      // const fullWallHeight = this.allPoints[0].y - this.allPoints[3].y;
 
-      // const spaceAvailable = wallHeight - windowHeight * windowCount;
-      // const extraInc = spaceAvailable / windowCount;
+      const windowSizeScalar = 1 - abs(posXMax - width / 2) / (width / 2);
+      const windowSize = windowSizeScalar * gWindowSize;
+      const windowSpacing = windowSizeScalar * gWindowSpacing;
+      const ratioWindowToWall = windowSize / heightMax;
+      const windowCount = floor(heightMax / (windowSize + windowSpacing)) - 1;
 
-      // const adjWindowHeight = (fullWallHeight * windowHeight) / wallHeight;
-      // const percentInc = (extraInc + windowHeight) / wallHeight;
-      // let percent = (0.5 * extraInc) / wallHeight;
+      if (windowCount > 0) {
+        const windowHeightL = isHeightLMax ? windowSize : ratioWindowToWall * heightL;
+        const windowHeightR = isHeightLMax ? ratioWindowToWall * heightR : windowSize;
 
-      // for (let i = 0; i < windowCount; i++) {
-      //   const adj0y = lerp(this.allPoints[0].y, this.allPoints[3].y, percent);
-      //   const adj1y = lerp(this.allPoints[1].y, this.allPoints[2].y, percent);
-      //   const adj2y = adj1y - windowHeight;
-      //   const adj3y = adj0y - adjWindowHeight;
-      //   this.allWindows.push([adj0y, adj1y, adj2y, adj3y]);
-      //   // createWindow(this.allPoints[0], this.allPoints[1], percent, windowHeight, adjWindowHeight, windowCount, wallHeight, this.allWindows);
-      //   percent += percentInc;
-      // }
-    }
+        const spaceAvailable = heightL - windowHeightL * windowCount;
+        const extraInc = spaceAvailable / windowCount;
 
-    function createWindow(pointA, pointB, percent, windowHeight, adjWindowHeight, windowCount, windowLength, allWindows) {
-      const adj0y = lerp(pointA.y, pointB.y, percent);
-      const adj1y = lerp(pointA.y, pointB.y, percent);
-      const topWindowLine = new Line(new c2.Vector(pointA.x, adj0y), new c2.Vector(pointB.x, adj1y));
+        const percentInc = (extraInc + windowHeightL) / heightL;
+        let percent = (0.5 * extraInc) / heightL;
+        const wallDistance = this.allPoints[3].x - this.allPoints[0].x;
+        const initPos = this.allPoints[3].x;
+        const wallLength = abs(wallDistance);
+        const sign = wallDistance < 0 ? 1 : -1;
 
-      const adj2y = adj1y - windowHeight;
-      const adj3y = adj0y - adjWindowHeight;
-      const bottomWindowLine = new Line(new c2.Vector(pointA.x, adj2y), new c2.Vector(pointB.x, adj3y));
+        const windowColCount = floor(wallLength / (windowSize + windowSpacing));
+        const windowSpaceAvailable = wallLength - windowColCount * windowSize;
+        const windowInc = windowSpaceAvailable / windowColCount + windowSize;
 
-      const wallLength = pointA.x - pointB.x;
-      const windowColCount = floor(wallLength / windowLength) - 1;
-      const windowSpaceAvailable = wallLength - windowColCount * windowLength;
-      const windowInc = windowSpaceAvailable / windowColCount + windowLength;
+        console.log(this.allPoints[0]);
+        console.log(this.allPoints[1]);
+        console.log(this.allPoints[2]);
+        console.log(this.allPoints[3]);
+        console.log(' ');
 
-      let loopInc = pointA.x < pointB.x ? 1 : -1;
-      for (let j = 0; j < windowColCount; j++) {
-        const position0 = loopInc * j * windowInc + pointA.x;
-        const position1 = position0 + loopInc * windowLength;
-        const wpt0 = getIntersectionPtWithConstant(position0, topWindowLine);
-        const wpt1 = getIntersectionPtWithConstant(position0, bottomWindowLine);
-        const wpt2 = getIntersectionPtWithConstant(position1, topWindowLine);
-        const wpt3 = getIntersectionPtWithConstant(position1, bottomWindowLine);
-        allWindows.push([wpt0, wpt1, wpt2, wpt3]);
+        for (let i = 0; i < windowCount; i++) {
+          const adj1y = lerp(this.allPoints[1].y, this.allPoints[0].y, percent);
+          const adj0y = adj1y - windowHeightL;
+          const adj2y = lerp(this.allPoints[2].y, this.allPoints[3].y, percent);
+          const adj3y = adj2y - windowHeightR;
+
+          const topWindowLine = new Line(new c2.Vector(this.allPoints[0].x, adj0y), new c2.Vector(this.allPoints[3].x, adj3y));
+          const bottomWindowLine = new Line(new c2.Vector(this.allPoints[2].x, adj2y), new c2.Vector(this.allPoints[1].x, adj1y));
+          this.createWindow(topWindowLine, bottomWindowLine, windowSize, windowColCount, windowInc, sign, initPos);
+          // this.allWindows.push([adj0y, adj1y, adj2y, adj3y]);
+          percent += percentInc;
+        }
       }
+    }
+  }
+
+  createWindow(topWindowLine, bottomWindowLine, windowSize, windowColCount, windowInc, sign, initPos) {
+    for (let j = 0; j < windowColCount; j++) {
+      const position0 = sign * j * windowInc + initPos;
+      const position1 = position0 + sign * windowSize;
+      const wpt0 = getIntersectionPtWithConstant(position0, bottomWindowLine);
+      const wpt1 = getIntersectionPtWithConstant(position0, topWindowLine);
+      const wpt2 = getIntersectionPtWithConstant(position1, topWindowLine);
+      const wpt3 = getIntersectionPtWithConstant(position1, bottomWindowLine);
+      this.allWindows.push([wpt0, wpt1, wpt2, wpt3]);
     }
   }
 
@@ -283,20 +271,10 @@ class Wall {
 
     fill(gWindowColor);
     strokeWeight(0.5);
-    // before  [leftCornerLine.p0, centerLine.p0, centerLine.p1, leftCornerLine.p1],
-    // now     [leftCornerLine.p1, leftCornerLine.p0, centerLine.p0, centerLine.p1]
 
     for (let window of this.allWindows) {
-      quad(this.allPoints[0].x, window[0], this.allPoints[1].x, window[1], this.allPoints[2].x, window[2], this.allPoints[3].x, window[3]);
-      // console.log(window[0].x + ' ' + window[0].y);
-      // console.log(window[1].x + ' ' + window[1].y);
-      // console.log(window[2].x + ' ' + window[2].y);
-      // console.log(window[3].x + ' ' + window[3].y);
-      // console.log(' ');
-      //quad(window[0].x, window[0].y, window[1].x, window[1].y, window[3].x, window[3].y, window[2].x, window[2].y);
+      quad(window[0].x, window[0].y, window[1].x, window[1].y, window[2].x, window[2].y, window[3].x, window[3].y);
     }
-
-    circle(this.allPoints[3].x, this.allPoints[3].y, 20);
   }
 }
 
