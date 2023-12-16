@@ -15,6 +15,8 @@ let gIsDebug = false;
 let gWindowColor;
 
 function setup() {
+  randomSeed(5);
+
   createCanvas(windowWidth, windowHeight);
   colorMode(HSL);
 
@@ -25,22 +27,25 @@ function setup() {
   gDistFromPointMin = windowWidth * 0.2;
   gWallDistMin = windowWidth * 0.1;
 
+  // create background elements
+  for (let i = 0; i < 50; i++) {
+    gBgGround.push(new c2.Vector(random(-width, 2 * width), random(gLeftPt.y, height)));
+    gBgSky.push(new c2.Vector(random(-width, 2 * width), random(-0.2 * height, gLeftPt.y)));
+  }
+
+  // create and stack building blocks
   let yp = 0.95 * height;
   let [upper, mid, lower] = [[], [], []];
-  let count = random(10, 30);
+  let count = 1; //random(10, 30);
   gWallHeightInc = (0.7 * height) / count;
-  gWindowHeight = 20; //0.5 * gWallHeightInc;
+  gWindowHeight = 100; //20; //0.5 * gWallHeightInc;
   for (let i = 0; i < count; i++) {
     let block = new BuildingBlock(yp);
     block.level > 0 ? upper.push(block) : block.level < 0 ? lower.push(block) : mid.push(block);
     yp -= random(0.8, 1.2) * gWallHeightInc;
   }
 
-  for (let i = 0; i < 50; i++) {
-    gBgGround.push(new c2.Vector(random(-width, 2 * width), random(gLeftPt.y, height)));
-    gBgSky.push(new c2.Vector(random(-width, 2 * width), random(-0.2 * height, gLeftPt.y)));
-  }
-
+  // adjust array for rendering purposes
   gAllBlocks = [...upper, ...lower.reverse(), ...mid.reverse()];
 
   noFill();
@@ -73,15 +78,24 @@ function draw() {
     circle(gRightPt.x, gRightPt.y, 10);
   }
 
-  // draw building sections
+  // draw building blocks
   for (let block of gAllBlocks) {
     block.draw();
   }
 }
 
+function getIntersectionPtWithConstant(constant, line) {
+  let x = constant;
+  let y = line.p0.y + ((constant - line.p0.x) * (line.p1.y - line.p0.y)) / (line.p1.x - line.p0.x);
+
+  return new c2.Vector(x, y);
+}
+
 class BuildingBlock {
   constructor(yp) {
+    // lines that connect to perspective point (drawn for debug mode)
     this.boundLines = [];
+
     // center corner
     const centerUpperPt = new c2.Vector(random(2 * gDistFromPointMin, width - 2 * gDistFromPointMin), yp);
     const centerLowerPt = new c2.Vector(centerUpperPt.x, centerUpperPt.y - random(0.5, 2.5) * gWallHeightInc);
@@ -100,33 +114,25 @@ class BuildingBlock {
     const ceilingPt = this.getIntersectionPt(new Line(leftCornerLine.p1, gRightPt), new Line(rightCornerLine.p1, gLeftPt), true);
     const floorPt = this.getIntersectionPt(new Line(leftCornerLine.p0, gRightPt), new Line(rightCornerLine.p0, gLeftPt), true);
 
+    // pick a color
     const cHue = random(0, 360);
     const cSat = 40;
     const cLig = 80;
-    const adjWindowHeight = (1 - abs(centerUpperPt.x - width / 2) / (width / 2)) * gWindowHeight;
-    const windowCount = floor(centerLineHeight / adjWindowHeight) - 1;
 
-    const ceilingWall = new Wall([leftCornerLine.p1, centerLine.p1, rightCornerLine.p1, ceilingPt], color(cHue, cSat, cLig));
-    const leftWall = new Wall(
-      [leftCornerLine.p0, centerLine.p0, centerLine.p1, leftCornerLine.p1],
-      color(cHue, cSat, cLig * 0.9),
-      windowCount,
-      centerLineHeight,
-      adjWindowHeight
-    );
-    const rightWall = new Wall(
-      [rightCornerLine.p0, centerLine.p0, centerLine.p1, rightCornerLine.p1],
-      color(cHue, cSat, cLig * 0.8),
-      windowCount,
-      centerLineHeight,
-      adjWindowHeight
-    );
-    const floorWall = new Wall([leftCornerLine.p0, centerLine.p0, rightCornerLine.p0, floorPt], color(cHue, cSat, cLig * 0.7));
+    // create walls
+    const createWall = (points, colorMultiplier) => new Wall(points, color(cHue, cSat, cLig * colorMultiplier));
+    const ceilingWall = createWall([leftCornerLine.p1, centerLine.p1, rightCornerLine.p1, ceilingPt], 1.0);
+    const leftWall = createWall([leftCornerLine.p1, leftCornerLine.p0, centerLine.p0, centerLine.p1], 0.9);
+    const rightWall = createWall([centerLine.p1, centerLine.p0, rightCornerLine.p0, rightCornerLine.p1], 0.8);
+    const floorWall = createWall([leftCornerLine.p0, centerLine.p0, rightCornerLine.p0, floorPt], 0.7);
 
-    if (centerUpperPt.y > gLeftPt.y && centerLowerPt.y > gLeftPt.y) {
+    // order walls for rendering purposes
+    const isAboveLeftPt = centerUpperPt.y > gLeftPt.y && centerLowerPt.y > gLeftPt.y;
+    const isBelowLeftPt = centerUpperPt.y < gLeftPt.y && centerLowerPt.y < gLeftPt.y;
+    if (isAboveLeftPt) {
       this.allWalls = [ceilingWall, leftWall, rightWall];
       this.level = 1;
-    } else if (centerUpperPt.y < gLeftPt.y && centerLowerPt.y < gLeftPt.y) {
+    } else if (isBelowLeftPt) {
       this.allWalls = [leftWall, rightWall, floorWall];
       this.level = -1;
     } else {
@@ -139,15 +145,8 @@ class BuildingBlock {
     let boundLines = [new Line(line.p0, perspectivePt), new Line(line.p1, perspectivePt)];
     this.boundLines.push(...boundLines);
 
-    let intersections = boundLines.map((boundLine) => this.getIntersectionPtWithConstant(ptX, boundLine));
+    let intersections = boundLines.map((boundLine) => getIntersectionPtWithConstant(ptX, boundLine));
     return new Line(...intersections);
-  }
-
-  getIntersectionPtWithConstant(constant, line) {
-    let x = constant;
-    let y = line.p0.y + ((constant - line.p0.x) * (line.p1.y - line.p0.y)) / (line.p1.x - line.p0.x);
-
-    return new c2.Vector(x, y);
   }
 
   getIntersectionPt(line0, line1, shouldAddToBoundLines = false) {
@@ -178,28 +177,92 @@ class BuildingBlock {
 }
 
 class Wall {
-  constructor(points, c, windowCount = 0, wallHeight = 0, windowHeight = 0) {
+  constructor(points, c) {
     this.allPoints = points;
     this.color = c;
 
     this.allWindows = [];
-    if (windowCount > 0) {
-      const farHeight = this.allPoints[0].y - this.allPoints[3].y;
-      const windowPercent = windowHeight / wallHeight;
+    // calculate window parameters (size is based on how close wall is to center)
+    const heightL = this.allPoints[1].y - this.allPoints[0].y;
+    const heightR = this.allPoints[2].y - this.allPoints[3].y;
+    const isHeightLMax = heightL > heightR;
+    let heightMax;
+    let posXMax;
+    if (isHeightLMax) {
+      heightMax = heightL;
+      posXMax = this.allPoints[0].x;
+    } else {
+      heightMax = heightR;
+      posXMax = this.allPoints[2].x;
+    }
 
-      const spaceAvailable = wallHeight - windowHeight * windowCount;
+    const windowSizeScalar = 1 - abs(posXMax - width / 2) / (width / 2);
+    const windowHeight = windowSizeScalar * gWindowHeight;
+    const ratioWindowToWall = windowHeight / heightMax;
+    const windowCount = floor(heightMax / windowHeight) - 1;
+
+    if (windowCount > 0) {
+      const windowHeightL = isHeightLMax ? windowHeight : ratioWindowToWall * heightL;
+      const windowHeightR = isHeightLMax ? ratioWindowToWall * heightR : windowHeight;
+
+      const spaceAvailable = heightL - windowHeightL * windowCount;
       const extraInc = spaceAvailable / windowCount;
 
-      const adjWindowHeight = farHeight * windowPercent;
-      const percentInc = (extraInc + windowHeight) / wallHeight;
-      let percent = (0.5 * extraInc) / wallHeight;
+      const percentInc = (extraInc + windowHeightL) / heightL;
+      let percent = (0.5 * extraInc) / heightL;
       for (let i = 0; i < windowCount; i++) {
-        const adj0y = lerp(this.allPoints[0].y, this.allPoints[3].y, percent);
-        const adj1y = lerp(this.allPoints[1].y, this.allPoints[2].y, percent);
-        const adj2y = adj1y - windowHeight;
-        const adj3y = adj0y - adjWindowHeight;
+        const adj1y = lerp(this.allPoints[1].y, this.allPoints[0].y, percent);
+        const adj0y = adj1y - windowHeightL;
+        const adj2y = lerp(this.allPoints[2].y, this.allPoints[3].y, percent);
+        const adj3y = adj2y - windowHeightR;
         this.allWindows.push([adj0y, adj1y, adj2y, adj3y]);
+        console.log(adj1y + ', ' + adj0y + ', ' + adj2y + ', ' + adj3y);
         percent += percentInc;
+        //break;
+      }
+      // const fullWallHeight = this.allPoints[0].y - this.allPoints[3].y;
+
+      // const spaceAvailable = wallHeight - windowHeight * windowCount;
+      // const extraInc = spaceAvailable / windowCount;
+
+      // const adjWindowHeight = (fullWallHeight * windowHeight) / wallHeight;
+      // const percentInc = (extraInc + windowHeight) / wallHeight;
+      // let percent = (0.5 * extraInc) / wallHeight;
+
+      // for (let i = 0; i < windowCount; i++) {
+      //   const adj0y = lerp(this.allPoints[0].y, this.allPoints[3].y, percent);
+      //   const adj1y = lerp(this.allPoints[1].y, this.allPoints[2].y, percent);
+      //   const adj2y = adj1y - windowHeight;
+      //   const adj3y = adj0y - adjWindowHeight;
+      //   this.allWindows.push([adj0y, adj1y, adj2y, adj3y]);
+      //   // createWindow(this.allPoints[0], this.allPoints[1], percent, windowHeight, adjWindowHeight, windowCount, wallHeight, this.allWindows);
+      //   percent += percentInc;
+      // }
+    }
+
+    function createWindow(pointA, pointB, percent, windowHeight, adjWindowHeight, windowCount, windowLength, allWindows) {
+      const adj0y = lerp(pointA.y, pointB.y, percent);
+      const adj1y = lerp(pointA.y, pointB.y, percent);
+      const topWindowLine = new Line(new c2.Vector(pointA.x, adj0y), new c2.Vector(pointB.x, adj1y));
+
+      const adj2y = adj1y - windowHeight;
+      const adj3y = adj0y - adjWindowHeight;
+      const bottomWindowLine = new Line(new c2.Vector(pointA.x, adj2y), new c2.Vector(pointB.x, adj3y));
+
+      const wallLength = pointA.x - pointB.x;
+      const windowColCount = floor(wallLength / windowLength) - 1;
+      const windowSpaceAvailable = wallLength - windowColCount * windowLength;
+      const windowInc = windowSpaceAvailable / windowColCount + windowLength;
+
+      let loopInc = pointA.x < pointB.x ? 1 : -1;
+      for (let j = 0; j < windowColCount; j++) {
+        const position0 = loopInc * j * windowInc + pointA.x;
+        const position1 = position0 + loopInc * windowLength;
+        const wpt0 = getIntersectionPtWithConstant(position0, topWindowLine);
+        const wpt1 = getIntersectionPtWithConstant(position0, bottomWindowLine);
+        const wpt2 = getIntersectionPtWithConstant(position1, topWindowLine);
+        const wpt3 = getIntersectionPtWithConstant(position1, bottomWindowLine);
+        allWindows.push([wpt0, wpt1, wpt2, wpt3]);
       }
     }
   }
@@ -220,9 +283,20 @@ class Wall {
 
     fill(gWindowColor);
     strokeWeight(0.5);
+    // before  [leftCornerLine.p0, centerLine.p0, centerLine.p1, leftCornerLine.p1],
+    // now     [leftCornerLine.p1, leftCornerLine.p0, centerLine.p0, centerLine.p1]
+
     for (let window of this.allWindows) {
       quad(this.allPoints[0].x, window[0], this.allPoints[1].x, window[1], this.allPoints[2].x, window[2], this.allPoints[3].x, window[3]);
+      // console.log(window[0].x + ' ' + window[0].y);
+      // console.log(window[1].x + ' ' + window[1].y);
+      // console.log(window[2].x + ' ' + window[2].y);
+      // console.log(window[3].x + ' ' + window[3].y);
+      // console.log(' ');
+      //quad(window[0].x, window[0].y, window[1].x, window[1].y, window[3].x, window[3].y, window[2].x, window[2].y);
     }
+
+    circle(this.allPoints[3].x, this.allPoints[3].y, 20);
   }
 }
 
