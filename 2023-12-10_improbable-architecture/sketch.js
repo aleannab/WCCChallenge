@@ -19,7 +19,7 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSL);
 
-  gWindowColor = color(0, 0.1);
+  gWindowColor = color(255, 0.25);
   // set points for two point perspective calculations
   gLeftPt = createVector(0, 0.6 * windowHeight);
   gRightPt = createVector(windowWidth, 0.6 * windowHeight);
@@ -37,10 +37,10 @@ function setup() {
   let [upper, mid, lower] = [[], [], []];
   let count = random(18, 30);
   gWallHeightInc = (0.7 * height) / count;
-  gWindowHeight = 10; //0.4 * gWallHeightInc;
-  gWindowLength = 5; //0.5 * gWallHeightInc;
+  gWindowHeight = 0.8 * gWallHeightInc;
+  gWindowLength = 0.5 * gWallHeightInc;
   gWindowSpacingX = 0.2 * gWindowLength;
-  gWindowSpacingY = 0.5 * gWindowHeight;
+  gWindowSpacingY = 0.1 * gWindowHeight;
   for (let i = 0; i < count; i++) {
     let block = new BuildingBlock(yp);
     block.level > 0 ? upper.push(block) : block.level < 0 ? lower.push(block) : mid.push(block);
@@ -118,15 +118,15 @@ class BuildingBlock {
 
     // pick a color
     const cHue = random(0, 360);
-    const cSat = 40;
-    const cLig = 80;
+    const cSat = random(30, 40); //40;
+    const cLig = random(60, 80); //80;
 
     // create walls
     const createWall = (points, colorMultiplier, hasWindows) => new Wall(points, color(cHue, cSat, cLig * colorMultiplier), hasWindows);
     const ceilingWall = createWall([leftCornerLine.p1, centerLine.p1, rightCornerLine.p1, ceilingPt], 1.0, false);
     const leftWall = createWall([leftCornerLine.p1, leftCornerLine.p0, centerLine.p0, centerLine.p1], 0.9, true);
-    const rightWall = createWall([centerLine.p1, centerLine.p0, rightCornerLine.p0, rightCornerLine.p1], 0.8, true);
-    const floorWall = createWall([leftCornerLine.p0, centerLine.p0, rightCornerLine.p0, floorPt], 0.7, false);
+    const rightWall = createWall([centerLine.p1, centerLine.p0, rightCornerLine.p0, rightCornerLine.p1], 0.75, true);
+    const floorWall = createWall([leftCornerLine.p0, centerLine.p0, rightCornerLine.p0, floorPt], 0.6, false);
 
     // order walls for rendering purposes
     const isAboveLeftPt = centerUpperPt.y > gLeftPt.y && centerLowerPt.y > gLeftPt.y;
@@ -261,7 +261,7 @@ class Wall {
 
   draw() {
     fill(this.color);
-    strokeWeight(1);
+    noStroke();
     quad(
       this.allPoints[0].x,
       this.allPoints[0].y,
@@ -273,8 +273,8 @@ class Wall {
       this.allPoints[3].y
     );
 
-    fill(gWindowColor);
-    strokeWeight(0.5);
+    fill(hue(this.color), saturation(this.color), lightness(this.color) * 0.8, 0.5);
+    stroke(hue(this.color), saturation(this.color), lightness(this.color) * 0.8, 0.5);
 
     for (let window of this.allWindows) {
       quad(window[0].x, window[0].y, window[1].x, window[1].y, window[2].x, window[2].y, window[3].x, window[3].y);
