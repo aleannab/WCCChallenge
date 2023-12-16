@@ -35,10 +35,12 @@ function setup() {
   // create and stack building blocks
   let yp = 0.95 * height;
   let [upper, mid, lower] = [[], [], []];
-  let count = random(15, 30);
+  let count = random(20, 30);
   gWallHeightInc = (0.7 * height) / count;
-  gWindowSize = 0.6 * gWallHeightInc;
-  gWindowSpacing = 0.2 * gWindowSize;
+  gWindowHeight = 0.4 * gWallHeightInc;
+  gWindowLength = 0.5 * gWallHeightInc;
+  gWindowSpacingX = 0.2 * gWindowLength;
+  gWindowSpacingY = 0.5 * gWindowHeight;
   for (let i = 0; i < count; i++) {
     let block = new BuildingBlock(yp);
     block.level > 0 ? upper.push(block) : block.level < 0 ? lower.push(block) : mid.push(block);
@@ -198,14 +200,16 @@ class Wall {
       }
 
       const windowSizeScalar = 1 - abs(posXMax - width / 2) / (width / 2);
-      const windowSize = windowSizeScalar * gWindowSize;
-      const windowSpacing = windowSizeScalar * gWindowSpacing;
-      const ratioWindowToWall = windowSize / heightMax;
-      const windowCount = floor(heightMax / (windowSize + windowSpacing)) - 1;
+      const windowHeight = windowSizeScalar * gWindowHeight;
+      const windowLength = windowSizeScalar * gWindowLength;
+      const windowSpacingX = windowSizeScalar * gWindowSpacingX;
+      const windowSpacingY = windowSizeScalar * gWindowSpacingY;
+      const ratioWindowToWall = windowHeight / heightMax;
+      const windowCount = floor(heightMax / (windowHeight + windowSpacingY)) - 1;
 
       if (windowCount > 0) {
-        const windowHeightL = isHeightLMax ? windowSize : ratioWindowToWall * heightL;
-        const windowHeightR = isHeightLMax ? ratioWindowToWall * heightR : windowSize;
+        const windowHeightL = isHeightLMax ? windowHeight : ratioWindowToWall * heightL;
+        const windowHeightR = isHeightLMax ? ratioWindowToWall * heightR : windowHeight;
 
         const spaceAvailable = heightL - windowHeightL * windowCount;
         const extraInc = spaceAvailable / windowCount;
@@ -213,13 +217,13 @@ class Wall {
         const percentInc = (extraInc + windowHeightL) / heightL;
         let percent = (0.5 * extraInc) / heightL;
         const wallDistance = this.allPoints[3].x - this.allPoints[0].x;
-        const initPos = this.allPoints[3].x;
+        const initPos = this.allPoints[3].x - windowSpacingY * 0.5;
         const wallLength = abs(wallDistance);
         const sign = wallDistance < 0 ? 1 : -1;
 
-        const windowColCount = floor(wallLength / (windowSize + windowSpacing));
-        const windowSpaceAvailable = wallLength - windowColCount * windowSize;
-        const windowInc = windowSpaceAvailable / windowColCount + windowSize;
+        const windowColCount = floor(wallLength / (windowLength + windowSpacingX)) - 2;
+        const windowSpaceAvailable = wallLength - windowColCount * windowLength;
+        const windowInc = windowSpaceAvailable / windowColCount + windowLength;
 
         console.log(this.allPoints[0]);
         console.log(this.allPoints[1]);
@@ -235,7 +239,7 @@ class Wall {
 
           const topWindowLine = new Line(new c2.Vector(this.allPoints[0].x, adj0y), new c2.Vector(this.allPoints[3].x, adj3y));
           const bottomWindowLine = new Line(new c2.Vector(this.allPoints[2].x, adj2y), new c2.Vector(this.allPoints[1].x, adj1y));
-          this.createWindow(topWindowLine, bottomWindowLine, windowSize, windowColCount, windowInc, sign, initPos);
+          this.createWindow(topWindowLine, bottomWindowLine, windowLength, windowColCount, windowInc, sign, initPos);
           // this.allWindows.push([adj0y, adj1y, adj2y, adj3y]);
           percent += percentInc;
         }
