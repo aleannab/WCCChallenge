@@ -21,24 +21,24 @@ function setup() {
 
   gWindowColor = color(0, 0.1);
   // set points for two point perspective calculations
-  gLeftPt = new c2.Vector(0, 0.6 * windowHeight);
-  gRightPt = new c2.Vector(windowWidth, 0.6 * windowHeight);
+  gLeftPt = createVector(0, 0.6 * windowHeight);
+  gRightPt = createVector(windowWidth, 0.6 * windowHeight);
   gDistFromPointMin = windowWidth * 0.2;
   gWallDistMin = windowWidth * 0.1;
 
   // create background elements
   for (let i = 0; i < 50; i++) {
-    gBgGround.push(new c2.Vector(random(-width, 2 * width), random(gLeftPt.y, height)));
-    gBgSky.push(new c2.Vector(random(-width, 2 * width), random(-0.2 * height, gLeftPt.y)));
+    gBgGround.push(createVector(random(-width, 2 * width), random(gLeftPt.y, height)));
+    gBgSky.push(createVector(random(-width, 2 * width), random(-0.2 * height, gLeftPt.y)));
   }
 
   // create and stack building blocks
   let yp = 0.95 * height;
   let [upper, mid, lower] = [[], [], []];
-  let count = random(20, 30);
+  let count = random(18, 30);
   gWallHeightInc = (0.7 * height) / count;
-  gWindowHeight = 0.4 * gWallHeightInc;
-  gWindowLength = 0.5 * gWallHeightInc;
+  gWindowHeight = 10; //0.4 * gWallHeightInc;
+  gWindowLength = 5; //0.5 * gWallHeightInc;
   gWindowSpacingX = 0.2 * gWindowLength;
   gWindowSpacingY = 0.5 * gWindowHeight;
   for (let i = 0; i < count; i++) {
@@ -90,7 +90,7 @@ function getIntersectionPtWithConstant(constant, line) {
   let x = constant;
   let y = line.p0.y + ((constant - line.p0.x) * (line.p1.y - line.p0.y)) / (line.p1.x - line.p0.x);
 
-  return new c2.Vector(x, y);
+  return createVector(x, y);
 }
 
 class BuildingBlock {
@@ -99,8 +99,8 @@ class BuildingBlock {
     this.boundLines = [];
 
     // center corner
-    const centerUpperPt = new c2.Vector(random(2 * gDistFromPointMin, width - 2 * gDistFromPointMin), yp);
-    const centerLowerPt = new c2.Vector(centerUpperPt.x, centerUpperPt.y - random(0.5, 2.5) * gWallHeightInc);
+    const centerUpperPt = createVector(random(2 * gDistFromPointMin, width - 2 * gDistFromPointMin), yp);
+    const centerLowerPt = createVector(centerUpperPt.x, centerUpperPt.y - random(0.5, 2.5) * gWallHeightInc);
     const centerLine = new Line(centerUpperPt, centerLowerPt);
     const centerLineHeight = centerUpperPt.y - centerLowerPt.y;
 
@@ -155,7 +155,7 @@ class BuildingBlock {
     if (shouldAddToBoundLines) this.boundLines.push(...[line0, line1]);
     let x = (line1.yIntercept - line0.yIntercept) / (line0.slope - line1.slope);
     let y = line0.slope * x + line0.yIntercept;
-    return new c2.Vector(x, y);
+    return createVector(x, y);
   }
 
   draw() {
@@ -237,8 +237,8 @@ class Wall {
           const adj2y = lerp(this.allPoints[2].y, this.allPoints[3].y, percent);
           const adj3y = adj2y - windowHeightR;
 
-          const topWindowLine = new Line(new c2.Vector(this.allPoints[0].x, adj0y), new c2.Vector(this.allPoints[3].x, adj3y));
-          const bottomWindowLine = new Line(new c2.Vector(this.allPoints[2].x, adj2y), new c2.Vector(this.allPoints[1].x, adj1y));
+          const topWindowLine = new Line(createVector(this.allPoints[0].x, adj0y), createVector(this.allPoints[3].x, adj3y));
+          const bottomWindowLine = new Line(createVector(this.allPoints[2].x, adj2y), createVector(this.allPoints[1].x, adj1y));
           this.createWindow(topWindowLine, bottomWindowLine, windowLength, windowColCount, windowInc, sign, initPos);
           // this.allWindows.push([adj0y, adj1y, adj2y, adj3y]);
           percent += percentInc;
