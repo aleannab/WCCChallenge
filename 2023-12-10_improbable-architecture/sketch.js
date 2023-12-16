@@ -26,35 +26,9 @@ function setup() {
   gDistFromPointMin = windowWidth * 0.2;
   gWallDistMin = windowWidth * 0.1;
 
-  // create background elements
-  for (let i = 0; i < 50; i++) {
-    gBgGround.push(createVector(random(-width, 2 * width), random(gLeftPt.y, height)));
-    gBgSky.push(createVector(random(-width, 2 * width), random(-0.2 * height, gLeftPt.y)));
-  }
-
-  // create and stack building blocks
-  let yp = 0.95 * height;
-  let [upper, mid, lower] = [[], [], []];
-  let count = random(18, 30);
-  gWallHeightInc = (0.7 * height) / count;
-  gWindowHeight = 0.8 * gWallHeightInc;
-  gWindowLength = 0.5 * gWallHeightInc;
-  gWindowSpacingX = 0.2 * gWindowLength;
-  gWindowSpacingY = 0.1 * gWindowHeight;
-  for (let i = 0; i < count; i++) {
-    let block = new BuildingBlock(yp);
-    block.level > 0 ? upper.push(block) : block.level < 0 ? lower.push(block) : mid.push(block);
-    yp -= random(0.8, 1.2) * gWallHeightInc;
-  }
-
-  // adjust array for rendering purposes
-  gAllBlocks = [...upper, ...lower.reverse(), ...mid.reverse()];
-
-  noFill();
-  noLoop();
+  createBuilding();
 }
 
-// Create a draw function
 function draw() {
   background(90);
 
@@ -84,6 +58,45 @@ function draw() {
   for (let block of gAllBlocks) {
     block.draw();
   }
+}
+
+function createBuilding() {
+  randomSeed(random(0, 999));
+  loop();
+
+  // reset arrays
+  gBgGround = [];
+  gBgSky = [];
+  gAllBlocks = [];
+  // create background elements
+  for (let i = 0; i < 50; i++) {
+    gBgGround.push(createVector(random(-width, 2 * width), random(gLeftPt.y, height)));
+    gBgSky.push(createVector(random(-width, 2 * width), random(-0.2 * height, gLeftPt.y)));
+  }
+
+  // create and stack building blocks
+  let yp = 0.95 * height;
+  let [upper, mid, lower] = [[], [], []];
+  let count = random(18, 30);
+  gWallHeightInc = (0.7 * height) / count;
+  gWindowHeight = 0.8 * gWallHeightInc;
+  gWindowLength = 0.5 * gWallHeightInc;
+  gWindowSpacingX = 0.2 * gWindowLength;
+  gWindowSpacingY = 0.1 * gWindowHeight;
+  for (let i = 0; i < count; i++) {
+    let block = new BuildingBlock(yp);
+    block.level > 0 ? upper.push(block) : block.level < 0 ? lower.push(block) : mid.push(block);
+    yp -= random(0.8, 1.2) * gWallHeightInc;
+  }
+
+  // adjust array for rendering purposes
+  gAllBlocks = [...upper, ...lower.reverse(), ...mid.reverse()];
+  noLoop();
+}
+
+function mouseClicked() {
+  console.log('click');
+  createBuilding();
 }
 
 function getIntersectionPtWithConstant(constant, line) {
@@ -119,7 +132,7 @@ class BuildingBlock {
     // pick a color
     const cHue = random(0, 360);
     const cSat = random(30, 40); //40;
-    const cLig = random(60, 80); //80;
+    const cLig = random(70, 80); //80;
 
     // create walls
     const createWall = (points, colorMultiplier, hasWindows) => new Wall(points, color(cHue, cSat, cLig * colorMultiplier), hasWindows);
@@ -224,12 +237,6 @@ class Wall {
         const windowColCount = floor(wallLength / (windowLength + windowSpacingX)) - 2;
         const windowSpaceAvailable = wallLength - windowColCount * windowLength;
         const windowInc = windowSpaceAvailable / windowColCount + windowLength;
-
-        console.log(this.allPoints[0]);
-        console.log(this.allPoints[1]);
-        console.log(this.allPoints[2]);
-        console.log(this.allPoints[3]);
-        console.log(' ');
 
         for (let i = 0; i < windowCount; i++) {
           const adj1y = lerp(this.allPoints[1].y, this.allPoints[0].y, percent);
