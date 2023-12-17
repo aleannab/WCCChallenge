@@ -1,3 +1,11 @@
+// Created for the #WCCChallenge - Topic: Improbable Architecture
+//
+// I used two-point perspective to draw this sketch - so this is made of up MANY calculations of lines and point intersections.
+// I initially chose random hues just to distinguish each block during development, but decided to keep them as it reminded me of stacks of post-its. :)
+//
+// See other submissions here: https://openprocessing.org/curation/78544
+// Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
+
 let gLeftPt;
 let gRightPt;
 
@@ -11,7 +19,6 @@ let gWallDistMin;
 
 let gWindowLength;
 let gWindowSpacing;
-let gIsDebug = false;
 
 let gWindowColor;
 
@@ -47,12 +54,6 @@ function draw() {
   // perspective lines
   strokeWeight(1); // draw horizon line
   line(0, gLeftPt.y, width, gRightPt.y);
-  if (gIsDebug) {
-    // draw perspective pts
-    stroke(255, 0, 0);
-    circle(gLeftPt.x, gLeftPt.y, 10);
-    circle(gRightPt.x, gRightPt.y, 10);
-  }
 
   // draw building blocks
   for (let block of gAllBlocks) {
@@ -61,7 +62,6 @@ function draw() {
 }
 
 function createBuilding() {
-  randomSeed(random(0, 999));
   loop();
 
   // reset arrays
@@ -95,7 +95,6 @@ function createBuilding() {
 }
 
 function mouseClicked() {
-  console.log('click');
   createBuilding();
 }
 
@@ -108,9 +107,6 @@ function getIntersectionPtWithConstant(constant, line) {
 
 class BuildingBlock {
   constructor(yp) {
-    // lines that connect to perspective point (drawn for debug mode)
-    this.boundLines = [];
-
     // center corner
     const centerUpperPt = createVector(random(2 * gDistFromPointMin, width - 2 * gDistFromPointMin), yp);
     const centerLowerPt = createVector(centerUpperPt.x, centerUpperPt.y - random(0.5, 2.5) * gWallHeightInc);
@@ -126,8 +122,8 @@ class BuildingBlock {
     const rightCornerLine = this.getCornerLine(rightPosX, centerLine, gRightPt);
 
     // ceiling
-    const ceilingPt = this.getIntersectionPt(new Line(leftCornerLine.p1, gRightPt), new Line(rightCornerLine.p1, gLeftPt), true);
-    const floorPt = this.getIntersectionPt(new Line(leftCornerLine.p0, gRightPt), new Line(rightCornerLine.p0, gLeftPt), true);
+    const ceilingPt = this.getIntersectionPt(new Line(leftCornerLine.p1, gRightPt), new Line(rightCornerLine.p1, gLeftPt));
+    const floorPt = this.getIntersectionPt(new Line(leftCornerLine.p0, gRightPt), new Line(rightCornerLine.p0, gLeftPt));
 
     // pick a color
     const cHue = random(0, 360);
@@ -158,14 +154,12 @@ class BuildingBlock {
 
   getCornerLine(ptX, line, perspectivePt) {
     let boundLines = [new Line(line.p0, perspectivePt), new Line(line.p1, perspectivePt)];
-    this.boundLines.push(...boundLines);
 
     let intersections = boundLines.map((boundLine) => getIntersectionPtWithConstant(ptX, boundLine));
     return new Line(...intersections);
   }
 
-  getIntersectionPt(line0, line1, shouldAddToBoundLines = false) {
-    if (shouldAddToBoundLines) this.boundLines.push(...[line0, line1]);
+  getIntersectionPt(line0, line1) {
     let x = (line1.yIntercept - line0.yIntercept) / (line0.slope - line1.slope);
     let y = line0.slope * x + line0.yIntercept;
     return createVector(x, y);
@@ -175,18 +169,9 @@ class BuildingBlock {
     stroke(255, 0, 0);
     strokeWeight(0.5);
 
-    if (gIsDebug) this.drawBoundLines();
-
     for (let wall of this.allWalls) {
       stroke(0);
       wall.draw();
-    }
-  }
-
-  drawBoundLines() {
-    stroke(hue(this.color), saturation(this.color), brightness(this.color), 100);
-    for (let bound of this.boundLines) {
-      bound.draw();
     }
   }
 }
@@ -220,6 +205,7 @@ class Wall {
       const ratioWindowToWall = windowHeight / heightMax;
       const windowCount = floor(heightMax / (windowHeight + windowSpacingY)) - 1;
 
+      // Create Windows
       if (windowCount > 0) {
         const windowHeightL = isHeightLMax ? windowHeight : ratioWindowToWall * heightL;
         const windowHeightR = isHeightLMax ? ratioWindowToWall * heightR : windowHeight;
@@ -247,7 +233,6 @@ class Wall {
           const topWindowLine = new Line(createVector(this.allPoints[0].x, adj0y), createVector(this.allPoints[3].x, adj3y));
           const bottomWindowLine = new Line(createVector(this.allPoints[2].x, adj2y), createVector(this.allPoints[1].x, adj1y));
           this.createWindow(topWindowLine, bottomWindowLine, windowLength, windowColCount, windowInc, sign, initPos);
-          // this.allWindows.push([adj0y, adj1y, adj2y, adj3y]);
           percent += percentInc;
         }
       }
