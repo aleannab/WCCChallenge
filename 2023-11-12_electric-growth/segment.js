@@ -10,25 +10,25 @@ class Segment {
     this.wire = new Wire(px, py, isVertical);
     this.endX = this.wire.endX;
     this.endY = this.wire.endY;
-		
-		// create flower at end point of wire
+
+    // create flower at end point of wire
     this.flower = new Flower(this.endX, this.endY);
-		
-		// init variables
+
+    // init variables
     this.isComplete = false;
-    this.alphaVal = 100;
-    this.alphaFinal = 100;
+    this.alphaVal = 255;
+    this.alphaFinal = 255;
     this.flickeringOffset = random(0, TWO_PI);
   }
 
   drawSegment() {
-		// vary alpha randomly to create flickering effect
-    this.alphaFinal = this.alphaVal + 30 * sin(millis() /10 + this.flickeringOffset);
-		
-		// animate segment growth, return true when finished
+    // vary alpha randomly to create flickering effect
+    this.alphaFinal = this.alphaVal + 30 * sin(millis() / 10 + this.flickeringOffset);
+
+    // animate segment growth, return true when finished
     if (this.wire.grow()) {
       if (this.flower.grow()) {
-        this.alphaVal -= 0.2;
+        this.alphaVal -= 1;
         return true;
       }
     }
