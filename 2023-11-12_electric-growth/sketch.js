@@ -1,21 +1,26 @@
 // Created for the #WCCChallenge - Electric Growth
 // Electric (sketch inspired by EL wire, the line paths inspired by circuit diagrams) - Growth (flower nodes)
 
-let neonPalette = ['#da00eb', '#ff6255', '#ff009d', '#00ff53', '#01fd9a'];
+let neonPalette = ['#00ff53']; //'#da00eb', '#ff6255', '#ff009d', '#00ff53', '#01fd9a'];
 let neonColorRGB;
 
 let startX, startY;
 
 let isVertical = true;
 let allSegments = [];
+let quadrants = [0, 0, 0, 0];
+
+let gBoundsX = { min: 0, max: 0 };
+let gBoundsY = { min: 0, max: 0 };
 
 function setup() {
   // init canvas/draw settings
   createCanvas(windowWidth, windowHeight);
   frameRate(30);
-  strokeWeight(3);
+  strokeWeight(6);
   strokeJoin(ROUND);
   noFill();
+  noLoop();
 
   // pick a color
   let neonColorStr = random(neonPalette);
@@ -25,6 +30,11 @@ function setup() {
   // initialize start point to canvas center
   startX = width / 2;
   startY = height / 2;
+
+  gBoundsX.min = width * 0.1;
+  gBoundsX.max = width * 0.9;
+  gBoundsY.min = height * 0.1;
+  gBoundsY.max = height * 0.9;
 
   // create first segment
   createSegment();
@@ -57,8 +67,29 @@ function draw() {
   }
 }
 
+function mouseClicked() {
+  loop();
+}
+
 function createSegment() {
-  let segment = new Segment(startX, startY, isVertical);
+  // get lowest Quadrant Values
+  let lowestQuadValue = 9999999;
+  let lowestQuads = [];
+  for (let i = 0; i < quadrants.length; i++) {
+    let currentVal = quadrants[i];
+    if (currentVal <= lowestQuadValue) {
+      if (currentVal === lowestQuadValue) {
+        lowestQuads.push(i);
+      } else {
+        lowestQuads = [i];
+        lowestQuadValue = currentVal;
+      }
+    }
+  }
+  let quadIndex = random(lowestQuads);
+  quadrants[quadIndex] += 1;
+
+  let segment = new Segment(startX, startY, isVertical, quadIndex, gBoundsX, gBoundsY);
   allSegments.push(segment);
 
   // Make next segment begins at the end of current segment

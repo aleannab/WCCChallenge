@@ -1,13 +1,13 @@
 // Segment consists of wire (line) and a flower node at the end
 
 class Segment {
-  constructor(px, py, isVertical) {
+  constructor(px, py, isVertical, quadrant, boundX, boundY) {
     // set start position
     this.startX = px;
     this.startY = py;
 
     // create wire
-    this.wire = new Wire(px, py, isVertical);
+    this.wire = new Wire(px, py, isVertical, quadrant, boundX, boundY);
     this.endX = this.wire.endX;
     this.endY = this.wire.endY;
 
@@ -28,7 +28,7 @@ class Segment {
     // animate segment growth, return true when finished
     if (this.wire.grow()) {
       if (this.flower.grow()) {
-        this.alphaVal -= 1;
+        this.alphaVal -= 0.5;
         return true;
       }
     }

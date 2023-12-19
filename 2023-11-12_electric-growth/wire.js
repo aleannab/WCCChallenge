@@ -1,66 +1,93 @@
 // Wire connection between flower nodes
 
 class Wire extends AbstractPart {
-  constructor(startX, startY, isVertical) {
+  constructor(startX, startY, isVertical, quadrant, widthBounds, heightBounds) {
     super();
+    let directionVal;
 
-		// determine start and end positions of lines
-    let px = startX;
-    let py = startY;
-    for (let i = 0; i < floor(random(6, 10)); i++) {
-      let subpart = new Leg(px, py, isVertical);
+    switch (quadrant) {
+      case 0:
+        directionVal = createVector(0, 1);
+        break;
+      case 1:
+        directionVal = createVector(0, -1);
+        break;
+      case 2:
+        directionVal = createVector(-1, 0);
+        break;
+      case 3:
+        directionVal = createVector(1, 0);
+        break;
+    }
 
-      isVertical = !isVertical;
-      px = subpart.endX;
-      py = subpart.endY;
+    // determine start and end positions of lines
+    let start = createVector(startX, startY);
+    let py = start.y;
+    let px = start.x;
+
+    let legNum = floor(random(6, 10));
+    for (let i = 0; i < legNum; i++) {
+      let isDiagonal = random(0, 1) < 0.2;
+      let maxLength = isDiagonal ? 100 : 500;
+
+      let maxLengthX = isVertical ? maxLength / 2 : maxLength;
+      let maxLengthY = isVertical ? maxLength : maxLength / 2;
+      let newX = px;
+      let newY = py;
+      if (isDiagonal) {
+        let inc = maxLength;
+        newX += this.getRandDirectionScalar() * inc;
+        newY += this.getRandDirectionScalar() * inc;
+      } else if (isVertical) {
+        let incY = directionVal.y === 0 ? this.getRandDirectionScalar() : directionVal.y;
+        newY += incY * random(maxLengthY / 2, maxLengthY);
+        isVertical = false;
+      } else {
+        let incX = directionVal.x === 0 ? this.getRandDirectionScalar() : directionVal.x;
+        newX += incX * random(maxLengthX / 2, maxLengthX);
+        isVertical = true;
+      }
+
+      // check bounds
+      // set bounds
+      let randVal = random(50, 300);
+      if (newX < widthBounds.min) newX = px + randVal;
+      if (newX > widthBounds.max) newX = px - randVal;
+      if (newY < heightBounds.min) newY = py + randVal;
+      if (newY > heightBounds.max) newY = py - randVal;
+      let subpart = new Leg(createVector(px, py), createVector(newX, newY));
+
+      px = newX;
+      py = newY;
+
       this.allSubpartsLeft.push(subpart);
     }
     this.endX = px;
     this.endY = py;
   }
+
+  getRandDirectionScalar() {
+    return random(0, 1) < 0.5 ? -1 : 1;
+  }
 }
 
 // single line of a wire part
-class Leg extends AbstractSubpart{
-  constructor(px, py, isVertical) {
+class Leg extends AbstractSubpart {
+  constructor(startPoint, endPoint) {
     // TODO: update rate initation
     super(0.1);
-		
-    this.startX = px;
-    this.startY = py;
-    let isDiagonal = random(0, 1) < 0.3;
-    
-    let maxLength = isDiagonal ? 70 : 300;
-    let length = random(50, maxLength); 
-    if (random(0, 1) < 0.5) {
-      length *= -1;
-    }
-		
-    if (!isVertical){
-      this.endX = isDiagonal ? px + length : px;
-      this.endY = py + length;
-    } else {
-      this.endX = px + length;
-      this.endY = isDiagonal ? py + length : py;
-    }
-		
-		// check bounds
-		// set bounds
-		let widthBounds = 0.7 * (width / 2);
-    let heightBounds = 0.7 * (height / 2); 
-		if (this.endX < -widthBounds) this.endX = -widthBounds;
-		if (this.endX > widthBounds) this.endX = widthBounds;
-		if (this.endY < -heightBounds) this.endY = -heightBounds;
-		if (this.endY > heightBounds) this.endY = heightBounds;
+
+    this.start = startPoint;
+    this.end = endPoint;
   }
 
   drawSubpart() {
     if (this.isDone) {
-      line(this.startX, this.startY, this.endX, this.endY);
+      line(this.start.x, this.start.y, this.end.x, this.end.y);
     } else {
-      let xProgress = map(this.mainProgress, 0, 1.0, this.startX, this.endX, true);
-      let yProgress = map(this.mainProgress, 0, 1.0, this.startY, this.endY, true);
-      line(this.startX, this.startY, xProgress, yProgress);
+      let xProgress = map(this.mainProgress, 0, 1.0, this.start.x, this.end.x, true);
+      let yProgress = map(this.mainProgress, 0, 1.0, this.start.y, this.end.y, true);
+      line(this.start.x, this.start.y, xProgress, yProgress);
     }
   }
 }
