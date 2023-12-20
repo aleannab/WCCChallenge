@@ -1,6 +1,7 @@
 // Created for the #WCCChallenge - Arc
 
 let gAllArcs = [];
+let gLineInc;
 
 let gColorPalette = ['#c9e4ca', '#87bba2', '#55828b', '#3b6064', '#364958']; //['#4236C7', '#D9D9D9', '#C7369F'];
 let gLastMoveTime = 0;
@@ -9,14 +10,14 @@ function setup() {
   frameRate(30);
   smooth();
 
-  let lineCount = 10;
+  let lineCount = 15;
 
-  let lineInc = (0.5 * height) / lineCount;
+  gLineInc = (0.4 * height) / (lineCount - 1);
 
-  let offset = lineInc;
-  for (let i = 0; i < 10; i++) {
+  let offset = gLineInc;
+  for (let i = 0; i < lineCount; i++) {
     gAllArcs.push(new Arc(offset));
-    offset += lineInc;
+    offset += gLineInc;
   }
 }
 
@@ -33,7 +34,8 @@ function draw() {
 }
 
 function renderSmoothCircle(x, y, diameter) {
-  let numVertices = 100;
+  let numVertices = 50;
+  noStroke();
   beginShape();
   for (let i = 0; i < numVertices; i++) {
     let angle = map(i, 0, numVertices, 0, TWO_PI);
@@ -47,40 +49,47 @@ function renderSmoothCircle(x, y, diameter) {
 class Arc {
   constructor(offset) {
     // init positions
-    this.startAngle = this.getRandomAngle();
-    this.endAngle = this.startAngle + this.getRandomAngle(0);
+    this.startAngle = this.getRandomQuartAngle(3);
+    this.endAngle = this.startAngle + this.getRandomQuartAngle(2);
     this.offset = offset;
-
-    this.count = random(10, 20); //random(5, 10);
-    this.inc = (this.endAngle - this.startAngle) / (this.count - 1);
 
     this.isCircle = this.getRandBool();
     this.isDescending = this.getRandBool();
 
-    this.size = random(10, 30);
-    this.weight = random(3, 10);
-    this.sizeInc = this.size / this.count;
+    let diff = this.endAngle - this.startAngle;
+    this.size = this.isCircle ? random(5, gLineInc) : random(1, 10);
+
+    strokeWeight(floor(random(0.5, 0.5 * this.size)));
+    let arcLength = (diff * 2 * this.offset) / PI;
+
+    this.count = floor(arcLength / (this.size * random(1.5, 2)));
+    this.sizeInc = diff / (this.count - 1);
+
+    this.length = random(this.size, 4 * this.size);
 
     this.shift = random(-100, 100);
   }
 
   draw() {
     stroke(0);
-    strokeWeight(this.weight);
     fill(0);
 
     //translate(0, 50);
 
     // rectangle
-    let startSize = this.size;
+    let curSize = this.size;
     for (let i = 0; i < this.count; i++) {
       push();
-      rotateZ(this.startAngle + this.inc * i);
+      rotateZ(this.startAngle + this.sizeInc * i);
       translate(0, this.offset);
-      if (this.isCircle) renderSmoothCircle(0, 0, this.size);
-      else line(0, 0, 0, startSize);
+      if (this.isCircle) renderSmoothCircle(0, 0, curSize);
+      else {
+        strokeWeight(curSize);
+        stroke(0);
+        line(0, 0, 0, 30); //this.length);
+      }
       pop();
-      startSize -= this.sizeInc;
+      curSize -= this.sizeInc;
     }
   }
 
@@ -88,7 +97,8 @@ class Arc {
     return random(0, 1) < 0.5;
   }
 
-  getRandomAngle(amount) {
-    return floor(random(0, TWO_PI));
+  getRandomQuartAngle(amount) {
+    let scalar = floor(random(1, amount));
+    return scalar * PI;
   }
 }
