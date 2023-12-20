@@ -15,9 +15,17 @@ function setup() {
   gLineInc = (0.4 * height) / (lineCount - 1);
 
   let offset = gLineInc;
+  let same = 0;
+  let isCircle = true;
   for (let i = 0; i < lineCount; i++) {
-    gAllArcs.push(new Arc(offset));
-    offset += gLineInc;
+    // if (isCircle && same < 2) {
+    //   same += 1;
+    // } else {
+    isCircle = !isCircle;
+    //}
+    let arc = new Arc(isCircle, offset);
+    gAllArcs.push(arc);
+    offset += gLineInc; //arc.size;
   }
 }
 
@@ -27,7 +35,7 @@ function draw() {
   background(255);
 
   fill(0);
-  renderSmoothCircle(0, 0, 100);
+  renderSmoothCircle(0, 0, 50);
   for (let archie of gAllArcs) {
     archie.draw();
   }
@@ -47,46 +55,53 @@ function renderSmoothCircle(x, y, diameter) {
 }
 
 class Arc {
-  constructor(offset) {
+  constructor(isCircle, offset) {
     // init positions
     this.startAngle = this.getRandomQuartAngle(3);
     this.endAngle = this.startAngle + this.getRandomQuartAngle(2);
     this.offset = offset;
 
-    this.isCircle = this.getRandBool();
+    this.isCircle = isCircle;
     this.isDescending = this.getRandBool();
 
     let diff = this.endAngle - this.startAngle;
-    this.size = this.isCircle ? random(5, gLineInc) : random(1, 10);
-
-    strokeWeight(floor(random(0.5, 0.5 * this.size)));
     let arcLength = (diff * 2 * this.offset) / PI;
 
-    this.count = floor(arcLength / (this.size * random(1.5, 2)));
-    this.sizeInc = diff / (this.count - 1);
+    if (this.isCircle) {
+      let min = 0.2 * gLineInc;
+      let max = 0.8 * gLineInc;
+      this.size = random(min, max);
+      let maxScalar = map(this.size, min, max, 1.1, 4);
+      this.count = floor(arcLength / (this.size * random(1.1, maxScalar)));
+      this.sizeInc = (0.8 * this.size) / (this.count - 1);
+    } else {
+      this.weight = random(0.5, 3);
+      let scalar = map(this.weight, 0.5, 3, 2, 0.5);
+      this.size = random(0.5 * gLineInc, scalar * gLineInc);
+      this.count = floor(arcLength / (this.weight * random(3, 10)));
+      this.weightInc = (0.8 * this.weight) / (this.count - 1);
+      this.sizeInc = diff / (this.count - 1);
+    }
 
-    this.length = random(this.size, 4 * this.size);
-
-    this.shift = random(-100, 100);
+    this.spacing = diff / (this.count - 1);
   }
 
   draw() {
     stroke(0);
     fill(0);
 
-    //translate(0, 50);
-
-    // rectangle
+    //translate(0, this.shift);
     let curSize = this.size;
+    let weight = this.weight;
     for (let i = 0; i < this.count; i++) {
       push();
-      rotateZ(this.startAngle + this.sizeInc * i);
+      rotateZ(this.startAngle + this.spacing * i);
       translate(0, this.offset);
       if (this.isCircle) renderSmoothCircle(0, 0, curSize);
       else {
-        strokeWeight(curSize);
-        stroke(0);
-        line(0, 0, 0, 30); //this.length);
+        strokeWeight(weight);
+        line(0, 0, 0, curSize);
+        weight -= this.weightInc;
       }
       pop();
       curSize -= this.sizeInc;
