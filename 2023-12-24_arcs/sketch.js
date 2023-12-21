@@ -1,6 +1,6 @@
 // Created for the #WCCChallenge - Arc
 
-let gAllArcs = [];
+let gAllCircles = [];
 let gLineInc;
 
 let gColorPalette = ['#c9e4ca', '#87bba2', '#55828b', '#3b6064', '#364958']; //['#4236C7', '#D9D9D9', '#C7369F'];
@@ -8,25 +8,9 @@ let gLastMoveTime = 0;
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   frameRate(30);
-  smooth();
 
-  let lineCount = 15;
-
-  gLineInc = (0.4 * height) / (lineCount - 1);
-
-  let offset = gLineInc;
-  let same = 0;
-  let isCircle = true;
-  for (let i = 0; i < lineCount; i++) {
-    // if (isCircle && same < 2) {
-    //   same += 1;
-    // } else {
-    isCircle = !isCircle;
-    //}
-    let arc = new Arc(isCircle, offset);
-    gAllArcs.push(arc);
-    offset += gLineInc; //arc.size;
-  }
+  gAllCircles.push(new Circle(-0.4 * height, true));
+  gAllCircles.push(new Circle(0.4 * height, true));
 }
 
 function mouseClicked() {}
@@ -35,9 +19,9 @@ function draw() {
   background(255);
 
   fill(0);
-  renderSmoothCircle(0, 0, 50);
-  for (let archie of gAllArcs) {
-    archie.draw();
+  //renderSmoothCircle(0, 0, 50);
+  for (let circe of gAllCircles) {
+    circe.draw();
   }
 }
 
@@ -52,6 +36,37 @@ function renderSmoothCircle(x, y, diameter) {
     vertex(xPos, yPos);
   }
   endShape(CLOSE);
+}
+
+class Circle {
+  constructor(xOffset, shouldRotate = false) {
+    this.xOffset = xOffset;
+    this.shouldRotate = shouldRotate;
+    this.allArcs = [];
+    let lineCount = 15;
+
+    gLineInc = (0.4 * height) / (lineCount - 1);
+
+    let offset = gLineInc;
+    let isCircle = true;
+    for (let i = 0; i < lineCount; i++) {
+      isCircle = !isCircle;
+      let arc = new Arc(isCircle, offset);
+      this.allArcs.push(arc);
+      offset += gLineInc; //arc.size;
+    }
+  }
+
+  draw() {
+    push();
+
+    translate(this.xOffset, 0);
+    if (this.shouldRotate) rotateZ(HALF_PI);
+    for (let archie of this.allArcs) {
+      archie.draw();
+    }
+    pop();
+  }
 }
 
 class Arc {
