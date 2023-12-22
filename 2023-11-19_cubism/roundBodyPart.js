@@ -25,11 +25,11 @@ class RoundBodyPart extends BodyPart {
       let rotationAngle = map(sin(time), -1, 1, this.rotateMin, this.rotateMax);
       rotate(rotationAngle);
     }
-		
+
     this.sketchCircles.forEach((sketch) => {
       sketch.drawSketchCircle(time);
     });
-		
+
     pop();
   }
 }
@@ -37,27 +37,27 @@ class RoundBodyPart extends BodyPart {
 class SketchCircle {
   constructor(shouldFill, bPosX, bPosY, bWidth, bHeight) {
     this.isFilled = shouldFill;
-    this.sWeight = random(1.5, 2);
+    this.sWeight = random(2.5, 4);
     this.sColor = random(gColorPalette);
 
     // Randomly adjusting control points
     let offsets = getRandomValues(4, 30);
-		
-		const baseX = bPosX - bWidth / 2;
-  	const baseY = bPosY;
+
+    const baseX = bPosX - bWidth / 2;
+    const baseY = bPosY;
 
     this.startPoint = { x: bPosX + bWidth / 2, y: baseY };
-		this.sPoints0 = [
-			{ x: this.startPoint.x, y: baseY - bHeight * 0.6 + offsets[0] },
-			{ x: baseX + offsets[1], y: baseY - bHeight * 0.6 + offsets[2] },
-			{ x: baseX, y: baseY },
-		];
+    this.sPoints0 = [
+      { x: this.startPoint.x, y: baseY - bHeight * 0.6 + offsets[0] },
+      { x: baseX + offsets[1], y: baseY - bHeight * 0.6 + offsets[2] },
+      { x: baseX, y: baseY },
+    ];
 
     this.sPoints1 = [
-			{ x: baseX, y: baseY + bHeight * 0.6 + offsets[3] },
-			{ x: this.startPoint.x, y: baseY + bHeight * 0.6 },
-			{ x: this.startPoint.x, y: baseY },
-		];
+      { x: baseX, y: baseY + bHeight * 0.6 + offsets[3] },
+      { x: this.startPoint.x, y: baseY + bHeight * 0.6 },
+      { x: this.startPoint.x, y: baseY },
+    ];
   }
 
   drawSketchCircle(time) {
@@ -73,16 +73,8 @@ class SketchCircle {
     beginShape();
     vertex(this.startPoint.x, this.startPoint.y);
 
-    bezierVertex(
-      this.sPoints0[0].x, this.sPoints0[0].y,
-      this.sPoints0[1].x, this.sPoints0[1].y,
-      this.sPoints0[2].x, this.sPoints0[2].y
-    );
-    bezierVertex(
-      this.sPoints1[0].x, this.sPoints1[0].y,
-      this.sPoints1[1].x, this.sPoints1[1].y,
-      this.sPoints1[2].x, this.sPoints1[2].y
-    );
+    bezierVertex(this.sPoints0[0].x, this.sPoints0[0].y, this.sPoints0[1].x, this.sPoints0[1].y, this.sPoints0[2].x, this.sPoints0[2].y);
+    bezierVertex(this.sPoints1[0].x, this.sPoints1[0].y, this.sPoints1[1].x, this.sPoints1[1].y, this.sPoints1[2].x, this.sPoints1[2].y);
 
     endShape(CLOSE);
   }
@@ -91,14 +83,11 @@ class SketchCircle {
 class SketchLine {
   constructor(pts) {
     this.slPoints = pts;
-    this.slWeight = random(1, 2.5);
+    this.slWeight = random(2, 4);
   }
 
   drawSketchLine() {
     strokeWeight(this.slWeight);
-    line(
-      this.slPoints[0].x, this.slPoints[0].y,
-      this.slPoints[1].x, this.slPoints[1].y
-    );
+    line(this.slPoints[0].x, this.slPoints[0].y, this.slPoints[1].x, this.slPoints[1].y);
   }
 }

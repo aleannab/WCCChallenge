@@ -10,16 +10,9 @@
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 // Color Palettes
-let gColorPalette = [
-  "#c1b48d",
-  "#b5a97f",
-  "#a2856a",
-  "#706042",
-  "#4c513d",
-  "#706c4b",
-];
-let gHexAlpha = "C8";
-let gBgPalette = ["#2f3127", "#3a3029", "#20201f"];
+let gColorPalette = ['#c1b48d', '#b5a97f', '#a2856a', '#706042', '#4c513d', '#706c4b'];
+let gHexAlpha = 'C8';
+let gBgPalette = ['#2f3127', '#3a3029', '#20201f'];
 
 let gVelocityScalar = 0.03;
 let gAngularVScalar = 0.005;
@@ -36,7 +29,7 @@ let gIncY;
 let gOffsets = {
   upperBodyMin: 0,
   upperBodyMax: Math.PI / 10,
-  headMin: Math.PI / 10 ,
+  headMin: Math.PI / 10,
   headMax: Math.PI / 4,
   hipMin: -Math.PI / 10,
   hipMax: Math.PI / 8,
@@ -49,74 +42,70 @@ let gOffsets = {
 
 // Size scalars for body parts
 let gPartSize = {
-  head: {w: 1.3, h: 1.4},
-  torso: {w: 1.5, h: 2},
-  hips:  {w: 2, h: 1},
-  thigh:  {w: 1, h: 1.75},
-  ankle:  {w: 0.75, h: 1.8}
+  head: { w: 1.3, h: 1.4 },
+  torso: { w: 1.5, h: 2 },
+  hips: { w: 2, h: 1 },
+  thigh: { w: 1, h: 1.75 },
+  ankle: { w: 0.75, h: 1.8 },
 };
 
 let gPeople = [];
-let gPeopleCount = 8;
+let gPeopleCount = 9;
 
 let gIsDebug = false;
 let gRandSeed;
 
 function setup() {
-  let h = 0.95 * windowHeight;
-  createCanvas(0.6 * h, h, WEBGL);
-  gRandSeed = random(0, 999);
-  
-	// Initialize unit sizes based on canvas dimensions
+  createCanvas(0.6 * windowHeight, windowHeight, WEBGL);
+
+  // Initialize unit sizes based on canvas dimensions
   let countDivs = 5;
   gDivX = width / countDivs;
   gDivY = height / countDivs;
-  
+
   let unitDivs = 10;
-  gUnitX =  width / unitDivs;
+  gUnitX = width / unitDivs;
   gUnitY = height / unitDivs;
-  
-  gInitPosX = - 7 * gUnitX;
-  gInitPosY = - 2 * gUnitY;
-  
-	// Update body part sizes using unit scalars
+
+  gInitPosX = -7.5 * gUnitX;
+  gInitPosY = -2 * gUnitY;
+
+  // Update body part sizes using unit scalars
   for (let part in gPartSize) {
-		gPartSize[part].w *= gUnitX;
-		gPartSize[part].h *= gUnitY;
-	}
+    gPartSize[part].w *= gUnitX;
+    gPartSize[part].h *= gUnitY;
+  }
 
   // add alpha to colors;
   gColorPalette.forEach((_, index, palette) => {
     palette[index] = palette[index] + gHexAlpha;
   });
-  
-  
+
   // populate figures
   gIncX = (width + gUnitX * 2) / gPeopleCount;
-  gIncY = 0.3 * (height + gUnitY * 2) / gPeopleCount;
-  
+  gIncY = (0.3 * (height + gUnitY * 2)) / gPeopleCount;
+
   let randomVarX = 0.3 * gUnitX;
   let randomVarY = gUnitY;
 
   for (let i = 0; i < gPeopleCount; i++) {
     let pos = {
-      x: i * gIncX + random(-randomVarX, randomVarX) + gInitPosX,
-      y: i * gIncY + random(- randomVarY, randomVarY) + gInitPosY,
+      x: i * gIncX + gInitPosX,
+      y: i * gIncY + random(-gUnitY, gUnitY) + gInitPosY,
     };
     gPeople.push(new Person(pos));
-  }  
+  }
 }
 
 function draw() {
-	randomSeed(gRandSeed);
-  background(random(gBgPalette));
-	
-	// Update time, this value will be used to calculate the rotation of the body parts
+  background(gBgPalette[2]);
+
+  // Update time, this value will be used to calculate the rotation of the body parts
   time = millis() * gAngularVScalar;
-  
-	// If person is offscreen, they go to the end of the line
-	// Shifting array is necessary to account for proper layer order
-	// 
+
+  // If person is offscreen, they go to the end of the line
+  // Shifting array is necessary to account for proper layer order
+  //
   let shouldShiftArray = false;
   gPeople.forEach((person) => {
     person.drawPerson(time);

@@ -5,8 +5,8 @@ class Person {
     this.initializeBodyParts();
     this.pVariance = random(0, 2 * PI); // offset for sinusoidal variation in Y position
   }
-	
-	initializeBodyParts() {
+
+  initializeBodyParts() {
     this.pHead = new RoundBodyPart(
       { x: 0, y: -1.1 * gPartSize.torso.h },
       gPartSize.head.w,
@@ -47,7 +47,7 @@ class Person {
 
   drawPerson(t) {
     push();
-    
+
     let yVar = 10 * sin(t + this.pVariance);
     translate(this.pPosition.x, this.pPosition.y + yVar);
     let time = t + this.pOffsetTime;
@@ -59,9 +59,9 @@ class Person {
   update() {
     this.pPosition.x += gVelocityScalar * gIncX;
     this.pPosition.y += gVelocityScalar * gIncY;
-    if (this.pPosition.x > 0.5 * width + gUnitX) {
+    if (this.pPosition.x > 0.5 * (width + gUnitX)) {
       this.pPosition.x = gInitPosX;
-      this.pPosition.y = gInitPosY;
+      this.pPosition.y = gInitPosY + random(-gUnitY, gUnitY);
       return true;
     }
 
