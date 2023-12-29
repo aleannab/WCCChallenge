@@ -31,7 +31,7 @@ function setup() {
   world.addForce(gGravity);
 
   let collision = new c2.Collision();
-  collision.strength = 0.5;
+  collision.strength = 1; //0.5;
   world.addInteractionForce(collision);
 
   let colCount = floor(width / gColPadding) + 1;
@@ -44,7 +44,7 @@ function setup() {
     gConstraintsCol.push(new ConstraintsColumn(xp));
   }
 
-  let num = (colCount > gRowCount ? colCount : gRowCount) * 30;
+  let num = (colCount > gRowCount ? colCount : gRowCount) * 2;
   for (let i = 0; i < num; i++) {
     let x = random(width);
     let y = random(height);
@@ -80,7 +80,7 @@ function draw() {
 
     //stroke(p.color);
     fill(180, saturation(p.color), lightness(p.color), 0.3);
-    let rad = gIsDebug ? p.radius : map(p.radius, gRadiusMin, gRadiusMax, 1, 10);
+    let rad = gIsDebug ? p.radius : map(p.radius, gRadiusMin, gRadiusMax, 0, 10);
     circle(p.position.x, p.position.y, rad); //rad);
     //point(p.position.x, p.position.y);
   }
@@ -95,7 +95,7 @@ function draw() {
   if (curTime > gUpdateGravityTime) {
     let randDirection = new c2.Vector(random(-1, 1), random(-1, 1));
     gGravity.force = randDirection.normalize();
-    gUpdateGravityTime = curTime + 2000;
+    gUpdateGravityTime = curTime + 3000;
   }
 }
 
