@@ -110,15 +110,16 @@ function keyPressed() {
 }
 
 class ConstraintsColumn {
-  constructor(xp) {
-    this.xp = xp;
+  constructor(initX) {
     this.data = [];
+
     for (let i = 0; i < gRowCount; i++) {
-      this.yp = i * gRowPadding + random(-0.5, 0.5) * gRowPadding;
-      let circ = new c2.Circle(xp, this.yp, random(gConstraintMin, gConstraintMax));
+      let xp = initX + random(-0.2, 0.2) * gColPadding;
+      let yp = i * gRowPadding + random(-0.5, 0.5) * gRowPadding;
+      let circ = new c2.Circle(xp, yp, random(gConstraintMin, gConstraintMax));
       let circConstraint = new c2.CircleConstraint(circ);
       world.addConstraint(circConstraint);
-      this.data.push({ constraint: circConstraint, initPos: this.yp, timeOffset: random(0, TWO_PI) });
+      this.data.push({ constraint: circConstraint, initPos: yp, timeOffset: random(0, TWO_PI) });
     }
     this.timeOffset = random(0, TWO_PI);
   }
@@ -133,7 +134,8 @@ class ConstraintsColumn {
     noFill();
     stroke(50);
     for (let d of this.data) {
-      circle(this.xp, d.constraint.circle.p.y, d.constraint.circle.r);
+      let curCircle = d.constraint.circle;
+      circle(curCircle.p.x, curCircle.p.y, curCircle.r);
     }
   }
 }
