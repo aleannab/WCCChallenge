@@ -1,4 +1,13 @@
-//Created by Ren Yuan
+// Created for the #WCCChallenge - Topic: Gravity
+//
+// This was created using a particle system for the paint strokes.
+// The direction of gravity changes at a set interval.
+// There are moving circular obstacles across the canvas which you can view by pressing 'd' to toggle debug mode.
+//
+// Uses the c2.js library for physics simulations: https://github.com/ren-yuan/c2.js/tree/main
+//
+// See other submissions here: https://openprocessing.org/curation/78544
+// Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 let world;
 
@@ -15,6 +24,7 @@ let gRadiusMax = 20;
 let gConstraintMin = 5;
 let gConstraintMax = 40;
 
+let gColCount;
 let gColPadding = 80;
 let gRowPadding = 80;
 
@@ -37,20 +47,27 @@ function setup() {
   collision.strength = 1; //0.5;
   world.addInteractionForce(collision);
 
-  let colCount = floor(width / gColPadding) + 1;
-  let adjColPad = floor(width / (colCount - 1));
+  gColCount = floor(width / gColPadding) + 1;
+  let adjColPad = floor(width / (gColCount - 1));
 
   gRowCount = floor(height / gRowPadding) + 1;
 
-  for (let i = 0; i < colCount; i++) {
+  for (let i = 0; i < gColCount; i++) {
     let xp = i * adjColPad;
     gConstraintsCol.push(new ConstraintsColumn(xp));
   }
 
+  createParticleBrushes();
+  strokeWeight(2);
+  background(gBackgroundColor);
+}
+
+function createParticleBrushes() {
+  world.particles = [];
   const mainHue = random(160, 220);
   const hueOffset = random(5, 20);
 
-  let num = (colCount > gRowCount ? colCount : gRowCount) * 2;
+  let num = (gColCount > gRowCount ? gColCount : gRowCount) * 2;
   for (let i = 0; i < num; i++) {
     let x = random(width);
     let y = random(height);
@@ -65,8 +82,6 @@ function setup() {
 
     world.addParticle(p);
   }
-  strokeWeight(2);
-  background(gBackgroundColor);
 }
 
 function draw() {
@@ -114,6 +129,11 @@ function keyPressed() {
       background(gBackgroundColor);
     }
   }
+}
+
+function mouseClicked() {
+  background(gBackgroundColor);
+  createParticleBrushes();
 }
 
 class ConstraintsColumn {
