@@ -18,7 +18,10 @@ let gConstraintMax = 40;
 let gColPadding = 80;
 let gRowPadding = 80;
 
-let gIsDebug = true;
+let gIsDebug = false;
+
+let gBackgroundColor = '#cccccc';
+let gEraseColor = '#cccccc34';
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -44,23 +47,30 @@ function setup() {
     gConstraintsCol.push(new ConstraintsColumn(xp));
   }
 
+  const mainHue = random(160, 220);
+  const hueOffset = random(5, 20);
+
   let num = (colCount > gRowCount ? colCount : gRowCount) * 2;
   for (let i = 0; i < num; i++) {
     let x = random(width);
     let y = random(height);
     let p = new c2.Particle(x, y);
     p.radius = random(gRadiusMin, gRadiusMax);
-    p.color = color(random(0, 30), random(30, 60), random(20, 100));
+    if (i % 5 === 0) {
+      p.color = gEraseColor;
+    } else {
+      p.color = color(mainHue + random(-hueOffset, hueOffset), random(30, 60), random(20, 100), 0.3);
+    }
     p.mass = random(0.1, 1);
 
     world.addParticle(p);
   }
   strokeWeight(2);
-  background('#cccccc');
+  background(gBackgroundColor);
 }
 
 function draw() {
-  if (gIsDebug) background('#cccccc');
+  if (gIsDebug) background(gBackgroundColor);
 
   let t = millis() * 0.001;
   for (let p of world.particles) {
@@ -77,12 +87,10 @@ function draw() {
   noStroke();
   for (let i = 0; i < world.particles.length; i++) {
     let p = world.particles[i];
+    fill(p.color);
 
-    //stroke(p.color);
-    fill(180, saturation(p.color), lightness(p.color), 0.3);
     let rad = gIsDebug ? p.radius : map(p.radius, gRadiusMin, gRadiusMax, 0, 10);
-    circle(p.position.x, p.position.y, rad); //rad);
-    //point(p.position.x, p.position.y);
+    circle(p.position.x, p.position.y, rad);
   }
 
   if (gIsDebug) {
@@ -102,10 +110,9 @@ function draw() {
 function keyPressed() {
   if (key == 'd') {
     gIsDebug = !gIsDebug;
-  }
-
-  if (!gIsDebug) {
-    background('#cccccc');
+    if (!gIsDebug) {
+      background(gBackgroundColor);
+    }
   }
 }
 
