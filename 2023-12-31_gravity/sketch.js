@@ -12,8 +12,8 @@ let gConstraintsCol = [];
 
 let gRadiusMin = 10;
 let gRadiusMax = 20;
-let gConstraintMin = 10;
-let gConstraintMax = 40;
+let gConstraintMin = 5;
+let gConstraintMax = 60;
 
 let gColPadding = 100;
 let gRowPadding = 100;
@@ -43,7 +43,7 @@ function setup() {
     gConstraintsCol.push(new ConstraintsColumn(xp));
   }
 
-  for (let i = 0; i < 100; i++) {
+  for (let i = 0; i < 200; i++) {
     let x = random(width);
     let y = random(height);
     let p = new c2.Particle(x, y);
@@ -111,14 +111,14 @@ class ConstraintsColumn {
       let circ = new c2.Circle(xp, this.yp, random(gConstraintMin, gConstraintMax));
       let circConstraint = new c2.CircleConstraint(circ);
       world.addConstraint(circConstraint);
-      this.data.push({ constraint: circConstraint, initPos: this.yp });
+      this.data.push({ constraint: circConstraint, initPos: this.yp, timeOffset: random(0, TWO_PI) });
     }
     this.timeOffset = random(0, TWO_PI);
   }
 
   update(t) {
     for (let d of this.data) {
-      d.constraint.circle.p.y = d.initPos + gColPadding * sin(t + this.timeOffset);
+      d.constraint.circle.p.y = d.initPos + gColPadding * sin(t + d.timeOffset);
     }
   }
 
