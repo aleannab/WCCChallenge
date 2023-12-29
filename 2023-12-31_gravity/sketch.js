@@ -1,83 +1,68 @@
-// Created for the #WCCChallenge
+//Created by Ren Yuan
 
-let gLastTime = 0;
+let world;
 
-let system;
+let rectangle;
+
+let gUpdateGravityTime = 0;
+
+let gGravity;
+
 function setup() {
-  createCanvas(windowWidth, windowHeight, WEBGL);
-  system = new ParticleSystem(createVector(0, 0, 0));
-  system.addParticle();
-}
+  createCanvas(960, 540);
+  colorMode(HSL, 360, 100, 100);
+  ellipseMode(RADIUS);
 
-function mouseClicked() {}
+  world = new c2.World(new c2.Rect(0, 0, width, height));
+
+  gGravity = new c2.ConstForce(new c2.Vector(0, 1));
+  world.addForce(gGravity);
+
+  for (let i = 0; i < 100; i++) {
+    let x = random(width);
+    let y = random(height);
+    let p = new c2.Particle(x, y);
+    p.radius = random(5, 10);
+    p.color = color(random(0, 30), random(30, 60), random(20, 100));
+
+    world.addParticle(p);
+    gGravity.apply(p);
+  }
+
+  let collision = new c2.Collision();
+  world.addInteractionForce(collision);
+
+  let leftTop = new c2.Point(width / 4, (height / 8) * 3);
+  let rightBottom = new c2.Point((width / 4) * 3, (height / 8) * 5);
+  rectangle = new c2.Rect(leftTop, rightBottom);
+  let rectConstraint = new c2.PolygonConstraint(rectangle);
+  world.addConstraint(rectConstraint);
+  noStroke();
+}
 
 function draw() {
-  orbitControl();
-  background(51);
-  const curTime = millis();
-  let dt = curTime - gLastTime;
-  gLastTime = curTime;
-  dt *= 0.1;
+  //background('#cccccc')
 
-  system.addParticle();
-  system.run(dt);
-}
+  drawingContext.setLineDash([5, 5]);
+  noFill();
+  rect(rectangle.p.x, rectangle.p.y, rectangle.w, rectangle.h);
 
-class Particle {
-  constructor(position) {
-    this.velocity = createVector(random(-1, 1), 0, random(-1, 1));
+  world.update();
 
-    this.position = position.copy();
-    this.lifespan = 255;
-    this.mass = 30;
-  }
-
-  run(dt) {
-    this.update(dt);
-    this.draw();
-  }
-
-  update(dt) {
-    let netForce = createVector(0, 1, 0).div(this.mass);
-    let acceleration = p5.Vector.mult(netForce, dt);
-    this.velocity.add(acceleration);
-    let dPos = p5.Vector.mult(this.velocity, dt).add(p5.Vector.mult(acceleration, 0.5 * dt * dt));
-    this.position.add(dPos);
-    this.lifespan -= 2;
-  }
-
-  draw() {
-    stroke(200, this.lifespan);
+  for (let i = 0; i < world.particles.length; i++) {
+    let p = world.particles[i];
+    // stroke('#333333');
+    // strokeWeight(1);
+    drawingContext.setLineDash([]);
+    fill(p.color);
+    circle(p.position.x, p.position.y, p.radius);
     strokeWeight(2);
-    fill(127, this.lifespan);
-    push();
-    translate(this.position.x, this.position.y, this.position.z);
-    sphere(5);
-    pop();
+    point(p.position.x, p.position.y);
   }
 
-  isDead() {
-    return this.lifespan < 0;
-  }
-}
-
-class ParticleSystem {
-  constructor(position) {
-    this.origin = position.copy();
-    this.particles = [];
-  }
-
-  addParticle() {
-    this.particles.push(new Particle(this.origin));
-  }
-
-  run(dt) {
-    for (let i = this.particles.length - 1; i >= 0; i--) {
-      let p = this.particles[i];
-      p.run(dt);
-      if (p.isDead()) {
-        this.particles.splice(i, 1);
-      }
-    }
+  let curTime = millis();
+  if (curTime > gUpdateGravityTime) {
+    gGravity.force = new c2.Vector(random(-1, 1), random(-1, 1));
+    gUpdateGravityTime = curTime + 1000;
   }
 }
