@@ -10,18 +10,18 @@ let gGravity;
 
 let gConstraintsCol = [];
 
-let gRadiusMin = 10;
+let gRadiusMin = 5;
 let gRadiusMax = 20;
 let gConstraintMin = 5;
-let gConstraintMax = 60;
+let gConstraintMax = 40;
 
-let gColPadding = 100;
-let gRowPadding = 100;
+let gColPadding = 80;
+let gRowPadding = 80;
 
 let gIsDebug = true;
 
 function setup() {
-  createCanvas(960, 540);
+  createCanvas(windowWidth, windowHeight);
   colorMode(HSL, 360, 100, 100);
   ellipseMode(RADIUS);
 
@@ -31,6 +31,7 @@ function setup() {
   world.addForce(gGravity);
 
   let collision = new c2.Collision();
+  collision.strength = 0.5;
   world.addInteractionForce(collision);
 
   let colCount = floor(width / gColPadding) + 1;
@@ -43,7 +44,8 @@ function setup() {
     gConstraintsCol.push(new ConstraintsColumn(xp));
   }
 
-  for (let i = 0; i < 200; i++) {
+  let num = (colCount > gRowCount ? colCount : gRowCount) * 30;
+  for (let i = 0; i < num; i++) {
     let x = random(width);
     let y = random(height);
     let p = new c2.Particle(x, y);
@@ -61,6 +63,11 @@ function draw() {
   if (gIsDebug) background('#cccccc');
 
   let t = millis() * 0.001;
+  for (let p of world.particles) {
+    p.radius += random(-1, 1);
+    if (p.radius > gRadiusMax) p.radius = gRadiusMax;
+    if (p.radius < gRadiusMin) p.radius = gRadiusMin;
+  }
   for (let col of gConstraintsCol) {
     col.update(t);
   }
@@ -72,9 +79,9 @@ function draw() {
     let p = world.particles[i];
 
     //stroke(p.color);
-    fill(hue(p.color), 0, lightness(p.color), 0.3);
-    let rad = (gIsDebug ? 1.0 : 0.3) * p.radius;
-    circle(p.position.x, p.position.y, 3); //rad);
+    fill(180, saturation(p.color), lightness(p.color), 0.3);
+    let rad = gIsDebug ? p.radius : map(p.radius, gRadiusMin, gRadiusMax, 1, 10);
+    circle(p.position.x, p.position.y, rad); //rad);
     //point(p.position.x, p.position.y);
   }
 
