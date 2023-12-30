@@ -116,9 +116,19 @@ function draw() {
 
   let curTime = millis();
   if (curTime > gUpdateGravityTime) {
-    let randDirection = new c2.Vector(random(-1, 1), random(-1, 1));
+    let curForce = gGravity.force.copy();
+    let randDirection = new c2.Vector(random(0, 1), random(0, 1));
+    if (abs(curForce.x) > abs(curForce.y) || random(0, 1) > 0.8) {
+      let oppositeSign = (-1 * curForce.x) / abs(curForce.x);
+      randDirection.x *= oppositeSign;
+      if (random(0, 1) > 0.5) randDirection.y *= -1;
+    } else {
+      let oppositeSign = (-1 * curForce.y) / abs(curForce.y);
+      randDirection.y *= oppositeSign;
+      if (random(0, 1) > 0.5) randDirection.x *= -1;
+    }
     gGravity.force = randDirection.normalize();
-    gUpdateGravityTime = curTime + 3000;
+    gUpdateGravityTime = curTime + random(3000, 5000);
   }
 }
 
