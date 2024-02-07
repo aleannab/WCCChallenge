@@ -36,7 +36,7 @@ function setup() {
   let count = 3;
   let incX = width / count;
   let incY = height / count;
-  gRadius = incX / 4;
+  gRadius = incX / 5;
   for (let i = 0; i < count; i++) {
     for (let j = 0; j < count; j++) {
       createBlob((i + 0.5) * incX, (j + 0.5) * incY);
@@ -58,11 +58,9 @@ function draw() {
 }
 
 function addWorldForces() {
-  let constForce = new c2.ConstForce(0, 1);
-  gWorld.addForce(constForce);
   quadTree = new c2.QuadTree(new c2.Rect(0, 0, width, height));
   let collision = new c2.Collision(quadTree);
-  collision.iterations = 5;
+  collision.iterations = 10;
   gWorld.addInteractionForce(collision);
 }
 
@@ -78,24 +76,24 @@ class Blob {
     this.color = random(gBlobPalette);
 
     this.createBody(pos);
-    this.offset = random(TWO_PI);
+    this.offset = 0; //random(TWO_PI);
+    this.frequency = 0.04; // random(0.03, 0.04);
   }
 
   update() {
-    const frequency = 0.02; // Adjust the frequency of expansion and contraction
-    const amplitude = 6; // Adjust the amplitude of expansion and contraction
+    const amplitude = 5.5; // Adjust the amplitude of expansion and contraction
     const damping = 0.6;
 
     for (let i = 0; i < this.allPoints.length; i++) {
       const point = this.allPoints[i];
 
-      const timeFactor = 1 + sin(frameCount * frequency + this.offset);
+      const timeFactor = 1 + sin(frameCount * this.frequency + this.offset);
 
       // Use sine function to create oscillation
       const expansionFactor = timeFactor * amplitude;
 
       // Dampen the oscillation using damping
-      point.radius = 2 * expansionFactor; // - point.radius;
+      point.radius = 1.5 * expansionFactor; // - point.radius;
 
       // Update spring lengths based on the adjusted radius
       for (let j = 0; j < this.springs.length; j++) {
@@ -108,7 +106,6 @@ class Blob {
 
   createBody(pos) {
     const count = floor(gRadius);
-    console.log(count + ' ' + gRadius);
     const angInc = TWO_PI / count;
     const r = floor(gRadius);
 
@@ -143,7 +140,7 @@ class Blob {
 
   createParticle(posX, posY) {
     let p = new c2.Particle(posX, posY);
-    p.radius = 10;
+    p.radius = 20;
     p.mass = 150;
     gWorld.addParticle(p);
 
