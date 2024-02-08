@@ -23,6 +23,8 @@ let gFrequency = 0.01;
 let gBgColor = '#f4f1ea';
 let gBlobPalette = ['#3567af', '#c04e82', '#538e47', '#e88740', '#e25c43', '#016d6f'];
 
+let gTime;
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   gWorld = new c2.World(new c2.Rect(0, 0, width, height));
@@ -43,17 +45,13 @@ function setup() {
   gRadius = 0.1 * (gIncX + gIncY);
 
   addWorldForces();
+  init();
 
-  gBlobs = [];
-  let isSmall = random() < 0.5;
-  for (let i = 0; i < gCountX; i++) {
-    for (let j = 0; j < gCountY; j++) {
-      let s = isSmall ? random(0.7, 1) : random(1, 1.3);
-      createBlob((i + 0.5) * gIncX, (j + 0.5) * gIncY, s);
-      isSmall = !isSmall;
-    }
-  }
   strokeWeight(5);
+}
+
+function mouseClicked() {
+  init();
 }
 
 function draw() {
@@ -65,6 +63,21 @@ function draw() {
     blob.update();
     blob.draw();
   });
+  gTime += 1;
+}
+
+function init() {
+  clearForces();
+  gBlobs = [];
+  let isSmall = random() < 0.5;
+  for (let i = 0; i < gCountX; i++) {
+    for (let j = 0; j < gCountY; j++) {
+      let s = isSmall ? random(0.7, 1) : random(1, 1.3);
+      createBlob((i + 0.5) * gIncX, (j + 0.5) * gIncY, s);
+      if (random() < 0.9) isSmall = !isSmall;
+    }
+  }
+  gTime = 0;
 }
 
 function addWorldForces() {
@@ -72,6 +85,17 @@ function addWorldForces() {
   let collision = new c2.Collision(quadTree);
   collision.iterations = 2;
   gWorld.addInteractionForce(collision);
+}
+
+function clearForces() {
+  for (let s of gWorld.springs) {
+    gWorld.removeSpring(s);
+  }
+  for (let p of gWorld.particles) {
+    gWorld.removeParticle(p);
+  }
+  gWorld.springs = [];
+  gWorld.particles = [];
 }
 
 function createBlob(posX, posY, scalar) {
@@ -90,7 +114,7 @@ class Blob {
 
   update() {
     const amplitude = 0.2 * this.radius;
-    const timeFactor = min(frameCount * this.frequency, 1);
+    const timeFactor = min(gTime * this.frequency, 1);
     const expansionFactor = timeFactor * amplitude;
 
     for (let i = 0; i < this.allPoints.length; i++) {
