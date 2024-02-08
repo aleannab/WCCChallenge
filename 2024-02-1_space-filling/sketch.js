@@ -1,4 +1,4 @@
-// Created for the #WCCChallenge - Topic: Space Filling
+// Created for the #WCCChallenge - Topic: Space Filling Algorithms
 //
 // I had a general idea of what I wanted to do when the topic was decided: fill the space with expanding blobs.
 // I arrived at these pointy blobs unintentionally due to a bug with my springs.
@@ -42,18 +42,7 @@ function setup() {
   gCountY = isWidthShort ? countL : gCountS;
   gRadius = 0.1 * (gIncX + gIncY);
 
-  initCanvas();
-
   addWorldForces();
-
-  noStroke();
-}
-function mouseClicked() {
-  initCanvas();
-}
-
-function initCanvas() {
-  gWorld = new c2.World(new c2.Rect(0, 0, width, height));
 
   gBlobs = [];
   let isSmall = random() < 0.5;
@@ -64,6 +53,7 @@ function initCanvas() {
       isSmall = !isSmall;
     }
   }
+  strokeWeight(5);
 }
 
 function draw() {
@@ -151,6 +141,7 @@ class Blob {
     for (let point of this.allPoints) {
       curveVertex(point.position.x, point.position.y);
     }
+    stroke(this.color);
     fill(this.color);
     endShape(CLOSE);
   }
