@@ -13,7 +13,7 @@ let gCountY = 3;
 let gRadius;
 
 let gDamping = 0.6;
-let gFrequency = 0.04;
+let gFrequency = 0.02;
 
 let gBgColor = '#f4f1ea';
 let gBlobPalette = ['#3567af', '#c04e82', '#538e47', '#e88740', '#e25c43', '#016d6f'];
@@ -21,11 +21,17 @@ let gBlobPalette = ['#3567af', '#c04e82', '#538e47', '#e88740', '#e25c43', '#016
 function setup() {
   let l = windowWidth < windowHeight ? windowWidth : windowHeight;
   createCanvas(l, l);
+  console.log('length: ' + l);
   gWorld = new c2.World(new c2.Rect(0, 0, width, height));
 
   let incX = width / gCountX;
   let incY = height / gCountY;
-  gRadius = incX / 5;
+  gRadius = 0.2 * min(incX, incY);
+  const amplitude = 0.2 * gRadius;
+  console.log('incX: ' + incX);
+  console.log('incY: ' + incY);
+  console.log('gRadius: ' + gRadius);
+  console.log('amplitude: ' + amplitude);
 
   for (let i = 0; i < gCountX; i++) {
     for (let j = 0; j < gCountY; j++) {
@@ -69,23 +75,19 @@ class Blob {
   }
 
   update() {
-    const amplitude = 5.5; // Adjust the amplitude of expansion and contraction
-
+    const amplitude = 0.2 * gRadius;
     for (let i = 0; i < this.allPoints.length; i++) {
       const point = this.allPoints[i];
 
-      // const timeFactor = min(frameCount * gFrequency, 2);
-      const timeFactor = 1 + sin(frameCount * gFrequency);
+      const timeFactor = min(frameCount * gFrequency, 1);
 
-      // Use sine function to create oscillation
       const expansionFactor = timeFactor * amplitude;
 
-      point.radius = 1.5 * expansionFactor; // - point.radius;
+      point.radius = 1.5 * expansionFactor;
 
       for (let j = 0; j < this.springs.length; j++) {
         const spring = this.springs[j];
         spring.s.length = spring.l * expansionFactor * gDamping;
-        //spring.s.strength = gSpringForce * timeFactor;
       }
     }
   }
@@ -93,35 +95,28 @@ class Blob {
   createBody(pos) {
     const count = floor(gRadius);
     const angInc = TWO_PI / count;
-    const r = floor(gRadius);
 
     // Create particles
     for (let i = 0; i < count; i++) {
       const angle = i * angInc;
-      const x = r * cos(angle) + pos.x;
-      const y = r * sin(angle) + pos.y;
+      const x = gRadius * cos(angle) + pos.x;
+      const y = gRadius * sin(angle) + pos.y;
       this.allPoints.push(this.createParticle(x, y));
     }
 
-    // Create springs
+    // Connect to the next neighbor
     for (let i = 0; i < count; i++) {
       const currentPoint = this.allPoints[i];
 
       // Connect to the next neighbor
-      for (let i = 0; i < count; i++) {
-        const currentPoint = this.allPoints[i];
-
-        // Connect to the next neighbor
-        const nextIndex = (i + 1) % count;
-        const nextPoint = this.allPoints[nextIndex];
-        this.createSpring(currentPoint, nextPoint);
-      }
+      const nextIndex = (i + 1) % count;
+      const nextPoint = this.allPoints[nextIndex];
+      this.createSpring(currentPoint, nextPoint);
     }
   }
 
   createParticle(posX, posY) {
     let p = new c2.Particle(posX, posY);
-    p.mass = 150;
     gWorld.addParticle(p);
 
     return p;
@@ -137,16 +132,16 @@ class Blob {
   }
 
   draw() {
-    fill(this.color);
-    stroke(255);
     noStroke();
 
     // draw outline
     beginShape();
     for (let point of this.allPoints) {
       curveVertex(point.position.x, point.position.y);
+      fill(0);
       //circle(point.position.x, point.position.y, point.radius);
     }
+    fill(this.color);
     endShape(CLOSE);
 
     // stroke(255);
