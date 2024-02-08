@@ -27,15 +27,13 @@ function setup() {
   let incX = width / gCountX;
   let incY = height / gCountY;
   gRadius = 0.2 * min(incX, incY);
-  const amplitude = 0.2 * gRadius;
-  console.log('incX: ' + incX);
-  console.log('incY: ' + incY);
-  console.log('gRadius: ' + gRadius);
-  console.log('amplitude: ' + amplitude);
 
+  let isSmall = random() < 0.5;
   for (let i = 0; i < gCountX; i++) {
     for (let j = 0; j < gCountY; j++) {
-      createBlob((i + 0.5) * incX, (j + 0.5) * incY);
+      let s = isSmall ? random(0.7, 1) : random(1, 1.3);
+      createBlob((i + 0.5) * incX, (j + 0.5) * incY, s);
+      isSmall = !isSmall;
     }
   }
 
@@ -61,25 +59,28 @@ function addWorldForces() {
   gWorld.addInteractionForce(collision);
 }
 
-function createBlob(posX, posY) {
-  gBlobs.push(new Blob(new c2.Vector(posX, posY)));
+function createBlob(posX, posY, scalar) {
+  gBlobs.push(new Blob(new c2.Vector(posX, posY), scalar));
 }
 
 class Blob {
-  constructor(pos) {
+  constructor(pos, scalar) {
     this.allPoints = [];
     this.springs = [];
     this.color = random(gBlobPalette);
+    this.radius = gRadius * scalar;
+
+    this.frequency = gFrequency; // * map(scalar, 0.5, 1.5, 1, 0.7);
 
     this.createBody(pos);
   }
 
   update() {
-    const amplitude = 0.2 * gRadius;
+    const amplitude = 0.2 * this.radius;
     for (let i = 0; i < this.allPoints.length; i++) {
       const point = this.allPoints[i];
 
-      const timeFactor = min(frameCount * gFrequency, 1);
+      const timeFactor = min(frameCount * this.frequency, 1);
 
       const expansionFactor = timeFactor * amplitude;
 
@@ -93,14 +94,14 @@ class Blob {
   }
 
   createBody(pos) {
-    const count = floor(gRadius);
+    const count = floor(this.radius);
     const angInc = TWO_PI / count;
 
     // Create particles
     for (let i = 0; i < count; i++) {
       const angle = i * angInc;
-      const x = gRadius * cos(angle) + pos.x;
-      const y = gRadius * sin(angle) + pos.y;
+      const x = this.radius * cos(angle) + pos.x;
+      const y = this.radius * sin(angle) + pos.y;
       this.allPoints.push(this.createParticle(x, y));
     }
 
