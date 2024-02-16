@@ -19,14 +19,17 @@ let gIncX;
 let gIncY;
 
 let gDamping = 0.6;
-let gFrequency = 0.01;
+let gFrequency = 0.005;
 let gBgColor = '#f4f1ea';
-let gBlobPalette = ['#3567af', '#c04e82', '#538e47', '#e88740', '#e25c43', '#016d6f'];
+let gBlobPalette = ['#3567af', '#c04e82', '#538e47', '#e88740', '#016d6f', '#e25c43'];
 
 let gTime;
+let gIsPaused = true;
+let gHueShift = -1;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  colorMode(HSB);
   gWorld = new c2.World(new c2.Rect(0, 0, width, height));
 
   let isWidthShort = width < height;
@@ -45,36 +48,45 @@ function setup() {
   gRadius = 0.1 * (gIncX + gIncY);
 
   addWorldForces();
-  init();
+  init(0);
 
-  strokeWeight(5);
+  strokeWeight(8);
 }
 
 function mouseClicked() {
   init();
+  gIsPaused = false;
+}
+
+function keyPressed() {
+  if (key === ' ') gIsPaused = !gIsPaused;
 }
 
 function draw() {
   background(gBgColor);
 
-  gWorld.update();
+  if (!gIsPaused) gWorld.update();
 
   gBlobs.forEach((blob) => {
     blob.update();
     blob.draw();
   });
-  gTime += 1;
+  if (!gIsPaused) gTime += 1;
 }
 
-function init() {
+function init(shift = -1) {
+  gHueShift = shift < 0 ? gHueShift + 4 : 0;
   clearForces();
   gBlobs = [];
   let isSmall = random() < 0.5;
+  let colIndex = floor(random(gBlobPalette.length));
   for (let i = 0; i < gCountX; i++) {
     for (let j = 0; j < gCountY; j++) {
-      let s = isSmall ? random(0.7, 1) : random(1, 1.3);
-      createBlob((i + 0.5) * gIncX, (j + 0.5) * gIncY, s);
-      if (random() < 0.9) isSmall = !isSmall;
+      let s = isSmall ? random(0.6, 0.9) : random(0.9, 1.2);
+      createBlob((i + 0.5) * gIncX, (j + 0.5) * gIncY, s, colIndex);
+      if (isSmall || random() < 0.9) isSmall = !isSmall;
+      let colInc = floor(random(1, gBlobPalette.length));
+      colIndex = (colIndex + colInc) % gBlobPalette.length;
     }
   }
   gTime = 0;
@@ -98,15 +110,22 @@ function clearForces() {
   gWorld.particles = [];
 }
 
-function createBlob(posX, posY, scalar) {
-  gBlobs.push(new Blob(new c2.Vector(posX, posY), scalar));
+function createBlob(posX, posY, scalar, colIndex) {
+  gBlobs.push(new Blob(new c2.Vector(posX, posY), scalar, colIndex));
 }
 
 class Blob {
-  constructor(pos, scalar) {
+  constructor(pos, scalar, colIndex) {
     this.allPoints = [];
     this.springs = [];
-    this.color = random(gBlobPalette);
+    // this.color = random(gBlobPalette);
+
+    let c = gBlobPalette[colIndex]; //random(gBlobPalette);
+    let h = (hue(c) + gHueShift) % 360;
+    let s = saturation(c);
+    let b = brightness(c);
+    this.color = color(h, s, b);
+
     this.radius = gRadius * scalar;
     this.frequency = gFrequency;
     this.createBody(pos);
@@ -119,7 +138,7 @@ class Blob {
 
     for (let i = 0; i < this.allPoints.length; i++) {
       const point = this.allPoints[i];
-      point.radius = 1.5 * expansionFactor;
+      point.radius = 1.55 * expansionFactor;
       for (let j = 0; j < this.springs.length; j++) {
         const spring = this.springs[j];
         spring.s.length = spring.l * expansionFactor * gDamping;
