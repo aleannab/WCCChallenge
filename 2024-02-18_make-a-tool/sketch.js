@@ -129,8 +129,8 @@ function initVarHelper() {
     OPC.slider(gVar);
   }
 
-  OPC.button('gSetMinBtn', 'Set Values to Min');
-  OPC.button('gSetMaxBtn', 'Set Values to Max');
+  OPC.button('gSetMinBtn', 'Set Min Bounds');
+  OPC.button('gSetMaxBtn', 'Set Max Bounds');
 }
 
 //parameterChanged function is used every time a parameter is updated.
@@ -138,11 +138,29 @@ function parameterChanged(variableName, newValue) {
   createLines();
 }
 
+function updatePanel() {
+  for (let gVar of global) {
+    OPC.delete(gVar.name);
+  }
+  let div = document.getElementById('opc-control-panel');
+  div.innerHTML = '';
+  initVarHelper();
+}
+
 //buttonReleased function is used every time a button is released.
 function buttonPressed(variableName) {
   if (variableName === 'gSetMinBtn') {
+    for (let gVar of global) {
+      gVar.value = window[gVar.name];
+      gVar.min = window[gVar.name];
+    }
   } else if (variableName === 'gSetMaxBtn') {
+    for (let gVar of global) {
+      gVar.value = window[gVar.name];
+      gVar.max = window[gVar.name];
+    }
   }
+  updatePanel();
 }
 
 function copyToClipboard(text) {
