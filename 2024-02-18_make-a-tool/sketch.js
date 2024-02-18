@@ -129,8 +129,10 @@ function initVarHelper() {
     OPC.slider(gVar);
   }
 
+  OPC.button('gRandomBtn', 'Randomize');
   OPC.button('gSetMinBtn', 'Set Min Bounds');
   OPC.button('gSetMaxBtn', 'Set Max Bounds');
+  OPC.button('gCopySettingsBtn', 'Copy Settings');
 }
 
 //parameterChanged function is used every time a parameter is updated.
@@ -149,18 +151,27 @@ function updatePanel() {
 
 //buttonReleased function is used every time a button is released.
 function buttonPressed(variableName) {
-  if (variableName === 'gSetMinBtn') {
-    for (let gVar of global) {
-      gVar.value = window[gVar.name];
-      gVar.min = window[gVar.name];
+  if (variableName === 'gCopySettingsBtn') {
+    mouseClicked();
+  } else {
+    if (variableName === 'gRandomBtn') {
+      for (let gVar of global) {
+        gVar.value = floor(random(gVar.min, gVar.max));
+        window[gVar.name] = gVar.value;
+      }
+    } else if (variableName === 'gSetMinBtn') {
+      for (let gVar of global) {
+        gVar.value = window[gVar.name];
+        gVar.min = window[gVar.name];
+      }
+    } else if (variableName === 'gSetMaxBtn') {
+      for (let gVar of global) {
+        gVar.value = window[gVar.name];
+        gVar.max = window[gVar.name];
+      }
     }
-  } else if (variableName === 'gSetMaxBtn') {
-    for (let gVar of global) {
-      gVar.value = window[gVar.name];
-      gVar.max = window[gVar.name];
-    }
+    updatePanel();
   }
-  updatePanel();
 }
 
 function copyToClipboard(text) {
