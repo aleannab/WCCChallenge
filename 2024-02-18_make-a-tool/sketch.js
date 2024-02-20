@@ -1,28 +1,32 @@
-let settings = [
-  {
-    name: 'gLineCount',
-    value: 1,
-    min: 1,
-    max: 1,
-    step: 1,
-    label: '# Lines',
-  },
-  {
-    name: 'gCurvePtCount',
-    value: 119,
-    min: 2,
-    max: 119,
-    step: 1,
-    label: '# Curve Points',
-  },
-];
-// Created for the #Genuary2024 - Wobbly Function Day
-// https://genuary.art/prompts#jan13
+// Sketch Parameter Range Helper by Antoinette Bumatay-Chan
+// Created for the #WCCChallenge - Topic: Make a Tool
+// Using a previous sketch (made for #Genuary2024 Wobbly Function) for demo purposes
+//
+// I made this tool to make my workflow more efficient, so parts of it may or may not be useful to you.
+// Generally when creating a sketch, I initialize specific parameters at the start.
+// The values are randomly chosen within pre-determined range to allow variation between generating new sketches.
+//
+// How to use:
+// (1) Update the settings file to include all the properties you desire.
+// (2) Make any changes to your sketch to reference these new values.
+// (3) Experiment with the tool to find desired ranges for each parameter.
+// (4) Copy new settings, and overwrite the old settings.
+//
+// Features I'd like to add:
+// (1) Update sliders to allow selection of both minimum and maximum points within the range.
+// (2) Instead of reinitializing all values when a slider is changed - only alter the relevant values
+//     (e.g. changing hue would still keep the same lines to avoid animation choppiness)
+// (3) Ability to lock parameters so they're not affected by Randomize
+// (4) Ability to overwrite the old settings file so I don't have to copy/paste when running the sketch locally.
+//
+// See other submissions here: https://openprocessing.org/curation/78544
+// Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 let gLines = [];
 let gPalette = [];
 
 let gHue;
+let gOGSettings;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -32,7 +36,8 @@ function setup() {
 
   gHue = random(0, 360);
 
-  initVarHelper();
+  initPanel();
+  gOGSettings = settings.map((obj) => deepCopy(obj));
   createLines();
 }
 
@@ -59,23 +64,27 @@ function createLines() {
   gLines = [];
   gPalette = [];
 
-  // TODO: palette algorithm needs work
-  let satInc = 20 / gLineCount;
-  let brightInc = 10; //20 / (gLineCount - 1);
+  const lineCount = int(gPanel.getValue('Line Count'));
+  const sat = int(gPanel.getValue('Saturation Level'));
+  const bright = int(gPanel.getValue('Brightness Level'));
+  const hue = int(gPanel.getValue('Hue Value'));
 
-  const colCount = int(gLineCount) + 1;
+  // TODO: palette algorithm needs work
+  let satInc = (sat * 10) / lineCount;
+  let brightInc = (10 - bright) * 10; //20 / (gLineCount - 1);
+
+  const colCount = int(lineCount) + 1;
   for (let i = 0; i < colCount; i++) {
-    gPalette.push(color(gHue, i * satInc, i === 0 ? random(0, 15) : 95 - brightInc * (i - 1)));
+    gPalette.push(color(hue, i * satInc, i === 0 ? random(0, 15) : 95 - brightInc * (i - 1)));
   }
 
   gPalette = shuffle(gPalette);
   gBgColor = gPalette.pop();
 
-  let count = gLineCount;
   let amp = 0.85 * height;
-  let ampInc = amp / (count + 1);
+  let ampInc = amp / (lineCount + 1);
   gPalette = shuffle(gPalette);
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < lineCount; i++) {
     gLines.push(new Line(amp, gPalette[i % gPalette.length]));
     amp -= ampInc;
   }
@@ -86,7 +95,7 @@ class Line {
   constructor(amp, col) {
     this.points = [];
     let xp = 0;
-    let count = gCurvePtCount; //floor(random(40, 50));
+    let count = int(gPanel.getValue('Vertex Count'));
     let inc = width / count;
     this.amp = amp;
     this.spaceFreq0 = random(0.3, 0.7);
@@ -122,84 +131,4 @@ class Line {
     vertex(this.lastPoint.x, this.lastPoint.y);
     endShape();
   }
-}
-
-function initVarHelper() {
-  for (let gVar of settings) {
-    OPC.slider(gVar);
-  }
-
-  OPC.button({
-    name: 'gSetMinBtn',
-    value: 'Update Min Bounds',
-    description: 'Update Min Bounds to Current Values',
-  });
-  OPC.button({
-    name: 'gSetMaxBtn',
-    value: 'Update Max Bounds',
-    description: 'Update Max Bounds to Current Values',
-  });
-  OPC.button({
-    name: 'gRandomBtn',
-    value: 'Randomize',
-    description: 'Chose random values for all',
-  });
-  OPC.button({
-    name: 'gCopySettingsBtn',
-    value: 'Copy Settings',
-    description: 'Copy Settings to clipboard',
-  });
-  OPC.button({
-    name: 'gResetBtn',
-    value: 'Reset Bounds',
-    description: 'Reset to saved values',
-  });
-}
-
-//parameterChanged function is used every time a parameter is updated.
-function parameterChanged(variableName, newValue) {
-  createLines();
-}
-
-function updatePanel() {
-  for (let gVar of settings) {
-    OPC.delete(gVar.name);
-  }
-  let div = document.getElementById('opc-control-panel');
-  div.innerHTML = '';
-  initVarHelper();
-}
-
-//buttonReleased function is used every time a button is released.
-function buttonPressed(variableName) {
-  if (variableName === 'gCopySettingsBtn') {
-    mouseClicked();
-  } else {
-    if (variableName === 'gRandomBtn') {
-      for (let gVar of settings) {
-        gVar.value = floor(random(gVar.min, gVar.max));
-        window[gVar.name] = gVar.value;
-      }
-    } else if (variableName === 'gSetMinBtn') {
-      for (let gVar of settings) {
-        gVar.value = int(window[gVar.name]);
-        gVar.min = int(window[gVar.name]);
-      }
-    } else if (variableName === 'gSetMaxBtn') {
-      for (let gVar of settings) {
-        gVar.value = int(window[gVar.name]);
-        gVar.max = int(window[gVar.name]);
-      }
-    }
-    updatePanel();
-  }
-}
-
-function copyToClipboard(text) {
-  var textarea = document.createElement('textarea');
-  textarea.value = text;
-  document.body.appendChild(textarea);
-  textarea.select();
-  document.execCommand('copy');
-  document.body.removeChild(textarea);
 }
