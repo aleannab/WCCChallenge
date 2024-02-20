@@ -1,17 +1,17 @@
-let global = [
+let settings = [
   {
     name: 'gLineCount',
-    value: 2,
+    value: 1,
     min: 1,
-    max: 5,
+    max: 1,
     step: 1,
     label: '# Lines',
   },
   {
     name: 'gCurvePtCount',
-    value: 40,
+    value: 119,
     min: 2,
-    max: 1000,
+    max: 119,
     step: 1,
     label: '# Curve Points',
   },
@@ -51,8 +51,8 @@ function draw() {
 }
 
 function mouseClicked() {
-  let stringGlobalSettings = 'let global = ' + JSON.stringify(global, null, 4);
-  copyToClipboard(stringGlobalSettings);
+  let stringSettings = 'let settings = ' + JSON.stringify(settings, null, 4);
+  copyToClipboard(stringSettings);
 }
 
 function createLines() {
@@ -125,14 +125,35 @@ class Line {
 }
 
 function initVarHelper() {
-  for (let gVar of global) {
+  for (let gVar of settings) {
     OPC.slider(gVar);
   }
 
-  OPC.button('gRandomBtn', 'Randomize');
-  OPC.button('gSetMinBtn', 'Set Min Bounds');
-  OPC.button('gSetMaxBtn', 'Set Max Bounds');
-  OPC.button('gCopySettingsBtn', 'Copy Settings');
+  OPC.button({
+    name: 'gSetMinBtn',
+    value: 'Update Min Bounds',
+    description: 'Update Min Bounds to Current Values',
+  });
+  OPC.button({
+    name: 'gSetMaxBtn',
+    value: 'Update Max Bounds',
+    description: 'Update Max Bounds to Current Values',
+  });
+  OPC.button({
+    name: 'gRandomBtn',
+    value: 'Randomize',
+    description: 'Chose random values for all',
+  });
+  OPC.button({
+    name: 'gCopySettingsBtn',
+    value: 'Copy Settings',
+    description: 'Copy Settings to clipboard',
+  });
+  OPC.button({
+    name: 'gResetBtn',
+    value: 'Reset Bounds',
+    description: 'Reset to saved values',
+  });
 }
 
 //parameterChanged function is used every time a parameter is updated.
@@ -141,7 +162,7 @@ function parameterChanged(variableName, newValue) {
 }
 
 function updatePanel() {
-  for (let gVar of global) {
+  for (let gVar of settings) {
     OPC.delete(gVar.name);
   }
   let div = document.getElementById('opc-control-panel');
@@ -155,19 +176,19 @@ function buttonPressed(variableName) {
     mouseClicked();
   } else {
     if (variableName === 'gRandomBtn') {
-      for (let gVar of global) {
+      for (let gVar of settings) {
         gVar.value = floor(random(gVar.min, gVar.max));
         window[gVar.name] = gVar.value;
       }
     } else if (variableName === 'gSetMinBtn') {
-      for (let gVar of global) {
-        gVar.value = window[gVar.name];
-        gVar.min = window[gVar.name];
+      for (let gVar of settings) {
+        gVar.value = int(window[gVar.name]);
+        gVar.min = int(window[gVar.name]);
       }
     } else if (variableName === 'gSetMaxBtn') {
-      for (let gVar of global) {
-        gVar.value = window[gVar.name];
-        gVar.max = window[gVar.name];
+      for (let gVar of settings) {
+        gVar.value = int(window[gVar.name]);
+        gVar.max = int(window[gVar.name]);
       }
     }
     updatePanel();
