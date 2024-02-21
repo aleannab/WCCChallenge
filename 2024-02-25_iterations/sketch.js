@@ -3,18 +3,17 @@ let isDebug = false;
 let gOGSettings;
 
 let gNumRows = 5;
-let gRadiusScalar = 0.2;
-let gGridSpacing;
-let gRadius;
+let gNumCols = 6;
+let gBoxWidth, gBoxHeight;
 
-let gIterations = [];
+let gAllIterations = [];
 
 function setup() {
   let l = windowHeight < windowWidth ? windowHeight : windowWidth;
   createCanvas(l, l);
 
-  gGridSpacing = l / gNumRows;
-  gRadius = gRadiusScalar * gGridSpacing;
+  gBoxWidth = width / gNumCols;
+  gBoxHeight = height / gNumRows;
 
   if (isDebug) {
     initPanel();
@@ -30,40 +29,63 @@ function setup() {
 function draw() {
   background(255);
 
-  for (let box of gIterations) {
-    box.draw();
+  for (let iter of gAllIterations) {
+    iter.draw();
   }
 }
 
 function createNewArt() {
-  gIterations = [];
+  gAllIterations = [];
 
-  let startVertices = [];
-  for (let i = 0; i < TWO_PI; i += PI / 30) {
-    let vX = cos(i) * gRadius;
-    let vY = sin(i) * gRadius;
-    startVertices.push(createVector(vX, vY));
+  for (let y = gBoxHeight / 2; y < height; y += gBoxHeight) {
+    gAllIterations.push(new IterationRow(y));
   }
-  // Nested loop to draw circles in a grid
-  for (let y = gGridSpacing / 2; y < height; y += gGridSpacing) {
-    for (let x = gGridSpacing / 2; x < width; x += gGridSpacing) {
-      let next;
-      let nI = new NthIteration(x, y, startVertices);
-      console.log(startVertices);
-      startVertices = nI.vertices;
-      gIterations.push(nI);
-    }
-  }
-}
-
-function drawCircle() {
-  noStroke();
-  fill(random(255), random(255), random(255)); // Random color for each circle
-  ellipse(0, 0, gRadius * 2); // Draw circle at translated position
 }
 
 function mouseClicked() {
   createNewArt();
+}
+
+class IterationRow {
+  constructor(y) {
+    this.iterations = [];
+    let startVertices = [];
+    for (let i = 0; i < TWO_PI; i += PI / 30) {
+      let vX = cos(i) * gBoxWidth * 0.3;
+      let vY = sin(i) * gBoxHeight * 0.3;
+      startVertices.push(createVector(vX, vY));
+    }
+    for (let x = gBoxWidth / 2; x < width; x += gBoxWidth) {
+      let nI = new NthIteration(x, y, startVertices);
+      startVertices = nI.vertices;
+      this.iterations.push(nI);
+    }
+  }
+
+  createPath() {
+    let path = [];
+    let count = 50;
+    let inc = (0.8 * gRadius) / (count - 1);
+    path.push(createVector(gMin.x + random(0.1, 0.5) * gRadius, gMax.y));
+    path.push(createVector(gMin.x, getRandInBoundPos().y));
+    for (let i = 1; i < count; i++) {
+      if (random() > 0.7) continue;
+      let xp = constrain(i * inc + 0.25 * width * random(-1, 1), gMin.x, gMax.x);
+      path.push(createVector(xp, getRandInBoundPos().y));
+    }
+    path.push(createVector(gMax.x, gMin.y));
+    return path;
+  }
+
+  getRandInBoundPos() {
+    return createVector(random(gMin.x, gMax.x), random(gMin.y, gMax.y));
+  }
+
+  draw() {
+    for (let n of this.iterations) {
+      n.draw();
+    }
+  }
 }
 
 class NthIteration {
