@@ -55,9 +55,8 @@ class IterationRow {
     let startElements = [];
 
     for (let x = 0; x < width - gBoxWidth; x += gBoxWidth) {
-      let startElementsCopy = startElements.slice();
-      let nI = new NthIteration(x, y, startElementsCopy, this.min, this.max);
-      startElements = nI.elements;
+      let nI = new NthIteration(x, y, startElements, this.min, this.max);
+      startElements = nI.elements.map((element) => ({ ...element }));
       this.iterations.push(nI);
     }
   }
@@ -75,15 +74,26 @@ class NthIteration {
     this.y = y;
     this.min = min;
     this.max = max;
-    this.elements = [];
+    this.elements = elements;
 
     if (elements.length < 1) {
-      this.elements.push(this.createPath());
+      this.elements.push(this.createElement());
     } else {
-      this.elements = elements;
       let randIndex = floor(random(this.elements.length));
-      this.elements[randIndex] = this.moveVertices(this.elements[randIndex]);
+      this.elements[randIndex].data = this.moveElement(this.elements[randIndex].data);
     }
+  }
+
+  createElement() {
+    let newElement = {
+      type: 'line',
+      data: this.createPath(),
+    };
+    return newElement;
+  }
+
+  moveElement(ele) {
+    return this.moveVertices(ele);
   }
 
   createPath() {
@@ -126,7 +136,7 @@ class NthIteration {
 
   drawShape(e) {
     beginShape();
-    for (let v of e) {
+    for (let v of e.data) {
       curveVertex(v.x, v.y);
     }
     endShape();
