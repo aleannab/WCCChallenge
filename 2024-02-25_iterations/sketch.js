@@ -52,12 +52,37 @@ class IterationRow {
 
     this.min = createVector(gBoxWidth, gBoxHeight).mult(0.2);
     this.max = createVector(gBoxWidth, gBoxHeight).mult(0.8);
-    let startVertices = this.createPath();
+    let startElements = [];
 
     for (let x = 0; x < width - gBoxWidth; x += gBoxWidth) {
-      let nI = new NthIteration(x, y, startVertices);
-      startVertices = nI.vertices;
+      let startElementsCopy = startElements.slice();
+      let nI = new NthIteration(x, y, startElementsCopy, this.min, this.max);
+      startElements = nI.elements;
       this.iterations.push(nI);
+    }
+  }
+
+  draw() {
+    for (let n of this.iterations) {
+      n.draw();
+    }
+  }
+}
+
+class NthIteration {
+  constructor(x, y, elements, min, max) {
+    this.x = x;
+    this.y = y;
+    this.min = min;
+    this.max = max;
+    this.elements = [];
+
+    if (elements.length < 1) {
+      this.elements.push(this.createPath());
+    } else {
+      this.elements = elements;
+      let randIndex = floor(random(this.elements.length));
+      this.elements[randIndex] = this.moveVertices(this.elements[randIndex]);
     }
   }
 
@@ -80,21 +105,6 @@ class IterationRow {
     return createVector(random(this.min.x, this.max.x), random(this.min.y, this.max.y));
   }
 
-  draw() {
-    for (let n of this.iterations) {
-      n.draw();
-    }
-  }
-}
-
-class NthIteration {
-  constructor(x, y, vs) {
-    this.x = x;
-    this.y = y;
-
-    this.vertices = this.moveVertices(vs);
-  }
-
   moveVertices(vs) {
     let newVs = [];
     for (let v of vs) {
@@ -108,13 +118,15 @@ class NthIteration {
   draw() {
     push();
     translate(this.x, this.y);
-    this.drawShape();
+    for (let e of this.elements) {
+      this.drawShape(e);
+    }
     pop();
   }
 
-  drawShape() {
+  drawShape(e) {
     beginShape();
-    for (let v of this.vertices) {
+    for (let v of e) {
       curveVertex(v.x, v.y);
     }
     endShape();
