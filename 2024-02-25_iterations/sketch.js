@@ -2,11 +2,14 @@
 let isDebug = false;
 let gOGSettings;
 
-let gNumRows = 5;
-let gNumCols = 6;
+let gNumRows = 10;
+let gNumCols = 10;
 let gBoxWidth, gBoxHeight;
 
 let gAllIterations = [];
+
+let gBgColor = '#f4f1ea';
+let gBlobPalette = ['#3567af', '#c04e82', '#538e47', '#e88740', '#016d6f', '#e25c43'];
 
 function setup() {
   let l = windowHeight < windowWidth ? windowHeight : windowWidth;
@@ -21,13 +24,13 @@ function setup() {
   }
 
   stroke(0);
+  strokeWeight(3);
   noFill();
   createNewArt();
-  noLoop();
 }
 
 function draw() {
-  background(255);
+  background(gBgColor);
 
   for (let iter of gAllIterations) {
     iter.draw();
@@ -50,8 +53,8 @@ class IterationRow {
   constructor(y) {
     this.iterations = [];
 
-    this.min = createVector(gBoxWidth, gBoxHeight).mult(0.2);
-    this.max = createVector(gBoxWidth, gBoxHeight).mult(0.8);
+    this.min = createVector(gBoxWidth, gBoxHeight).mult(0.3);
+    this.max = createVector(gBoxWidth, gBoxHeight).mult(0.7);
     let startElements = [];
 
     for (let x = 0; x < width - gBoxWidth; x += gBoxWidth) {
@@ -76,24 +79,54 @@ class NthIteration {
     this.max = max;
     this.elements = elements;
 
-    if (elements.length < 1) {
-      this.elements.push(this.createElement());
-    } else {
-      let randIndex = floor(random(this.elements.length));
-      this.elements[randIndex].data = this.moveElement(this.elements[randIndex].data);
-    }
+    // if (random() < 0.5 || elements.length < 1) {
+    this.elements.push(this.createElement());
+    this.sortElements();
+    // }
+    this.moveRandomElement();
   }
 
   createElement() {
     let newElement = {
-      type: 'line',
-      data: this.createPath(),
+      color: random(gBlobPalette),
     };
+    if (random() < 0.5) {
+      newElement.type = 'line';
+      newElement.data = this.createPath();
+      newElement.size = random(2, 5);
+    } else {
+      newElement.type = 'circle';
+      newElement.data = this.getRandInBoundPos();
+      newElement.size = random(this.min.x, this.max.x) * 0.5;
+      console.log(newElement.size);
+    }
+
     return newElement;
   }
 
-  moveElement(ele) {
-    return this.moveVertices(ele);
+  sortElements() {
+    this.elements.sort((a, b) => {
+      const typeOrder = { circle: 0, square: 1, line: 2 };
+      const typeA = typeOrder[a.type];
+      const typeB = typeOrder[b.type];
+
+      return typeA - typeB;
+    });
+  }
+
+  moveRandomElement() {
+    for (let i = 0; i < this.elements.length; i++) {
+      let eleType = this.elements[i].type;
+      let updatedData;
+      if (eleType === 'line') {
+        updatedData = this.moveVertices(this.elements[i].data);
+      } else if (eleType === 'circle') {
+        updatedData = this.getRandInBoundPos();
+        this.elements[i].size = random(this.min.x, this.max.x) * 0.5;
+      }
+      this.elements[i].color = random(gBlobPalette);
+      this.elements[i].data = updatedData;
+    }
   }
 
   createPath() {
@@ -135,10 +168,27 @@ class NthIteration {
   }
 
   drawShape(e) {
+    if (e.type === 'line') {
+      this.drawLine(e);
+    } else if (e.type === 'circle') {
+      this.drawCircle(e);
+    }
+  }
+
+  drawLine(e) {
+    strokeWeight(e.size);
+    stroke(e.color);
+    noFill();
     beginShape();
     for (let v of e.data) {
       curveVertex(v.x, v.y);
     }
     endShape();
+  }
+
+  drawCircle(e) {
+    fill(e.color);
+    noStroke();
+    ellipse(e.data.x, e.data.y, e.size);
   }
 }
