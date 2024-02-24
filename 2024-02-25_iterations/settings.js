@@ -1,23 +1,23 @@
 let settings = [
   {
     title: 'gRowCount',
-    min: 1,
-    max: 20,
-    value: 15,
+    min: 8,
+    max: 12,
+    value: 9,
     step: 1,
   },
   {
     title: 'gColCount',
-    min: 1,
-    max: 20,
-    value: 15,
+    min: 5,
+    max: 8,
+    value: 6,
     step: 1,
   },
   {
     title: 'gVerticesCount',
-    min: 1,
-    max: 20,
-    value: 12,
+    min: 2,
+    max: 10,
+    value: 5,
     step: 1,
   },
 ];

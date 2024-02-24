@@ -15,6 +15,7 @@ function setup() {
   let w = windowHeight < windowWidth ? 0.8 * windowHeight : windowWidth;
   createCanvas(w, h);
   rectMode(CORNERS);
+  noStroke();
 
   if (isDebug) {
     initPanel();
@@ -82,53 +83,32 @@ class NthIteration {
     this.elements = elements;
 
     if ((elements.length < 3 && random() < 0.5) || elements.length < 1) {
-      this.elements.push(this.createElement());
-      this.sortElements();
+      this.createElement();
     } else {
-      this.moveRandomElement();
+      this.changeRandomElement();
     }
   }
 
   createElement() {
     let newElement = {
       colorIndex: floor(random(gBlobPalette.length)),
+      data: this.createPath(),
     };
-    if (true) {
-      newElement.type = 'line';
-      newElement.data = this.createPath();
-    } else {
-      newElement.type = 'circle';
-      newElement.data = this.getRandInBoundPos();
-      newElement.size = random(this.min.x, this.max.x) * 0.5;
-    }
 
-    return newElement;
+    this.elements.push(newElement);
   }
 
-  sortElements() {
-    this.elements.sort((a, b) => {
-      const typeOrder = { circle: 0, square: 1, line: 2 };
-      const typeA = typeOrder[a.type];
-      const typeB = typeOrder[b.type];
-
-      return typeA - typeB;
-    });
-  }
-
-  moveRandomElement() {
+  changeRandomElement() {
     let i = floor(random(this.elements.length));
-    if (random() < 0.5) {
-      let eleType = this.elements[i].type;
-      let updatedData;
-      if (eleType === 'line') {
-        updatedData = this.moveVertices(this.elements[i].data);
-      } else if (eleType === 'circle') {
-        updatedData = this.getRandInBoundPos();
-        this.elements[i].size = random(this.min.x, this.max.x) * 0.5;
-      }
-      //
-      this.elements[i].data = updatedData;
+    let randVal = random();
+    if (randVal < 0.33 && this.elements.length != 1) {
+      // shuffle render order
+      this.elements = shuffle(this.elements);
+    } else if (randVal < 0.66) {
+      // modify path
+      this.elements[i].data = this.moveVertices(this.elements[i].data);
     } else {
+      // change color
       this.elements[i].colorIndex = (this.elements[i].colorIndex + floor(random(1, 2))) % gBlobPalette.length;
     }
   }
@@ -172,26 +152,11 @@ class NthIteration {
   }
 
   drawShape(e) {
-    if (e.type === 'line') {
-      this.drawLine(e);
-    } else if (e.type === 'circle') {
-      this.drawCircle(e);
-    }
-  }
-
-  drawLine(e) {
-    strokeWeight(e.size);
     fill(gBlobPalette[e.colorIndex]);
     beginShape();
     for (let v of e.data) {
       curveVertex(v.x, v.y);
     }
     endShape(CLOSE);
-  }
-
-  drawCircle(e) {
-    fill(gBlobPalette[e.colorIndex]);
-    rect(e.data.x, e.data.y, e.data.x + e.size, e.data.y + e.size);
-    // ellipse(e.data.x, e.data.y, e.size);
   }
 }
