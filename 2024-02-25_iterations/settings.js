@@ -1,27 +1,20 @@
 let settings = [
   {
-    title: 'Row Count',
+    title: 'gRowCount',
     min: 1,
     max: 20,
     value: 15,
     step: 1,
   },
   {
-    title: 'Col Count',
+    title: 'gColCount',
     min: 1,
     max: 20,
     value: 15,
     step: 1,
   },
   {
-    title: 'Line Thickness',
-    min: 1,
-    max: 10,
-    value: 2,
-    step: 1,
-  },
-  {
-    title: 'Line Vertices',
+    title: 'gVerticesCount',
     min: 1,
     max: 20,
     value: 12,

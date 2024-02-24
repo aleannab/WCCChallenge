@@ -68,6 +68,19 @@ function resetPanel() {
   updatePanel();
 }
 
+function getValue(settingName) {
+  return isDebug ? getPanelValue(settingName) : getRandomValue(settingName);
+}
+
+function getPanelValue(settingName) {
+  return int(gPanel.getValue(settingName));
+}
+
+function getRandomValue(settingName) {
+  let s = settings.find((setting) => setting.title === settingName);
+  return floor(random(s.min, s.max));
+}
+
 // I did not write this function, but copied it from Aaron Reuland (a_ soluble_fish) who copied it from user Greg Lowe on Stack Overflow
 
 function copyToClipboard(text) {
