@@ -1,5 +1,5 @@
 // Created for the #WCCChallenge
-let isDebug = false;
+let isDebug = true;
 let gOGSettings;
 
 let gRowCount, gColCount;
@@ -33,8 +33,8 @@ function draw() {
 }
 
 function createNewArt() {
-  gRowCount = getValue('gRowCount');
-  gColCount = getValue('gColCount');
+  gRowCount = getValue('gRowCount') + 2; // add margins
+  gColCount = getValue('gColCount') + 2;
 
   gBoxWidth = width / gColCount;
   gBoxHeight = height / gRowCount;
