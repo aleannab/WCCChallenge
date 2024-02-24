@@ -1,9 +1,8 @@
 // Created for the #WCCChallenge
-let isDebug = false;
+let isDebug = true;
 let gOGSettings;
 
-let gNumRows = 3;
-let gNumCols = 3;
+let gNumRows, gNumCols;
 let gBoxWidth, gBoxHeight;
 
 let gAllIterations = [];
@@ -12,7 +11,7 @@ let gAllIterations = [];
 // let gBgColor = '#eabaacf';
 // let gBlobPalette = ['#be3400', '#020d22', '#015045'];
 let gBgColor = '#f4f1ea';
-let gBlobPalette = ['#000000']; //'#3567af', '#c04e82', '#538e47', '#e88740', '#016d6f', '#e25c43'];
+let gBlobPalette = ['#3567af', '#c04e82', '#538e47', '#e88740', '#016d6f', '#e25c43'];
 
 function setup() {
   let h = windowHeight < windowWidth ? windowHeight : 1.2 * windowWidth;
@@ -21,13 +20,8 @@ function setup() {
   createCanvas(w, h);
   rectMode(CORNERS);
 
-  gBoxWidth = width / gNumCols;
-  gBoxHeight = height / gNumRows;
-
-  if (isDebug) {
-    initPanel();
-    gOGSettings = settings.map((obj) => deepCopy(obj));
-  }
+  initPanel();
+  gOGSettings = settings.map((obj) => deepCopy(obj));
 
   stroke(0);
   strokeWeight(3);
@@ -44,9 +38,15 @@ function draw() {
 }
 
 function createNewArt() {
+  gNumRows = int(gPanel.getValue('Row Count'));
+  gNumCols = int(gPanel.getValue('Col Count'));
+
+  gBoxWidth = width / gNumCols;
+  gBoxHeight = height / gNumRows;
   gAllIterations = [];
 
-  for (let y = 0; y < height; y += gBoxHeight) {
+  for (let i = 1; i < gNumCols - 1; i++) {
+    let y = i * gBoxHeight;
     gAllIterations.push(new IterationRow(y));
   }
 }
@@ -63,7 +63,7 @@ class IterationRow {
     this.max = createVector(gBoxWidth, gBoxHeight).mult(0.9);
     let startElements = [];
 
-    for (let i = 0; i < gNumCols; i++) {
+    for (let i = 1; i < gNumCols - 1; i++) {
       let nI = new NthIteration(i * gBoxWidth, y, startElements, this.min, this.max);
       startElements = nI.elements.map((element) => ({ ...element }));
       this.iterations.push(nI);
@@ -98,10 +98,11 @@ class NthIteration {
       color: random(gBlobPalette),
     };
     if (true) {
+      let thickness = int(gPanel.getValue('Line Thickness'));
       //random() < 0.5) {
       newElement.type = 'line';
       newElement.data = this.createPath();
-      newElement.size = random(0.5, 1);
+      newElement.size = thickness; //random(0.5, 1);
     } else {
       newElement.type = 'circle';
       newElement.data = this.getRandInBoundPos();
@@ -140,7 +141,7 @@ class NthIteration {
 
   createPath() {
     let path = [];
-    let count = 15;
+    let count = int(gPanel.getValue('Line Vertices'));
     let inc = (0.8 * gBoxWidth) / (count - 1);
     path.push(createVector(this.min.x + random(0.1, 0.5) * gBoxWidth, gBoxHeight));
     path.push(createVector(this.min.x, this.getRandInBoundPos().y));
@@ -173,8 +174,8 @@ class NthIteration {
     noStroke();
     // fill(150);
     // rect(0, 0, gBoxWidth, gBoxHeight);
-    fill(200);
-    rect(this.min.x, this.min.y, this.max.x, this.max.y);
+    // fill(200);
+    // rect(this.min.x, this.min.y, this.max.x, this.max.y);
     for (let e of this.elements) {
       this.drawShape(e);
     }

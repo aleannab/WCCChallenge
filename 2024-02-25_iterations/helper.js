@@ -15,7 +15,7 @@ function initPanel() {
 
 function updateAll() {
   updateDefault();
-  createLines();
+  createNewArt();
 }
 
 function updatePanel() {
