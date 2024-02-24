@@ -99,17 +99,21 @@ class NthIteration {
   }
 
   changeRandomElement() {
-    let i = floor(random(this.elements.length));
-    let randVal = random();
-    if (randVal < 0.33 && this.elements.length != 1) {
-      // shuffle render order
-      this.elements = shuffle(this.elements);
-    } else if (randVal < 0.66) {
-      // modify path
-      this.elements[i].data = this.moveVertices(this.elements[i].data);
+    if (random() < 0.5) {
+      for (let ele of this.elements) {
+        // change color
+        ele.colorIndex = (ele.colorIndex + floor(random(1, 2))) % gBlobPalette.length;
+      }
     } else {
-      // change color
-      this.elements[i].colorIndex = (this.elements[i].colorIndex + floor(random(1, 2))) % gBlobPalette.length;
+      let i = floor(random(this.elements.length));
+      let randVal = random();
+      if (randVal < 0.33 && this.elements.length != 1) {
+        // shuffle render order
+        this.elements = shuffle(this.elements);
+      } else if (randVal < 0.66) {
+        // modify path
+        this.elements[i].data = this.moveVertices(this.elements[i].data);
+      }
     }
   }
 
