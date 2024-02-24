@@ -45,7 +45,7 @@ function createNewArt() {
   gBoxHeight = height / gNumRows;
   gAllIterations = [];
 
-  for (let i = 1; i < gNumCols - 1; i++) {
+  for (let i = 1; i < gNumRows - 1; i++) {
     let y = i * gBoxHeight;
     gAllIterations.push(new IterationRow(y));
   }
@@ -95,7 +95,7 @@ class NthIteration {
 
   createElement() {
     let newElement = {
-      color: random(gBlobPalette),
+      colorIndex: floor(random(gBlobPalette.length)),
     };
     if (true) {
       let thickness = int(gPanel.getValue('Line Thickness'));
@@ -125,17 +125,22 @@ class NthIteration {
 
   moveRandomElement() {
     let i = floor(random(this.elements.length));
-    // for (let i = 0; i < this.elements.length; i++) {
-    let eleType = this.elements[i].type;
-    let updatedData;
-    if (eleType === 'line') {
-      updatedData = this.moveVertices(this.elements[i].data);
-    } else if (eleType === 'circle') {
-      updatedData = this.getRandInBoundPos();
-      this.elements[i].size = random(this.min.x, this.max.x) * 0.5;
+    if (random() < 0.5) {
+      let eleType = this.elements[i].type;
+      let updatedData;
+      if (eleType === 'line') {
+        updatedData = this.moveVertices(this.elements[i].data);
+      } else if (eleType === 'circle') {
+        updatedData = this.getRandInBoundPos();
+        this.elements[i].size = random(this.min.x, this.max.x) * 0.5;
+      }
+      //
+      this.elements[i].data = updatedData;
+    } else {
+      this.elements[i].colorIndex = (this.elements[i].colorIndex + floor(random(1, 2))) % gBlobPalette.length;
     }
-    // this.elements[i].color = random(gBlobPalette);
-    this.elements[i].data = updatedData;
+    // for (let i = 0; i < this.elements.length; i++) {
+
     // }
   }
 
@@ -192,17 +197,17 @@ class NthIteration {
 
   drawLine(e) {
     strokeWeight(e.size);
-    stroke(e.color);
-    noFill();
+    fill(gBlobPalette[e.colorIndex]);
+    // noFill();
     beginShape();
     for (let v of e.data) {
       curveVertex(v.x, v.y);
     }
-    endShape();
+    endShape(CLOSE);
   }
 
   drawCircle(e) {
-    fill(e.color);
+    fill(gBlobPalette[e.colorIndex]);
     noStroke();
     rect(e.data.x, e.data.y, e.data.x + e.size, e.data.y + e.size);
     // ellipse(e.data.x, e.data.y, e.size);
