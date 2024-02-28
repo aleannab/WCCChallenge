@@ -3,9 +3,9 @@ let isDebug = false;
 let gOGSettings;
 
 let gCircles = [];
-let gRowCount = 10;
-let gColCount = 10;
-let gBoxWidth, gBoxHeight;
+let gCount = 10;
+let gBoxWidth;
+let gHoverRadius;
 
 let gSounds = [];
 let gReallySound;
@@ -19,7 +19,6 @@ function preload() {
   gSounds.push(loadSound('nope01'));
   gSounds.push(loadSound('nope02'));
   gSounds.push(loadSound('nope03'));
-
   gReallySound = loadSound('really');
 }
 
@@ -32,24 +31,26 @@ function setup() {
     initPanel();
     gOGSettings = settings.map((obj) => deepCopy(obj));
   }
-  gBoxWidth = width / gColCount;
-  gBoxHeight = height / gRowCount;
+  gBoxWidth = width / gCount;
+  gHoverRadius = 0.8 * gBoxWidth;
 
   createNewArt();
 }
 
 function draw() {
   background(gBgColor);
-  triggerHoveredCircle();
+
+  hoverCheck();
+
   for (let c of gCircles) {
     c.draw();
   }
 }
 
 function createNewArt() {
-  for (let i = 1; i < gRowCount - 1; i++) {
-    let y = (0.5 + i) * gBoxHeight;
-    for (let i = 1; i < gColCount - 1; i++) {
+  for (let i = 1; i < gCount - 1; i++) {
+    let y = (0.5 + i) * gBoxWidth;
+    for (let i = 1; i < gCount - 1; i++) {
       let nI = new Circle((0.5 + i) * gBoxWidth, y);
       gCircles.push(nI);
     }
@@ -64,10 +65,10 @@ function playSound() {
   }
 }
 
-function triggerHoveredCircle() {
+function hoverCheck() {
   for (let c of gCircles) {
     let d = dist(mouseX, mouseY, c.x, c.y);
-    if (d < 25) {
+    if (d < gHoverRadius) {
       c.trigger();
     }
   }
@@ -75,17 +76,16 @@ function triggerHoveredCircle() {
 
 class Circle {
   constructor(x, y) {
-    this.angle = 0; // Initial angle for sine function
-    this.initAmplitude = random(5, 10);
-    this.amplitude = this.initAmplitude; // Initial amplitude of shaking
-    this.x = x; // Horizontal position of the circle
-    this.y = y; // Vertical position of the circle
+    this.angle = 0;
+    this.x = x;
+    this.y = y;
     this.angleSpeed = random(0.2, 0.4);
-    this.r = 0.4 * random(gBoxHeight, gBoxWidth);
-    this.vertices = this.createPointsInCircle(this.r, 10);
-    this.smCircle = this.createPointsInCircle(0.5 * this.r, 10);
-    this.c = random(gPalette);
-    this.c2 = random(gPalette);
+
+    let r = 0.4 * random(gBoxWidth, gBoxWidth);
+    let a = random(5, 10);
+    let s0 = this.createShape(r, a);
+    let s1 = this.createShape(r * 0.5, 2 * a);
+    this.shapes = [s0, s1];
 
     this.isAnimating = false;
   }
@@ -96,51 +96,46 @@ class Circle {
     this.isAnimating = true;
   }
 
-  createPointsInCircle(r, n) {
+  createShape(r, a) {
     let points = [];
+    let n = random(8, 10);
     let angle = TWO_PI / n;
     for (let i = 0; i < n; i++) {
       let newX = (cos(angle * i) + random(-0.1, 0.1)) * r;
       let newY = (sin(angle * i) + random(-0.1, 0.1)) * r;
       points.push(createVector(newX, newY));
     }
-    return points;
+    let shape = { pts: points, amp: a, initAmp: a, col: random(gPalette) };
+    return shape;
   }
 
   draw() {
-    // Calculate horizontal position using sine function
-    let offsetX = this.isAnimating ? sin(this.angle) * this.amplitude : 0;
-    let xp = this.x + offsetX;
-    fill(this.c);
+    for (let s of this.shapes) {
+      let offsetX = this.isAnimating ? sin(this.angle) * s.amp : 0;
+      let xp = this.x + offsetX;
+      fill(s.col);
 
-    // Draw the circle
-    beginShape();
-    for (let v of this.vertices) {
-      curveVertex(xp + v.x, this.y + v.y);
+      beginShape();
+      for (let p of s.pts) {
+        curveVertex(xp + p.x, this.y + p.y);
+      }
+      endShape(CLOSE);
     }
-    endShape(CLOSE);
-
-    fill(this.c2);
-    beginShape();
-    for (let v of this.smCircle) {
-      curveVertex(xp + v.x, this.y + v.y);
-    }
-    endShape(CLOSE);
-    // ellipse(xp, this.y, this.r, this.r);
 
     if (this.isAnimating) {
-      // Update angle for next frame
-      this.angle += this.angleSpeed; // Adjust speed of shaking
-
-      // Gradually decrease the amplitude
-      this.amplitude *= 0.99; // Adjust damping factor
-    }
-
-    // Reset parameters if amplitude becomes very small
-    if (this.amplitude < 1) {
-      this.amplitude = this.initAmplitude; // Reset amplitude
-      this.angle = 0; // Reset angle
-      this.isAnimating = false;
+      this.angle += this.angleSpeed;
+      let isDone = false;
+      for (let s of this.shapes) {
+        s.amp *= 0.99;
+        if (s.amp < 1) {
+          isDone = true;
+          s.amp = s.initAmp;
+        }
+      }
+      if (isDone) {
+        this.angle = 0;
+        this.isAnimating = false;
+      }
     }
   }
 }
