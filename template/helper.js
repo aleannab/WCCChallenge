@@ -26,7 +26,8 @@ function updatePanel() {
 
 function updateMax() {
   for (let s of settings) {
-    let val = int(gPanel.getValue(s.title));
+    let val = gPanel.getValue(s.title);
+    val = isInt ? int(val) : float(val);
     s.value = val;
     s.max = val;
   }
@@ -35,7 +36,8 @@ function updateMax() {
 
 function updateMin() {
   for (let s of settings) {
-    let val = int(gPanel.getValue(s.title));
+    let val = gPanel.getValue(s.title);
+    val = s.isInt ? int(val) : float(val);
     s.value = val;
     s.min = val;
   }
@@ -51,7 +53,8 @@ function randomize() {
 
 function updateDefault() {
   for (let s of settings) {
-    s.value = int(gPanel.getValue(s.title));
+    let val = gPanel.getValue(s.title);
+    s.value = s.isInt ? int(val) : float(val);
   }
 }
 
@@ -68,17 +71,23 @@ function resetPanel() {
   updatePanel();
 }
 
-function getValue(settingName) {
-  return isDebug ? getPanelValue(settingName) : getRandomValue(settingName);
+function getValue(settingName, isInt = false) {
+  return isDebug ? getPanelValue(settingName, isFloat) : getRandomValue(settingName, isInt);
 }
 
-function getPanelValue(settingName) {
-  return int(gPanel.getValue(settingName));
+function getPanelValue(settingName, isInt) {
+  console.log(' ');
+  console.log(settingName);
+  if (isInt) console.log('int ' + int(gPanel.getValue(settingName)));
+  else console.log('float ' + float(gPanel.getValue(settingName)));
+
+  return isInt ? int(gPanel.getValue(settingName)) : float(gPanel.getValue(settingName));
 }
 
-function getRandomValue(settingName) {
+function getRandomValue(settingName, isInt) {
   let s = settings.find((setting) => setting.title === settingName);
-  return floor(random(s.min, s.max));
+  let val = random(s.min, s.max);
+  return isInt ? int(val) : float(val);
 }
 
 // I did not write this function, but copied it from Aaron Reuland (a_ soluble_fish) who copied it from user Greg Lowe on Stack Overflow

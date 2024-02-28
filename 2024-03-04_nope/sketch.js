@@ -1,14 +1,17 @@
 // Created for the #WCCChallenge
-let isDebug = false;
+let isDebug = true;
 let gOGSettings;
 
 let gCircles = [];
 let gCount = 10;
 let gBoxWidth;
 let gHoverRadius;
+let gDamping;
 
 let gSounds = [];
 let gReallySound;
+
+let gReallyOdds;
 
 let gBgColor = '#f4f1ea';
 let gPalette = ['#3567af', '#c04e82', '#538e47', '#e88740', '#016d6f', '#e25c43'];
@@ -31,8 +34,6 @@ function setup() {
     initPanel();
     gOGSettings = settings.map((obj) => deepCopy(obj));
   }
-  gBoxWidth = width / gCount;
-  gHoverRadius = 0.8 * gBoxWidth;
 
   createNewArt();
 }
@@ -48,6 +49,15 @@ function draw() {
 }
 
 function createNewArt() {
+  gCount = getValue('gCount', true);
+
+  gBoxWidth = width / gCount;
+  gHoverRadius = 0.8 * gBoxWidth;
+  gReallyOdds = getValue('gReallyOdds');
+
+  gDamping = getValue('gDamping');
+
+  gCircles = [];
   for (let i = 1; i < gCount - 1; i++) {
     let y = (0.5 + i) * gBoxWidth;
     for (let i = 1; i < gCount - 1; i++) {
@@ -58,7 +68,7 @@ function createNewArt() {
 }
 
 function playSound() {
-  if (random() < 0.05) {
+  if (random() < gReallyOdds) {
     gReallySound.play();
   } else {
     gSounds[int(random(gSounds.length))].play();
@@ -79,12 +89,12 @@ class Circle {
     this.angle = 0;
     this.x = x;
     this.y = y;
-    this.angleSpeed = random(0.2, 0.4);
+    this.angleSpeed = getValue('gAngleSpeed');
 
-    let r = 0.4 * random(gBoxWidth, gBoxWidth);
-    let a = random(5, 10);
+    let r = random(gBoxWidth, gBoxWidth) * getValue('gRadius');
+    let a = getValue('gAmplitude');
     let s0 = this.createShape(r, a);
-    let s1 = this.createShape(r * 0.5, 2 * a);
+    let s1 = this.createShape(r * getValue('gRadiusScalar'), getValue('gAmpScalar') * a);
     this.shapes = [s0, s1];
 
     this.isAnimating = false;
@@ -98,11 +108,12 @@ class Circle {
 
   createShape(r, a) {
     let points = [];
-    let n = random(8, 10);
+    let n = getValue('gShapeNum', true);
     let angle = TWO_PI / n;
+    let offset = getValue('gPointOffset', false);
     for (let i = 0; i < n; i++) {
-      let newX = (cos(angle * i) + random(-0.1, 0.1)) * r;
-      let newY = (sin(angle * i) + random(-0.1, 0.1)) * r;
+      let newX = (cos(angle * i) + random(-offset, offset)) * r;
+      let newY = (sin(angle * i) + random(-offset, offset)) * r;
       points.push(createVector(newX, newY));
     }
     let shape = { pts: points, amp: a, initAmp: a, col: random(gPalette) };
@@ -124,15 +135,17 @@ class Circle {
 
     if (this.isAnimating) {
       this.angle += this.angleSpeed;
-      let isDone = false;
+      let isDone = true;
       for (let s of this.shapes) {
-        s.amp *= 0.99;
-        if (s.amp < 1) {
-          isDone = true;
-          s.amp = s.initAmp;
+        s.amp *= gDamping;
+        if (s.amp > 1) {
+          isDone = false;
         }
       }
       if (isDone) {
+        for (let s of this.shapes) {
+          s.amp = s.initAmp;
+        }
         this.angle = 0;
         this.isAnimating = false;
       }
