@@ -1,9 +1,9 @@
 let settings = [
   {
     title: 'gRowCount',
-    min: 8,
+    min: 4,
     max: 12,
-    value: 9,
+    value: 10,
     step: 1,
   },
   {
@@ -17,7 +17,7 @@ let settings = [
     title: 'gVerticesCount',
     min: 2,
     max: 10,
-    value: 5,
+    value: 4,
     step: 1,
   },
 ];

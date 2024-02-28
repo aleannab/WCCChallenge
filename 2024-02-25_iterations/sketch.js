@@ -1,9 +1,30 @@
-// Created for the #WCCChallenge
-let isDebug = true;
+// I Could Go On by Antoinette Bumatay-Chan
+// Created for the #WCCChallenge - Topic: Iterations
+//
+// My initial idea was to have a sequence of shapes where each shape would iterate on the previous by modifying it in some way.
+//
+// Looking for inspiration I came across an image of Erich Dieckmann's Design Development of a Metal Tube Chair.
+// I decided to display my iteration progression similarly, with rows of different iterations:
+// small changes accumulating from left to right.
+//
+// Essentially each iteration row does the following
+// - Create Starting Form
+// - Modify by one of the following
+//			* Add a shape
+// 			* Change the colors
+//			* Move the vertices of the shape(s)
+//			* Shuffle the order shapes are drawn
+// - Repeat: Use End Result as Starting Form for next iteration
+//
+// See other submissions here: https://openprocessing.org/curation/78544
+// Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
+
+let isDebug = false;
 let gOGSettings;
 
 let gRowCount, gColCount;
 let gBoxWidth, gBoxHeight;
+let gVerticesCount;
 
 let gAllIterationRows = [];
 
@@ -13,9 +34,9 @@ let gBlobPalette = ['#3567af', '#c04e82', '#538e47', '#e88740', '#016d6f', '#e25
 function setup() {
   let h = windowHeight < windowWidth ? windowHeight : 1.2 * windowWidth;
   let w = windowHeight < windowWidth ? 0.8 * windowHeight : windowWidth;
-  createCanvas(w, h);
+  createCanvas(0.9 * w, 0.9 * h);
   rectMode(CORNERS);
-  noStroke();
+  strokeWeight(2);
 
   if (isDebug) {
     initPanel();
@@ -36,6 +57,7 @@ function draw() {
 function createNewArt() {
   gRowCount = getValue('gRowCount') + 2; // add margins
   gColCount = getValue('gColCount') + 2;
+  gVerticesCount = getValue('gVerticesCount');
 
   gBoxWidth = width / gColCount;
   gBoxHeight = height / gRowCount;
@@ -55,7 +77,6 @@ class IterationRow {
   constructor(y) {
     this.iterations = [];
 
-    // TODO: put in settings
     this.min = createVector(gBoxWidth, gBoxHeight).mult(0.1);
     this.max = createVector(gBoxWidth, gBoxHeight).mult(0.9);
 
@@ -81,6 +102,7 @@ class NthIteration {
     this.min = min;
     this.max = max;
     this.elements = elements;
+    this.justShuffled = false;
 
     if ((elements.length < 3 && random() < 0.5) || elements.length < 1) {
       this.createElement();
@@ -90,8 +112,14 @@ class NthIteration {
   }
 
   createElement() {
+    let largestIndex = -1;
+    for (let ele of this.elements) {
+      if (ele.colorIndex > largestIndex) largestIndex = ele.colorIndex;
+    }
+    if (largestIndex < 0) largestIndex = floor(random(gBlobPalette.length));
+    this.curColIndex = floor(largestIndex + 1) % gBlobPalette.length;
     let newElement = {
-      colorIndex: floor(random(gBlobPalette.length)),
+      colorIndex: this.curColIndex,
       data: this.createPath(),
     };
 
@@ -99,36 +127,42 @@ class NthIteration {
   }
 
   changeRandomElement() {
-    if (random() < 0.5) {
-      for (let ele of this.elements) {
-        // change color
-        ele.colorIndex = (ele.colorIndex + floor(random(1, 2))) % gBlobPalette.length;
+    let randVal = random();
+    if (this.elements.length === 1 || !this.justShuffled || randVal > 0.8) {
+      if (random() > 0.5) {
+        for (let ele of this.elements) {
+          ele.colorIndex = (ele.colorIndex + 1) % gBlobPalette.length;
+        }
+      } else {
+        for (let ele of this.elements) {
+          ele.data = this.moveVertices(ele.data);
+        }
       }
+      this.justShuffled = false;
     } else {
-      let i = floor(random(this.elements.length));
-      let randVal = random();
-      if (randVal < 0.33 && this.elements.length != 1) {
-        // shuffle render order
-        this.elements = shuffle(this.elements);
-      } else if (randVal < 0.66) {
-        // modify path
-        this.elements[i].data = this.moveVertices(this.elements[i].data);
-      }
+      this.shuffleElements();
+      this.justShuffled = true;
     }
+  }
+
+  shuffleElements() {
+    let firstItem = this.elements.shift();
+    if (this.elements.length > 1 && random() < 0.5) this.elements.reverse();
+    this.elements.push(firstItem);
   }
 
   createPath() {
     let path = [];
-    let count = getValue('gVerticesCount');
-    let inc = (0.8 * gBoxWidth) / (count - 1);
-    path.push(createVector(this.min.x + random(0.1, 0.5) * gBoxWidth, gBoxHeight));
+
+    let inc = (0.8 * gBoxWidth) / (gVerticesCount - 1);
+    path.push(this.getRandInBoundPos());
     path.push(createVector(this.min.x, this.getRandInBoundPos().y));
-    for (let i = 1; i < count; i++) {
-      if (random() > 0.7) continue;
+    for (let i = 1; i < gVerticesCount; i++) {
       let xp = constrain(i * inc + 0.1 * gBoxWidth * random(-1, 1), this.min.x, this.max.x);
-      path.push(createVector(xp, this.getRandInBoundPos().y));
+      path.push(this.getRandInBoundPos());
     }
-    path.push(createVector(this.max.x, this.min.y));
+    path.push(createVector(this.max.x, this.getRandInBoundPos().y));
+    path.push(this.getRandInBoundPos());
     return path;
   }
 
@@ -139,8 +173,8 @@ class NthIteration {
   moveVertices(vs) {
     let newVs = [];
     for (let v of vs) {
-      let xp = v.x + random(-1, 1) * 10;
-      let yp = v.y + random(-1, 1) * 10;
+      let xp = v.x + random(-0.15, 0.15) * gBoxWidth;
+      let yp = v.y + random(-0.15, 0.15) * gBoxHeight;
       newVs.push(createVector(xp, yp));
     }
     return newVs;
@@ -156,11 +190,14 @@ class NthIteration {
   }
 
   drawShape(e) {
+    noFill();
     fill(gBlobPalette[e.colorIndex]);
+    strokeWeight(2);
+    stroke(gBlobPalette[e.colorIndex]);
     beginShape();
     for (let v of e.data) {
       curveVertex(v.x, v.y);
     }
-    endShape(CLOSE);
+    endShape();
   }
 }
