@@ -1,17 +1,17 @@
 let settings = [
   {
     title: 'gCount',
-    min: 5,
-    max: 15,
+    min: 7,
+    max: 11,
     value: 9,
     step: 1,
     isInt: true,
   },
   {
     title: 'gReallyOdds',
-    min: 0.01,
-    max: 0.1,
-    value: 0.08,
+    min: 0.04,
+    max: 0.04,
+    value: 0.04,
     step: 0.01,
     isInt: false,
   },
@@ -41,7 +41,7 @@ let settings = [
   },
   {
     title: 'gRadiusScalar',
-    min: 0.4,
+    min: 0.5,
     max: 0.7,
     value: 0.5,
     step: 0.1,
@@ -66,7 +66,7 @@ let settings = [
   {
     title: 'gPointOffset',
     min: 0.05,
-    max: 0.45,
+    max: 0.1,
     value: 0.15,
     step: 0.05,
     isInt: false,

@@ -1,5 +1,5 @@
 // Created for the #WCCChallenge
-let isDebug = true;
+let isDebug = false;
 let gOGSettings;
 
 let gCircles = [];
@@ -68,7 +68,7 @@ function createNewArt() {
 }
 
 function playSound() {
-  if (random() < gReallyOdds) {
+  if (!gReallySound.isPlaying() && random() < gReallyOdds) {
     gReallySound.play();
   } else {
     gSounds[int(random(gSounds.length))].play();
@@ -78,10 +78,14 @@ function playSound() {
 function hoverCheck() {
   for (let c of gCircles) {
     let d = dist(mouseX, mouseY, c.x, c.y);
-    if (d < gHoverRadius) {
+    if (d < gBoxWidth) {
       c.trigger();
     }
   }
+}
+
+function mouseClicked() {
+  createNewArt();
 }
 
 class Circle {
