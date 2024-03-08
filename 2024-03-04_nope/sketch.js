@@ -21,7 +21,7 @@ let gDamping;
 let gSounds = [];
 let gReallySound;
 
-let gReallyOdds = 0.02;
+let gReallyOdds = 0.01;
 let gNopeCount = 0;
 
 let gBgColor = '#E7E1CD';
@@ -46,7 +46,7 @@ function preload() {
 
 function setup() {
   let l = 0.9 * (windowWidth < windowHeight ? windowWidth : windowHeight);
-  createCanvas(l, l);
+  createCanvas(windowWidth, windowHeight);
   noStroke();
 
   if (isDebug) {
@@ -68,7 +68,9 @@ function draw() {
 }
 
 function createNewArt() {
+  gCount = getValue('gCount', true);
   gBoxWidth = width / gCount;
+  gCountY = floor(height / gBoxWidth);
   gHoverRadius = 0.8 * gBoxWidth;
 
   gDamping = getValue('gDamping');
@@ -76,8 +78,10 @@ function createNewArt() {
   gPalette = gPalettes[gPaletteIndex % gPalettes.length];
   gPaletteIndex++;
   gCircles = [];
-  for (let i = 1; i < gCount - 1; i++) {
-    let y = (0.5 + i) * gBoxWidth;
+  let offsetY = (height - gBoxWidth * gCountY) / 2;
+  //let offsetX = (width - gBoxWidth * gCount) / 2;
+  for (let i = 1; i < gCountY - 1; i++) {
+    let y = (0.5 + i) * gBoxWidth + offsetY;
     for (let i = 1; i < gCount - 1; i++) {
       let nI = new Circle((0.5 + i) * gBoxWidth, y);
       gCircles.push(nI);

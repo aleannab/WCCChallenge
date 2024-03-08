@@ -1,7 +1,7 @@
 let settings = [
   {
     title: 'gCount',
-    min: 7,
+    min: 6,
     max: 11,
     value: 9,
     step: 1,
@@ -66,14 +66,14 @@ let settings = [
   {
     title: 'gPointOffset',
     min: 0.05,
-    max: 0.1,
+    max: 0.08,
     value: 0.11,
     step: 0.05,
     isInt: false,
   },
   {
     title: 'gDamping',
-    min: 0.95,
+    min: 0.96,
     max: 0.99,
     value: 0.99,
     step: 0.01,
