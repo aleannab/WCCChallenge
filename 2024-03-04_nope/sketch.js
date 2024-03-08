@@ -1,9 +1,19 @@
-// Created for the #WCCChallenge
+// AYFKMRN by Antoinette Bumatay-Chan
+// Created for the #WCCChallenge - Topic: Nope
+//
+// SOUND ON!
+//
+// Pretty self-explanatory on how this relates to the topic haha.
+// I definitely giggled a lot making this.
+//
+// See other submissions here: https://openprocessing.org/curation/78544
+// Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
+
 let isDebug = false;
 let gOGSettings;
 
 let gCircles = [];
-let gCount = 10;
+let gCount = 11;
 let gBoxWidth;
 let gHoverRadius;
 let gDamping;
@@ -11,22 +21,31 @@ let gDamping;
 let gSounds = [];
 let gReallySound;
 
-let gReallyOdds;
+let gReallyOdds = 0.02;
+let gNopeCount = 0;
 
-let gBgColor = '#f4f1ea';
-let gPalette = ['#3567af', '#c04e82', '#538e47', '#e88740', '#016d6f', '#e25c43'];
+let gBgColor = '#E7E1CD';
+let gPalettes = [
+  ['#A34B4B', '#c14d8d', '#b54a7f', '#a24a6a', '#4c343d', '#703a4b', '#2f0e27', '#3a1329', '#200c1f'],
+  ['#4B6BA3', '#4EB8C2', '#4AA7B5', '#4B8CA3', '#34464D', '#3A5F70', '#0E2E2A', '#13383B', '#0C211B'],
+  ['#4B9DA3', '#4EC28A', '#4AB587', '#4BA389', '#344D46', '#3A7064', '#0E2E18', '#133B28', '#0C210F'],
+];
+let gPaletteIndex = 0;
+let gPalette = gPalettes[0];
 
 function preload() {
   soundFormats('mp3', 'ogg');
-  gSounds.push(loadSound('nope00'));
-  gSounds.push(loadSound('nope01'));
-  gSounds.push(loadSound('nope02'));
-  gSounds.push(loadSound('nope03'));
+  let nopes = ['nope00', 'nope01', 'nope02', 'nope03'];
+  for (let n of nopes) {
+    let sound = loadSound(n);
+    sound.setVolume(0.5);
+    gSounds.push(sound);
+  }
   gReallySound = loadSound('really');
 }
 
 function setup() {
-  let l = windowWidth < windowHeight ? windowWidth : windowHeight;
+  let l = 0.9 * (windowWidth < windowHeight ? windowWidth : windowHeight);
   createCanvas(l, l);
   noStroke();
 
@@ -49,14 +68,13 @@ function draw() {
 }
 
 function createNewArt() {
-  gCount = getValue('gCount', true);
-
   gBoxWidth = width / gCount;
   gHoverRadius = 0.8 * gBoxWidth;
-  gReallyOdds = getValue('gReallyOdds');
 
   gDamping = getValue('gDamping');
 
+  gPalette = gPalettes[gPaletteIndex % gPalettes.length];
+  gPaletteIndex++;
   gCircles = [];
   for (let i = 1; i < gCount - 1; i++) {
     let y = (0.5 + i) * gBoxWidth;
@@ -68,10 +86,12 @@ function createNewArt() {
 }
 
 function playSound() {
-  if (!gReallySound.isPlaying() && random() < gReallyOdds) {
+  if (!gReallySound.isPlaying() && (random() < gReallyOdds || gNopeCount > 100)) {
     gReallySound.play();
+    gNopeCount = 0;
   } else {
     gSounds[int(random(gSounds.length))].play();
+    gNopeCount++;
   }
 }
 
@@ -97,8 +117,15 @@ class Circle {
 
     let r = random(gBoxWidth, gBoxWidth) * getValue('gRadius');
     let a = getValue('gAmplitude');
-    let s0 = this.createShape(r, a);
-    let s1 = this.createShape(r * getValue('gRadiusScalar'), getValue('gAmpScalar') * a);
+    let cIndex0 = int(random(gPalette.length));
+    let cIndex1 = (cIndex0 + int(random(1, gPalette.length - 1))) % gPalette.length;
+    let s0 = this.createShape(r, a, gPalette[cIndex0], createVector(0, 0));
+    let s1 = this.createShape(
+      r * getValue('gRadiusScalar'),
+      getValue('gAmpScalar') * a,
+      gPalette[cIndex1],
+      createVector(random(-0.1, 0.1), random(0, 0.1))
+    );
     this.shapes = [s0, s1];
 
     this.isAnimating = false;
@@ -110,7 +137,7 @@ class Circle {
     this.isAnimating = true;
   }
 
-  createShape(r, a) {
+  createShape(r, a, c, o = 0) {
     let points = [];
     let n = getValue('gShapeNum', true);
     let angle = TWO_PI / n;
@@ -120,7 +147,7 @@ class Circle {
       let newY = (sin(angle * i) + random(-offset, offset)) * r;
       points.push(createVector(newX, newY));
     }
-    let shape = { pts: points, amp: a, initAmp: a, col: random(gPalette) };
+    let shape = { pts: points, amp: a, initAmp: a, col: c, off: o.mult(gBoxWidth) };
     return shape;
   }
 
@@ -132,7 +159,7 @@ class Circle {
 
       beginShape();
       for (let p of s.pts) {
-        curveVertex(xp + p.x, this.y + p.y);
+        curveVertex(xp + p.x + s.off.x, this.y + p.y + s.off.y);
       }
       endShape(CLOSE);
     }
