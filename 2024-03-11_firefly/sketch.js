@@ -8,8 +8,17 @@
 let gFireflies;
 let gCount = 300;
 let gDesiredSeparation = 50;
-let gNeighborDist = 300;
+let gNeighborDist = 400;
 let gBuffer = 10;
+let gBrightnessMin = 0.2;
+let gBrightnessMax = 0.8;
+let gAlphaMin = 0.1;
+let gAlphaMax = 0.5;
+let gFadeDuration = 300;
+let gHoldDuration = 200;
+let gFlashDuration = 2 * gFadeDuration + gHoldDuration;
+let gNewFlashInterval = 5000;
+let gRecoverDuration = 1000;
 
 let gProps = {};
 
@@ -28,15 +37,12 @@ function setup() {
   background(0);
 }
 
-function mouseClicked() {
-  //makeNewFlock();
-}
-
 function makeNewFlock() {
   gFireflies = new Flock();
 }
 
 function draw() {
+  console.log(frameRate());
   background(0);
   gFireflies.run();
 }
@@ -69,7 +75,7 @@ class Flock {
 class Firefly {
   constructor(props) {
     this.h = random(0.5, 1);
-    this.dimColor = color(this.h, random(0.5, 1), 0.2, 0.1);
+    this.dimColor = color(this.h, random(0.5, 1), gBrightnessMin, gBrightnessMin);
     this.currentColor = this.dimColor;
     this.pos = createVector(random(width), random(height));
     this.vel = p5.Vector.random2D();
@@ -78,10 +84,10 @@ class Firefly {
     this.isRecovering = false;
 
     this.readyToGoTime = 0;
-    this.nextFlashTime = random(5000);
-    this.recoverInterval = 3000;
-    this.flashInterval = 5000;
+    this.nextFlashTime = random(gNewFlashInterval);
     this.r = random(5, 50);
+
+    this.flashLife = 0;
   }
 
   run(boids) {
@@ -95,7 +101,10 @@ class Firefly {
     let now = millis();
     if (this.isFlashing && now > this.flashDoneTime) {
       this.isFlashing = false;
+      this.nextFlashTime = now + gNewFlashInterval;
       this.currentColor = this.dimColor;
+    } else if (this.isFlashing) {
+      this.flashLife = this.flashDoneTime - millis();
     } else if (this.isRecovering && now > this.readyToGoTime) {
       this.isRecovering = false;
     } else if (!this.isFlashing && now > this.nextFlashTime) {
@@ -108,10 +117,9 @@ class Firefly {
 
     this.isFlashing = true;
     this.isRecovering = true;
-    this.flashDoneTime = now + 1000;
-    this.nextFlashTime = now + this.flashInterval;
-    this.readyToGoTime = now + this.recoverInterval;
-    this.currentColor = color(hue, 1, 1, 0.5);
+    this.flashDoneTime = now + gFlashDuration;
+    this.readyToGoTime = now + gRecoverDuration;
+    this.currentColor = color(hue, saturation(this.dimColor), gBrightnessMin, gBrightnessMin);
 
     for (let boid of boids) {
       let d = p5.Vector.dist(this.pos, boid.pos);
@@ -122,8 +130,24 @@ class Firefly {
   }
 
   draw() {
+    if (this.isFlashing) {
+      this.updateBrightness();
+    }
     fill(this.currentColor);
     ellipse(this.pos.x, this.pos.y, this.r);
+  }
+
+  updateBrightness() {
+    let b = gBrightnessMin;
+    if (this.flashLife < gFadeDuration) {
+      b = map(this.flashLife, 0, gFadeDuration, gBrightnessMin, gBrightnessMax);
+    } else if (this.flashLife < gFadeDuration + gHoldDuration) {
+      b = gBrightnessMax;
+    } else {
+      b = map(this.flashLife, gFadeDuration + gHoldDuration, gFlashDuration, gBrightnessMax, gBrightnessMin);
+    }
+
+    this.currentColor = color(hue(this.currentColor), saturation(this.currentColor), b, b);
   }
 
   flock(boids) {
