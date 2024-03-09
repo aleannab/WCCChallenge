@@ -8,7 +8,7 @@
 let gFireflies;
 let gCount = 300;
 let gDesiredSeparation = 50;
-let gNeighborDist = 400;
+let gNeighborDist = 80;
 let gBuffer = 10;
 let gBrightnessMin = 0.2;
 let gBrightnessMax = 0.8;
@@ -18,7 +18,7 @@ let gFadeDuration = 300;
 let gHoldDuration = 200;
 let gFlashDuration = 2 * gFadeDuration + gHoldDuration;
 let gNewFlashInterval = 5000;
-let gRecoverDuration = 1000;
+let gRecoverDuration = 3000;
 
 let gProps = {};
 
@@ -81,10 +81,10 @@ class Firefly {
     this.vel = p5.Vector.random2D();
 
     this.isFlashing = false;
-    this.isRecovering = false;
+    this.isRecovering = true;
 
-    this.readyToGoTime = 0;
-    this.nextFlashTime = random(gNewFlashInterval);
+    this.nextFlashTime = millis() + 20 * random(gNewFlashInterval);
+    this.readyToGoTime = this.nextFlashTime - gNewFlashInterval;
     this.r = random(5, 50);
 
     this.flashLife = 0;
@@ -123,7 +123,7 @@ class Firefly {
 
     for (let boid of boids) {
       let d = p5.Vector.dist(this.pos, boid.pos);
-      if (d > 0 && d < gDesiredSeparation) {
+      if (d > 0 && d < gNeighborDist) {
         boid.flash(boids, now, hue);
       }
     }
