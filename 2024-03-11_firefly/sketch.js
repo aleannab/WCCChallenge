@@ -1,14 +1,37 @@
-// ___ by Antoinette Bumatay-Chan
+// Rhythms in Darkness by Antoinette Bumatay-Chan
 // Created for the #WCCChallenge - Topic: Firefly
 //
+// My sketch is inspired by the way fireflies flash in sync. Below is a quote from an article I read:
+//
+//     "Imagine an isolated firefly that has just emitted a burst of flashes, and consider the following rules.
+//     If you sequester it now, it will wait a random interval before flashing again.
+//     There is, however, a minimum wait time that the insect needs for recharging its light organs.
+//     This firefly is also susceptible to peer pressure: If it sees another firefly starting to flash, it will flash too, as long as it physically can.
+//
+//     Now picture a whole field of fireflies in the quiet darkness immediately following a burst.
+//     Each one picks a random wait time longer than the charging period.
+//     Whoever flashes first, though, inspires all the others to jump in immediately.
+//     This entire process repeats each time the field goes dark. As the number of fireflies increases,
+//     it becomes increasingly likely that at least one will randomly choose to flash again
+//     as soon as it’s biologically possible, and that will set off the rest.
+//     As a result, the time between bursts shortens toward the minimum wait time.
+//     Any scientists gawking at this scene will see what looks like a steady group rhythm of light rolling into darkness,
+//     and then darkness erupting with light." --- Joshua Sokol
+//
+//     https://www.quantamagazine.org/how-do-fireflies-flash-in-sync-studies-suggest-a-new-answer-20220920/
+//
+// My firefly behavior roughly mimics the logic above.
+// Additionally, I initialized each firefly with it's own color.
+// If a firefly's flash is triggered by another's, it will take on the hue of the originator of the chain.
+// If you let the program run long enough, the entire swarm's flashes will sync up perfectly. (To speed this up you can increase gNeighborDist)
 //
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 let gFireflies;
-let gCount = 300;
-let gDesiredSeparation = 50;
-let gNeighborDist = 80;
+let gCount = 150;
+let gDesiredSeparation = 60;
+let gNeighborDist = 100; // Increase this value to ~150 to speed up how long the flashes take to sync completely
 let gBuffer = 10;
 let gBrightnessMin = 0.2;
 let gBrightnessMax = 0.8;
@@ -17,8 +40,8 @@ let gAlphaMax = 0.5;
 let gFadeDuration = 300;
 let gHoldDuration = 200;
 let gFlashDuration = 2 * gFadeDuration + gHoldDuration;
-let gNewFlashInterval = 5000;
-let gRecoverDuration = 3000;
+let gNewFlashInterval = 3000;
+let gRecoverDuration = 1500;
 
 let gProps = {};
 
@@ -26,6 +49,7 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSB, 1);
   noStroke();
+
   gProps = {
     fMax: random(0.01, 1),
     sMax: random(4, 6),
@@ -42,7 +66,6 @@ function makeNewFlock() {
 }
 
 function draw() {
-  console.log(frameRate());
   background(0);
   gFireflies.run();
 }
@@ -51,16 +74,8 @@ class Flock {
   constructor() {
     this.boids = [];
 
-    let props = {
-      fMax: random(0.01, 1),
-      sMax: random(4, 6),
-      sep: 0.05,
-      ali: 0.002,
-      coh: 0.001,
-    };
-
     for (let i = 0; i < gCount; i++) {
-      this.boids.push(new Firefly(props));
+      this.boids.push(new Firefly());
     }
   }
 
@@ -73,9 +88,9 @@ class Flock {
 }
 
 class Firefly {
-  constructor(props) {
+  constructor() {
     this.h = random(0.5, 1);
-    this.dimColor = color(this.h, random(0.5, 1), gBrightnessMin, gBrightnessMin);
+    this.dimColor = color(this.h, random(0.4, 1), gBrightnessMin, gBrightnessMin);
     this.currentColor = this.dimColor;
     this.pos = createVector(random(width), random(height));
     this.vel = p5.Vector.random2D();
@@ -83,9 +98,9 @@ class Firefly {
     this.isFlashing = false;
     this.isRecovering = true;
 
-    this.nextFlashTime = millis() + 20 * random(gNewFlashInterval);
+    this.nextFlashTime = millis() + 2 * random(gNewFlashInterval);
     this.readyToGoTime = this.nextFlashTime - gNewFlashInterval;
-    this.r = random(5, 50);
+    this.r = random(10, 50);
 
     this.flashLife = 0;
   }
@@ -98,13 +113,13 @@ class Firefly {
   }
 
   flashCheck(boids) {
-    let now = millis();
+    let now = millis(); // Store the current time only once for efficiency
     if (this.isFlashing && now > this.flashDoneTime) {
       this.isFlashing = false;
       this.nextFlashTime = now + gNewFlashInterval;
       this.currentColor = this.dimColor;
     } else if (this.isFlashing) {
-      this.flashLife = this.flashDoneTime - millis();
+      this.flashLife = this.flashDoneTime - now;
     } else if (this.isRecovering && now > this.readyToGoTime) {
       this.isRecovering = false;
     } else if (!this.isFlashing && now > this.nextFlashTime) {
@@ -133,18 +148,21 @@ class Firefly {
     if (this.isFlashing) {
       this.updateBrightness();
     }
+
     fill(this.currentColor);
     ellipse(this.pos.x, this.pos.y, this.r);
   }
 
   updateBrightness() {
-    let b = gBrightnessMin;
-    if (this.flashLife < gFadeDuration) {
-      b = map(this.flashLife, 0, gFadeDuration, gBrightnessMin, gBrightnessMax);
-    } else if (this.flashLife < gFadeDuration + gHoldDuration) {
-      b = gBrightnessMax;
+    let b;
+    let flashLife = this.flashLife;
+    if (flashLife < gFadeDuration) {
+      b = map(flashLife, 0, gFadeDuration, gBrightnessMin, gBrightnessMax);
+    } else if (flashLife >= 1 - gFadeDuration) {
+      flashLife -= gFadeDuration + gFlashDuration;
+      b = map(flashLife, 0, gFlashDuration, gBrightnessMax, gBrightnessMin);
     } else {
-      b = map(this.flashLife, gFadeDuration + gHoldDuration, gFlashDuration, gBrightnessMax, gBrightnessMin);
+      b = gBrightnessMax;
     }
 
     this.currentColor = color(hue(this.currentColor), saturation(this.currentColor), b, b);
