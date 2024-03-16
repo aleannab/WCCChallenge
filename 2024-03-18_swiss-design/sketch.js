@@ -4,7 +4,8 @@ let gMaskLayer;
 
 let gImg;
 let gPoemData = [];
-let gMaskText;
+let gFirstName;
+let gLastName;
 let gFont;
 let gAlpha = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 let gPalette = ['#00b8b8', '#e4bd0b', '#de3d83'];
@@ -41,12 +42,16 @@ function drawPoster() {
 
   gMaskLayer.background('#e0e5db');
   gMaskLayer.erase();
-  gMaskLayer.textLeading(0.7 * gMaskText.tsize);
-  gMaskLayer.textSize(gMaskText.tsize);
+
+  let angle = gAngleOffset;
+  let xp = width / 2;
+  let yp = height / 2;
+  gMaskLayer.textLeading(0.7 * gFirstName.tsize);
   gMaskLayer.push();
-  gMaskLayer.translate(width / 2, height / 2);
-  gMaskLayer.rotate(gAngleOffset);
-  gMaskLayer.text(gMaskText.tstring, 0, 0);
+  gMaskLayer.translate(xp, yp);
+  gMaskLayer.textSize(gFirstName.tsize);
+  gMaskLayer.rotate(angle);
+  gMaskLayer.text(gFirstName.tstring, 0, 0);
   gMaskLayer.pop();
 
   for (let line of gPoemData) {
@@ -60,6 +65,14 @@ function drawPoster() {
     pop();
   }
   image(gMaskLayer, 0, 0);
+
+  textLeading(0.8 * gLastName.tsize);
+  push();
+  translate(0.7 * width, 0.6 * height);
+  textSize(gLastName.tsize);
+  rotate(gAngleOffset - PI / 2);
+  text(gLastName.tstring, 0, 0);
+  pop();
 }
 
 function addLineBreaks(inputString) {
@@ -103,10 +116,15 @@ function recievedPoem(data) {
   if (data && data.length > 0) {
     gPoemData = data[0].lines.slice(0, 50);
 
-    let firstName = data[0].author.split(' ')[0]; //gAlpha.charAt(floor(random(gAlpha.length)));
-    let lSize = 1.2 * getFontSize(firstName, width);
+    let fullName = data[0].author;
+    let first = fullName.split(' ')[0]; //gAlpha.charAt(floor(random(gAlpha.length)));
 
-    gMaskText = { tstring: firstName, tsize: lSize };
+    let last = addLineBreaks(fullName.split(' ').slice(1).join(' '));
+    let lSize = 1.2 * getFontSize(first, width);
+    let rSize = 1.2 * getFontSize(last.split('\n')[0], height / 3);
+
+    gFirstName = { tstring: first, tsize: lSize };
+    gLastName = { tstring: last, tsize: rSize };
   } else {
     gPoemData = { lines: ['No poem found.'] };
   }
