@@ -1,7 +1,9 @@
 // Created for the #WCCChallenge - Swiss Design
 //
-// Gah this code is a mess lol. 🫣
 // Uses the PoetryDB API: https://poetrydb.org/index.html
+// Mask uses the poet's first name.
+// Outside text is the poet's middle/last name and the title of the featured poem.
+// Text inside the name are line snippets from said poem.
 //
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
@@ -43,6 +45,8 @@ let gFontBlock;
 let gFontReg;
 let gFontThin;
 let gPalette = ['#00b8b8', '#e4bd0b', '#de3d83'];
+let gSecondaryPalette = ['#007a07', '#ae2905', '#002852'];
+
 let gColIndexStart;
 let gAngleOffset;
 let gSlope;
@@ -97,23 +101,41 @@ function createNameMask() {
 }
 
 function createPoemLines() {
-  setTextProps(this, gFontReg, LEFT, TOP);
-  textFont(gFontReg);
-
   let wrapLength = 0.1 * width;
   let spacing = width / gPoemData.length;
-  xp = 0;
-  let colIndex = floor(random(gPalette.length));
   let angle = (floor(random(4)) * PI) / 2 + PI / 2 + gAngleOffset;
+
+  let poemLinesLayer = createGraphics(width, height);
+  setTextProps(poemLinesLayer, gFontThin, CENTER, CENTER);
+
+  poemLinesLayer.noStroke();
+  poemLinesLayer.blendMode(MULTIPLY);
+
+  let x = 0;
+  let colIndex = floor(random(gPalette.length));
   for (let line of gPoemData) {
-    if (random() > 0.8) line = addLineBreaks(line);
     let tsize = random(0.01, 0.02) * width;
-    setTextSizeProps(this, tsize, 0.8);
-    addText(this, line, xp, gAngleOffset * xp + random(2) * gTitle.tsize + 0.1 * height, angle, random(1, 2) * wrapLength, gPalette[colIndex]);
-    colIndex = (colIndex + 1) % gPalette.length;
+    setTextSizeProps(poemLinesLayer, tsize, 0.8);
+    poemLinesLayer.fill(gPalette[colIndex]); // Random color
+
+    x += (random(5) * spacing) / 5;
+    let deviation = 0; //random(-50, 50); // Adjust the range of deviation as needed
+    let y = gSlope * x + deviation + 0.1 * height;
+    let wrapOffset = random(0.5, 1) * wrapLength;
+
+    poemLinesLayer.push();
+    poemLinesLayer.translate(x, y);
+    poemLinesLayer.rotate((floor(random(4)) * PI) / 2 + PI / 2 + gAngleOffset);
+    //angle);
+    poemLinesLayer.text(line, 0, random(-2, 2) * gTitle.tsize, wrapOffset);
+    poemLinesLayer.pop();
+
     angle += PI / 2;
-    xp += spacing;
+    x += spacing;
+    colIndex = (colIndex + 1) % gPalette.length;
   }
+
+  image(poemLinesLayer, 0, 0);
 }
 
 function setLayerProps(layer, blendMode, isErase) {
@@ -152,7 +174,18 @@ function createTitle() {
   addText(this, gLastName.tstring, 0.7 * width, 0.55 * height, gAngleOffset - PI / 2, -1, gPalette[colIndex], false);
 
   setTextProps(this, gFontThin, RIGHT, TOP, gTitle.tsize, 0.8);
-  addText(this, gTitle.tstring, 0, 0, PI, 0.3 * width, gPalette[(colIndex + 1) % gPalette.length], false, -0.3 * width, gTitle.tsize);
+  addText(
+    this,
+    gTitle.tstring,
+    0,
+    0,
+    PI,
+    0.3 * width,
+    gSecondaryPalette[gColIndexStart % gSecondaryPalette.length],
+    false,
+    -0.3 * width,
+    gTitle.tsize
+  );
 
   pop();
 }
@@ -163,7 +196,7 @@ function drawRects() {
   let colIndex = gColIndexStart; //floor(random(gPalette.length));
   for (let i = 0; i < 3; i++) {
     gMaskLayer.push();
-    gMaskLayer.translate(spacing * (i + 1), i < 2 ? random(height) : random(height / 3, height / 2));
+    gMaskLayer.translate(spacing * (i + 1), i < 2 ? random(0.8 * height) : random(height / 3, height / 2));
     gMaskLayer.rotate(gAngleOffset - (isExtraRotated ? -PI / 2 : 0));
     gMaskLayer.fill(gPalette[colIndex]);
     gMaskLayer.rect(0, 0, (floor(random(4)) + 1) * width * 0.15, width);
@@ -215,7 +248,7 @@ function getPoem() {
 
 function recievedPoem(data) {
   if (data && data.length > 0) {
-    gPoemData = data[0].lines.slice(0, 50);
+    gPoemData = data[0].lines.slice(0, 45);
 
     let fullName = data[0].author;
     let first = fullName.split(' ')[0];
