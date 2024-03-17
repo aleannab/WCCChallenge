@@ -62,14 +62,10 @@ function setup() {
   createCanvas(0.95 * w, 0.95 * h);
   gSlope = height / width;
   gAngleOffset = atan(gSlope);
-
-  textAlign(LEFT, CENTER);
   noStroke();
 
   gMaskLayer = createGraphics(width, height);
   gMaskLayer.noStroke();
-  gMaskLayer.textAlign(CENTER, CENTER);
-  // gMaskLayer.rectMode(CENTER);
 
   gPoetIndex = floor(random(gPoets.length));
   createNewArt();
@@ -91,37 +87,31 @@ function createNameMask() {
   push();
   setLayerProps(gMaskLayer, MULTIPLY, false);
   drawRects();
-
   pop();
-  setLayerProps(gMaskLayer, BLEND, true);
 
-  setTextProps(gMaskLayer, gFontBlock, gFirstName.tsize, 0.7);
+  setLayerProps(gMaskLayer, BLEND, true);
+  setTextProps(gMaskLayer, gFontBlock, CENTER, CENTER, gFirstName.tsize, 0.7);
   addText(gMaskLayer, gFirstName.tstring, width / 2, height / 2, gAngleOffset);
+
   image(gMaskLayer, 0, 0);
 }
 
 function createPoemLines() {
-  setTextProps(this, gFontReg);
+  setTextProps(this, gFontReg, LEFT, TOP);
   textFont(gFontReg);
 
   let wrapLength = 0.1 * width;
   let spacing = width / gPoemData.length;
   xp = 0;
   let colIndex = floor(random(gPalette.length));
+  let angle = (floor(random(4)) * PI) / 2 + PI / 2 + gAngleOffset;
   for (let line of gPoemData) {
     if (random() > 0.8) line = addLineBreaks(line);
     let tsize = random(0.01, 0.02) * width;
     setTextSizeProps(this, tsize, 0.8);
-    addText(
-      this,
-      line,
-      xp,
-      gAngleOffset * xp + random(2) * gTitle.tsize + 0.1 * height,
-      (floor(random(4)) * PI) / 2 + PI / 2 + gAngleOffset,
-      random(1, 2) * wrapLength,
-      gPalette[colIndex]
-    );
+    addText(this, line, xp, gAngleOffset * xp + random(2) * gTitle.tsize + 0.1 * height, angle, random(1, 2) * wrapLength, gPalette[colIndex]);
     colIndex = (colIndex + 1) % gPalette.length;
+    angle += PI / 2;
     xp += spacing;
   }
 }
@@ -132,8 +122,9 @@ function setLayerProps(layer, blendMode, isErase) {
   else layer.noErase();
 }
 
-function setTextProps(layer, font, size, leading) {
+function setTextProps(layer, font, alignX, alignY, size, leading) {
   layer.textFont(font);
+  layer.textAlign(alignX, alignY);
   setTextSizeProps(layer, size, leading);
 }
 
@@ -156,12 +147,11 @@ function addText(layer, str, translateX, translateY, angle, wrapLength = -1, col
 
 function createTitle() {
   let colIndex = gColIndexStart;
-  setTextProps(this, gFontBlock, gLastName.tsize, 0.8);
+  setTextProps(this, gFontBlock, LEFT, CENTER, gLastName.tsize, 0.8);
   push();
   addText(this, gLastName.tstring, 0.7 * width, 0.55 * height, gAngleOffset - PI / 2, -1, gPalette[colIndex], false);
 
-  textAlign(RIGHT, TOP);
-  setTextProps(this, gFontThin, gTitle.tsize, 0.8);
+  setTextProps(this, gFontThin, RIGHT, TOP, gTitle.tsize, 0.8);
   addText(this, gTitle.tstring, 0, 0, PI, 0.3 * width, gPalette[(colIndex + 1) % gPalette.length], false, -0.3 * width, gTitle.tsize);
 
   pop();
