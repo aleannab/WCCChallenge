@@ -43,9 +43,9 @@ let gFontBlock;
 let gFontReg;
 let gFontThin;
 let gPalette = ['#00b8b8', '#e4bd0b', '#de3d83'];
-// let gSecondaryPalette = ['#ae2905', '#002852', '#007a07'];
 let gColIndexStart;
 let gAngleOffset;
+let gSlope;
 
 let gRandomSeed = 0;
 let gPoetIndex = 0;
@@ -60,7 +60,8 @@ function setup() {
   let h = windowHeight < windowWidth ? windowHeight : 0.707 * windowWidth;
   let w = windowHeight < windowWidth ? 1.414 * windowHeight : windowWidth;
   createCanvas(0.95 * w, 0.95 * h);
-  gAngleOffset = atan(height / width);
+  gSlope = height / width;
+  gAngleOffset = atan(gSlope);
 
   textAlign(LEFT, CENTER);
   noStroke();
@@ -106,11 +107,21 @@ function createPoemLines() {
   let wrapLength = 0.1 * width;
   let spacing = width / gPoemData.length;
   xp = 0;
+  let colIndex = floor(random(gPalette.length));
   for (let line of gPoemData) {
     if (random() > 0.8) line = addLineBreaks(line);
     let tsize = random(0.01, 0.02) * width;
     setTextSizeProps(this, tsize, 0.8);
-    addText(this, line, xp, xp + random(-0.2, 0.2) * height, (floor(random(4)) * PI) / 2 + PI / 2 + gAngleOffset, random(1, 2) * wrapLength);
+    addText(
+      this,
+      line,
+      xp,
+      gAngleOffset * xp + random(2) * gTitle.tsize + 0.1 * height,
+      (floor(random(4)) * PI) / 2 + PI / 2 + gAngleOffset,
+      random(1, 2) * wrapLength,
+      gPalette[colIndex]
+    );
+    colIndex = (colIndex + 1) % gPalette.length;
     xp += spacing;
   }
 }
