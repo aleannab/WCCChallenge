@@ -1,9 +1,16 @@
+// Poster Poetry by Antoinette Bumatay-Chan
 // Created for the #WCCChallenge - Swiss Design
+//
+// Honestly don't really remember if there was a singular piece for inspiration. 😅
+// I basically searched on Google and Pinterest 'swiss design poster' and went from there.
 //
 // Uses the PoetryDB API: https://poetrydb.org/index.html
 // Mask uses the poet's first name.
 // Outside text is the poet's middle/last name and the title of the featured poem.
 // Text inside the name are line snippets from said poem.
+//
+// I'd like to improve on this to have a nicer distribution of line snippets within the letters.
+// Some of the poems are also very short. So maybe having it repeat lines if so.
 //
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
@@ -38,12 +45,8 @@ let gPoets = [
 ];
 
 let gPoemData = [];
-let gFirstName;
-let gLastName;
-let gTitle;
-let gFontBlock;
-let gFontReg;
-let gFontThin;
+let gFirstName, gLastName, gTitle;
+let gFontBlock, gFontReg, gFontThin;
 let gPalette = ['#00b8b8', '#e4bd0b', '#de3d83'];
 let gSecondaryPalette = ['#007a07', '#ae2905', '#002852'];
 
@@ -51,7 +54,6 @@ let gColIndexStart;
 let gAngleOffset;
 let gSlope;
 
-let gRandomSeed = 0;
 let gPoetIndex = 0;
 
 function preload() {
@@ -116,11 +118,10 @@ function createPoemLines() {
   for (let line of gPoemData) {
     let tsize = random(0.01, 0.02) * width;
     setTextSizeProps(poemLinesLayer, tsize, 0.8);
-    poemLinesLayer.fill(gPalette[colIndex]); // Random color
+    poemLinesLayer.fill(gPalette[colIndex]);
 
     x += (random(5) * spacing) / 5;
-    let deviation = 0; //random(-50, 50); // Adjust the range of deviation as needed
-    let y = gSlope * x + deviation + 0.1 * height;
+    let y = gSlope * x + 0.1 * height;
     let wrapOffset = random(0.5, 1) * wrapLength;
 
     poemLinesLayer.push();
