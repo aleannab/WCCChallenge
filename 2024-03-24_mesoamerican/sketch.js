@@ -12,8 +12,8 @@ let gOGSettings;
 let gUnit;
 
 function setup() {
-  let l = 0.9 * (windowWidth < windowHeight ? windowWidth : windowHeight);
-  createCanvas(windowWidth, windowHeight);
+  let l = 0.95 * (windowWidth < windowHeight ? windowWidth : windowHeight);
+  createCanvas(l, l);
   gUnit = width / 100;
   noLoop();
   strokeWeight(5);
@@ -23,21 +23,24 @@ function draw() {
   background(255);
 
   let count = 5;
-  let unit = (0.5 * width) / count;
+  let unit = width * 0.15;
   let theta = TWO_PI / count;
   let r = 0.1 * width;
+  let inc = 50 / count;
 
   push();
   translate(width / 2, height / 2);
   for (let i = 0; i < count; i++) {
-    let offset = 0; //random(TWO_PI);
+    let offset = random(TWO_PI);
     let xp = cos(theta * i + offset) * r;
     let yp = sin(theta * i + offset) * r;
-    let c = new Shape(xp, yp, unit);
+    let c = new Shape(xp, yp, unit, random() < 0.5);
     c.draw();
+    let c1 = new Shape(xp, yp, 0.5 * unit, true);
+    c1.draw();
 
-    unit *= 0.9;
-    r -= 0.1 * unit; //random(0.1, 0.6) * unit;
+    unit -= inc;
+    // r -= 0.1 * unit; //0.5 * unit; //random(0.1, 0.6) * unit;
   }
   pop();
 }
@@ -47,7 +50,7 @@ function mouseClicked() {
 }
 
 class Shape {
-  constructor(x, y, unit) {
+  constructor(x, y, unit, isCirc) {
     this.x = x;
     this.y = y;
     this.angle = random(TWO_PI);
@@ -57,7 +60,6 @@ class Shape {
     let r = unit; // getValue('gRadius') * unit;
     let n = getValue('gShapeNum', true);
     let angle = random() < 0.5 ? PI : TWO_PI;
-    let isCirc = random() < 0.5;
     if (isCirc) {
       for (let i = 0; i < 3; i++) {
         this.shapes.push(this.createCircle(r, n, angle));
@@ -82,22 +84,37 @@ class Shape {
   createQuad(r) {
     let l = r * 2;
     let points = [];
-    let scalars = [createVector(0, -0.1), createVector(0, 0.1), createVector(1, 0.25), createVector(1, -0.25)];
+    let scalars = [
+      createVector(-random(), -random(0.5)),
+      createVector(-random(), random(0.5)),
+      createVector(random(), random(0.5)),
+      createVector(random(), -random(0.5)),
+    ];
 
     for (let i = 0; i < 4; i++) {
       points.push(createVector(l * scalars[i].x, l * scalars[i].y));
     }
-    console.log(points);
 
-    // Draw horizontal lines to divide the quad
     let dividedLines = [];
-    let count = 3;
+    let count = ~~random(5);
     let inc = 1 / (count + 1);
+    let isVert = random() < 0.5;
     for (let i = 0; i < count; i++) {
-      let xp = (i + 1) * inc * l;
-      let y0 = map(xp, 0, l, points[0].y, points[3].y);
-      let y1 = map(xp, 0, l, points[1].y, points[2].y);
-      dividedLines.push([xp, y0, xp, y1]);
+      if (isVert) {
+        let xp = inc * (i + 1);
+        let x0 = map(xp, 0, 1, points[0].x, points[3].x);
+        let y0 = map(xp, 0, 1, points[0].y, points[3].y);
+        let x1 = map(xp, 0, 1, points[1].x, points[2].x);
+        let y1 = map(xp, 0, 1, points[1].y, points[2].y);
+        dividedLines.push([x0, y0, x1, y1]);
+      } else {
+        let xp = inc * (i + 1);
+        let x0 = map(xp, 0, 1, points[0].x, points[1].x);
+        let y0 = map(xp, 0, 1, points[0].y, points[1].y);
+        let x1 = map(xp, 0, 1, points[3].x, points[2].x);
+        let y1 = map(xp, 0, 1, points[3].y, points[2].y);
+        dividedLines.push([x0, y0, x1, y1]);
+      }
     }
 
     return { vertices: points, lines: dividedLines };
@@ -114,7 +131,7 @@ class Shape {
     stroke(255);
 
     push();
-    //translate(this.x, this.y);
+    translate(this.x, this.y);
     rotate(this.angle);
     for (let s of this.shapes) {
       beginShape();
