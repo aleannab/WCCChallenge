@@ -19,29 +19,37 @@ let gMaskLayer;
 
 // array of poets necessary, or else making a random call is dominated by a few poets with significantly more poems in their repetoire. This array is not all inclusive.
 let gPoets = [
-  'whittier',
-  'watts',
-  'wilmot',
-  'henley',
-  'clare',
-  'browning',
-  'milton',
-  'herrick',
-  'raleigh',
-  'pope',
-  'dunbar',
-  'dryden',
-  'shakespeare',
-  'seeger',
-  'drayton',
-  'byron',
+  'austen',
   'blake',
-  'shelley',
-  'wordsworth',
-  'poe',
-  'keats',
+  'bradstreet',
+  'bronte',
+  'browning',
+  'byron',
   'chaucer',
+  'chudleigh',
+  'clare',
+  'dickinson',
+  'drayton',
+  'dryden',
+  'dunbar',
+  'finch',
+  'henley',
+  'herrick',
+  'howe',
+  'keats',
+  'killigrew',
+  'milton',
+  'poe',
+  'pope',
+  'raleigh',
+  'seeger',
+  'shakespeare',
+  'shelley',
+  'watts',
   'whitman',
+  'whittier',
+  'wilmot',
+  'wordsworth',
 ];
 
 let gPoemData = [];
@@ -97,7 +105,8 @@ function createNameMask() {
 
   setLayerProps(gMaskLayer, BLEND, true);
   setTextProps(gMaskLayer, gFontBlock, CENTER, CENTER, gFirstName.tsize, 0.7);
-  addText(gMaskLayer, gFirstName.tstring, width / 2, height / 2, gAngleOffset);
+  addText(gMaskLayer, gFirstName.tstring, width / 2, (3 * height) / 7, gAngleOffset);
+  // addText(gMaskLayer, gFirstName.tstring, width / 2, height / 2, gAngleOffset);
 
   image(gMaskLayer, 0, 0);
 }
@@ -108,32 +117,34 @@ function createPoemLines() {
   let angle = (floor(random(4)) * PI) / 2 + PI / 2 + gAngleOffset;
 
   let poemLinesLayer = createGraphics(width, height);
-  setTextProps(poemLinesLayer, gFontThin, CENTER, CENTER);
+  setTextProps(poemLinesLayer, gFontThin, LEFT, CENTER);
 
   poemLinesLayer.noStroke();
   poemLinesLayer.blendMode(MULTIPLY);
 
   let x = 0;
   let colIndex = floor(random(gPalette.length));
+  let isUp = false;
   for (let line of gPoemData) {
     let tsize = random(0.01, 0.02) * width;
     setTextSizeProps(poemLinesLayer, tsize, 0.8);
     poemLinesLayer.fill(gPalette[colIndex]);
 
     x += (random(5) * spacing) / 5;
-    let y = gSlope * x + 0.1 * height;
+    let y = gSlope * x; //+ 0.005 * height;
     let wrapOffset = random(0.5, 1) * wrapLength;
 
     poemLinesLayer.push();
-    poemLinesLayer.translate(x, y);
+    poemLinesLayer.translate(x, y + random(0.3) * (isUp ? -gFirstName.tsize : gFirstName.tsize) + 0.1 * gFirstName.tsize);
     poemLinesLayer.rotate((floor(random(4)) * PI) / 2 + PI / 2 + gAngleOffset);
     //angle);
-    poemLinesLayer.text(line, 0, random(-2, 2) * gTitle.tsize, wrapOffset);
+    poemLinesLayer.text(line, 0, 0, wrapOffset); //random(-3, 3) * gTitle.tsize, random(-3, 3) * gTitle.tsize, wrapOffset);
     poemLinesLayer.pop();
 
     angle += PI / 2;
     x += spacing;
     colIndex = (colIndex + 1) % gPalette.length;
+    isUp = !isUp;
   }
 
   image(poemLinesLayer, 0, 0);
@@ -170,9 +181,9 @@ function addText(layer, str, translateX, translateY, angle, wrapLength = -1, col
 
 function createTitle() {
   let colIndex = gColIndexStart;
-  setTextProps(this, gFontBlock, LEFT, CENTER, gLastName.tsize, 0.8);
+  setTextProps(this, gFontBlock, LEFT, CENTER, gLastName.tsize, 0.9);
   push();
-  addText(this, gLastName.tstring, 0.7 * width, 0.55 * height, gAngleOffset - PI / 2, -1, gPalette[colIndex], false);
+  addText(this, gLastName.tstring, 0.7 * width, 0.5 * height, gAngleOffset - PI / 2, -1, gPalette[colIndex], false);
 
   setTextProps(this, gFontThin, RIGHT, TOP, gTitle.tsize, 0.8);
   addText(
@@ -185,7 +196,7 @@ function createTitle() {
     gSecondaryPalette[gColIndexStart % gSecondaryPalette.length],
     false,
     -0.3 * width,
-    gTitle.tsize
+    (gLastName.tstring.includes('\n') ? 2 : 1) * gTitle.tsize
   );
 
   pop();
@@ -249,16 +260,23 @@ function getPoem() {
 
 function recievedPoem(data) {
   if (data && data.length > 0) {
-    gPoemData = data[0].lines.slice(0, 45);
+    let originalLines = data[0].lines;
+    let targetLength = 50;
+    let currentIndex = 0;
+
+    while (gPoemData.length < targetLength) {
+      gPoemData.push(originalLines[currentIndex]);
+      currentIndex = (currentIndex + 1) % originalLines.length;
+    }
 
     let fullName = data[0].author;
     let first = fullName.split(' ')[0];
     let title = data[0].title;
 
-    let last = addLineBreaks(fullName.split(' ').slice(1).join(' '));
+    let last = fullName.split(' ').slice(1).join(' '); //addLineBreaks(fullName.split(' ').slice(1).join(' '));
     let lSize = 1.1 * getFontSize(first, width);
-    let rSize = 1.75 * getFontSize(last.split('\n')[0], height / 3);
-    let tSize = max(rSize / 3, getFontSize(title, height / 3));
+    let rSize = min(100, 1.75 * getFontSize(last.split('\n')[0], height / 3));
+    let tSize = constrain(getFontSize(title, height / 3), 35, rSize / 3);
 
     gFirstName = { tstring: first, tsize: lSize };
     gLastName = { tstring: last, tsize: rSize };
