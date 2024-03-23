@@ -17,9 +17,9 @@ let settings = [
   },
   {
     title: 'gShapeNum',
-    min: 10,
-    max: 20,
-    value: 15,
+    min: 50,
+    max: 100,
+    value: 100,
     step: 1,
     isInt: true,
   },
