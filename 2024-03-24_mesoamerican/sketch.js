@@ -16,7 +16,7 @@ let gStrokeWidth = 5;
 function setup() {
   let l = 0.95 * (windowWidth < windowHeight ? windowWidth : windowHeight);
   createCanvas(l, l);
-  gUnit = width / 20;
+  gUnit = width / 15;
   noLoop();
   strokeWeight(gStrokeWidth);
   fill(0);
@@ -39,13 +39,15 @@ class Shape {
     this.angle = angle != -1 ? angle : random(TWO_PI);
     this.mainShape = [];
     this.childShapes = [];
+    this.instanceCount = 1; //~~random(1, 4);
+    this.instanceInc = (level === 0 ? TWO_PI : random(QUARTER_PI, HALF_PI)) / this.instanceCount;
 
     let n = getValue('gShapeNum', true);
-    let a;
+    let a = isCirc ? random(1, 3) : random(1, 5);
+    let r = a * unit;
+
     if (isCirc) {
       let circCount = ~~random(3) + 1;
-      a = random(1, 3);
-      let r = a * unit;
       let cAngle = random() < 0.5 ? PI : TWO_PI;
       for (let i = 0; i < circCount; i++) {
         this.mainShape.push(this.createCircle(r, n, cAngle));
@@ -53,23 +55,19 @@ class Shape {
         if (r < 10) break;
       }
     } else {
-      a = random(1, 5);
-      let r = a * unit;
       this.mainShape.push(this.createQuad(r, n, angle));
     }
 
-    if (unit > 6 * gStrokeWidth) {
-      let childCount = isCirc ? 1 : 3 - level; //~~random(5);
-      if (level === 0) childCount = 10;
-      if (level < 3) {
-        let theta = max(random(QUARTER_PI, TWO_PI) / childCount, QUARTER_PI);
+    if (unit > 6 * gStrokeWidth && level < 2) {
+      let childCount = isCirc ? 1 : 3 - level;
+      if (level === 0) childCount = 5;
+      let theta = max(random(QUARTER_PI, TWO_PI) / childCount, QUARTER_PI);
 
-        for (let i = 0; i < childCount; i++) {
-          let offset = 0; //random(TWO_PI);
-          let xp = a * cos(theta * i + offset) * unit;
-          let yp = a * sin(theta * i + offset) * unit;
-          this.childShapes.push(new Shape(xp, yp, random(0.6, 0.9) * unit, !isCirc, level + 1, theta * i));
-        }
+      for (let i = 0; i < childCount; i++) {
+        let offset = 0; //random(TWO_PI);
+        let xp = a * cos(theta * i + offset) * unit;
+        let yp = a * sin(theta * i + offset) * unit;
+        this.childShapes.push(new Shape(xp, yp, random(0.6, 0.9) * unit, !isCirc, level + 1, theta * i));
       }
     }
   }
@@ -98,26 +96,27 @@ class Shape {
 
     let dividedLines = [];
 
-    if (r > 3 * gStrokeWidth) {
-      let max = min(r * min(w0, w1), r) / (5 * gStrokeWidth) - 1;
-      let count = ~~random(max);
+    if (r > gStrokeWidth) {
+      let count = ~~random(3) + 1;
       let inc = 1 / (count + 1);
-      let isVert = random() < 0.5;
-      for (let i = 0; i < count; i++) {
-        let xp = inc * (i + 1);
-        let x0, y0, x1, y1;
-        if (isVert) {
-          x0 = map(xp, 0, 1, points[0].x, points[3].x);
-          y0 = map(xp, 0, 1, points[0].y, points[3].y);
-          x1 = map(xp, 0, 1, points[1].x, points[2].x);
-          y1 = map(xp, 0, 1, points[1].y, points[2].y);
-        } else {
-          x0 = map(xp, 0, 1, points[0].x, points[1].x);
-          y0 = map(xp, 0, 1, points[0].y, points[1].y);
-          x1 = map(xp, 0, 1, points[3].x, points[2].x);
-          y1 = map(xp, 0, 1, points[3].y, points[2].y);
+      if (inc < 8 * gStrokeWidth) {
+        let isVert = random() < 0.5;
+        for (let i = 0; i < count; i++) {
+          let xp = inc * (i + 1);
+          let x0, y0, x1, y1;
+          if (isVert) {
+            x0 = map(xp, 0, 1, points[0].x, points[3].x);
+            y0 = map(xp, 0, 1, points[0].y, points[3].y);
+            x1 = map(xp, 0, 1, points[1].x, points[2].x);
+            y1 = map(xp, 0, 1, points[1].y, points[2].y);
+          } else {
+            x0 = map(xp, 0, 1, points[0].x, points[1].x);
+            y0 = map(xp, 0, 1, points[0].y, points[1].y);
+            x1 = map(xp, 0, 1, points[3].x, points[2].x);
+            y1 = map(xp, 0, 1, points[3].y, points[2].y);
+          }
+          dividedLines.push([x0, y0, x1, y1]);
         }
-        dividedLines.push([x0, y0, x1, y1]);
       }
     }
 
@@ -131,16 +130,21 @@ class Shape {
   }
 
   draw() {
+    strokeWeight(random(5, 10));
     push();
     translate(this.pos.x, this.pos.y);
     rotate(this.angle);
-
-    if (random() < 0.5) {
+    for (let i = 0; i < this.instanceCount; i++) {
+      push();
+      rotate(this.instanceInc * i);
+      // if (random() < 0.5) {
       this.drawChildren();
       this.drawMain();
-    } else {
-      this.drawMain();
-      this.drawChildren();
+      // } else {
+      //   this.drawMain();
+      //   this.drawChildren();
+      // }
+      pop();
     }
 
     pop();
