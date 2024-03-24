@@ -10,64 +10,96 @@ let isDebug = false;
 let gOGSettings;
 
 let gUnit;
+let gShapes;
 
 function setup() {
   let l = 0.95 * (windowWidth < windowHeight ? windowWidth : windowHeight);
-  createCanvas(l, l);
-  gUnit = width / 100;
+  createCanvas(windowWidth, l);
+  gUnit = width / 20;
   noLoop();
   strokeWeight(5);
+  fill(0);
+  stroke(255);
+  initShapes();
 }
 
 function draw() {
   background(255);
 
-  let count = 5;
-  let unit = width * 0.15;
-  let theta = TWO_PI / count;
-  let r = 0.1 * width;
-  let inc = 50 / count;
+  gShapes.draw();
 
-  push();
-  translate(width / 2, height / 2);
-  for (let i = 0; i < count; i++) {
-    let offset = random(TWO_PI);
-    let xp = cos(theta * i + offset) * r;
-    let yp = sin(theta * i + offset) * r;
-    let c = new Shape(xp, yp, unit, random() < 0.5);
-    c.draw();
-    let c1 = new Shape(xp, yp, 0.5 * unit, true);
-    c1.draw();
+  // let count = 1;
+  // let unit = width * 0.1;
+  // let theta = TWO_PI / count;
+  // let r = 0.1 * width;
+  // let inc = 50 / count;
 
-    unit -= inc;
-    // r -= 0.1 * unit; //0.5 * unit; //random(0.1, 0.6) * unit;
-  }
-  pop();
+  // push();
+  // translate(width / 2, height / 2);
+  // for (let i = 0; i < count; i++) {
+  //   let offset = random(TWO_PI);
+  //   let xp = cos(theta * i + offset) * r;
+  //   let yp = sin(theta * i + offset) * r;
+  //   push();
+  //   translate(xp, yp);
+
+  //   let c = new Shape(xp, yp, unit, random() < 0.5);
+
+  //   let sCount = ~~random(5) + 1;
+  //   let thInc = TWO_PI / sCount;
+  //   for (let j = 0; j < sCount; j++) {
+  //     push();
+  //     rotate(thInc * j);
+  //     c.draw();
+  //     pop();
+  //     if (random() < 0.5) break;
+  //   }
+  //   pop();
+
+  //   unit -= inc;
+  //   r += 0.05 * unit; //0.5 * unit; //random(0.1, 0.6) * unit;
+  // }
+  // pop();
 }
 
-function mouseClicked() {
-  redraw();
+function initShapes() {
+  gShapes = new Shape(width / 2, height / 2, gUnit, true, 0);
 }
 
 class Shape {
-  constructor(x, y, unit, isCirc) {
-    this.x = x;
-    this.y = y;
-    this.angle = random(TWO_PI);
+  constructor(x, y, unit, isCirc, level, angle = -1) {
+    this.pos = createVector(x, y);
+    this.angle = angle != -1 ? angle : random(TWO_PI);
+    this.mainShape = [];
+    this.childShapes = [];
 
-    this.shapes = [];
-
-    let r = unit; // getValue('gRadius') * unit;
     let n = getValue('gShapeNum', true);
-    let angle = random() < 0.5 ? PI : TWO_PI;
+    let a;
     if (isCirc) {
-      for (let i = 0; i < 3; i++) {
-        this.shapes.push(this.createCircle(r, n, angle));
-        r *= 0.5;
+      let circCount = ~~random(3) + 1;
+      a = 2;
+      let r = a * unit;
+      for (let i = 0; i < circCount; i++) {
+        this.mainShape.push(this.createCircle(r, n, TWO_PI));
+        r *= random(0.3, 0.6);
         if (r < 10) break;
       }
     } else {
-      this.shapes.push(this.createQuad(r, n, angle));
+      a = random(1, 5);
+      let r = a * unit;
+      this.mainShape.push(this.createQuad(r, n, angle));
+    }
+
+    let childCount = 1; //~~random(2) + 1;
+    if (level < 3) {
+      let theta = random(QUARTER_PI, TWO_PI) / childCount;
+
+      for (let i = 0; i < childCount; i++) {
+        let offset = 0; //random(TWO_PI);
+        let xp = a * cos(theta * i + offset) * unit;
+        let yp = a * sin(theta * i + offset) * unit;
+        this.childShapes.push(new Shape(xp, yp, 0.8 * unit, false, level + 1, theta * i));
+      }
     }
   }
 
@@ -82,14 +114,13 @@ class Shape {
   }
 
   createQuad(r) {
-    let l = r * 2;
+    let l = r;
     let points = [];
-    let scalars = [
-      createVector(-random(), -random(0.5)),
-      createVector(-random(), random(0.5)),
-      createVector(random(), random(0.5)),
-      createVector(random(), -random(0.5)),
-    ];
+    let w0 = random(0.25);
+    let w1 = random(0.5);
+    let h = 1; //random(0.5, 1);
+    let offset = random(0.2);
+    let scalars = [createVector(0, -w0), createVector(0, w0), createVector(h, w1), createVector(h, -w1)];
 
     for (let i = 0; i < 4; i++) {
       points.push(createVector(l * scalars[i].x, l * scalars[i].y));
@@ -100,21 +131,20 @@ class Shape {
     let inc = 1 / (count + 1);
     let isVert = random() < 0.5;
     for (let i = 0; i < count; i++) {
+      let xp = inc * (i + 1);
+      let x0, y0, x1, y1;
       if (isVert) {
-        let xp = inc * (i + 1);
-        let x0 = map(xp, 0, 1, points[0].x, points[3].x);
-        let y0 = map(xp, 0, 1, points[0].y, points[3].y);
-        let x1 = map(xp, 0, 1, points[1].x, points[2].x);
-        let y1 = map(xp, 0, 1, points[1].y, points[2].y);
-        dividedLines.push([x0, y0, x1, y1]);
+        x0 = map(xp, 0, 1, points[0].x, points[3].x);
+        y0 = map(xp, 0, 1, points[0].y, points[3].y);
+        x1 = map(xp, 0, 1, points[1].x, points[2].x);
+        y1 = map(xp, 0, 1, points[1].y, points[2].y);
       } else {
-        let xp = inc * (i + 1);
-        let x0 = map(xp, 0, 1, points[0].x, points[1].x);
-        let y0 = map(xp, 0, 1, points[0].y, points[1].y);
-        let x1 = map(xp, 0, 1, points[3].x, points[2].x);
-        let y1 = map(xp, 0, 1, points[3].y, points[2].y);
-        dividedLines.push([x0, y0, x1, y1]);
+        x0 = map(xp, 0, 1, points[0].x, points[1].x);
+        y0 = map(xp, 0, 1, points[0].y, points[1].y);
+        x1 = map(xp, 0, 1, points[3].x, points[2].x);
+        y1 = map(xp, 0, 1, points[3].y, points[2].y);
       }
+      dividedLines.push([x0, y0, x1, y1]);
     }
 
     return { vertices: points, lines: dividedLines };
@@ -127,13 +157,15 @@ class Shape {
   }
 
   draw() {
-    fill(0);
-    stroke(255);
-
     push();
-    translate(this.x, this.y);
+    translate(this.pos.x, this.pos.y);
     rotate(this.angle);
-    for (let s of this.shapes) {
+
+    for (let cs of this.childShapes) {
+      cs.draw();
+    }
+
+    for (let s of this.mainShape) {
       beginShape();
       for (let pt of s.vertices) {
         vertex(pt.x, pt.y);
@@ -146,4 +178,9 @@ class Shape {
 
     pop();
   }
+}
+
+function mouseClicked() {
+  initShapes();
+  redraw();
 }
