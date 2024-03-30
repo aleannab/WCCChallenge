@@ -15,35 +15,44 @@ let gAllChords = [
   ['B', 'D', 'F'],
   ['G', 'B', 'D'],
 ];
-let gOctaves = ['3', '4', '5'];
-let gCounts = [2, 3, 4, 5, 6];
+let gOctaves = ['3', '4']; //, '5']; //'3', '4', '5'];
+let gCounts = [2, 3, 4, 5, 6, 7];
 
 let gPalette = ['#00b8b8', '#e4bd0b', '#de3d83'];
 
+let gIsPlaying = false;
+
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  const l = windowWidth < windowHeight ? windowWidth : windowHeight;
+  createCanvas(l, l);
   background(255);
   noStroke();
 
   gRadius = 0.5 * height;
 
+  Transport.bpm.value = 60;
+}
+
+function createPolyRhythm() {
+  Transport.stop();
+  Transport.cancel(0);
+  gRhythms = [];
   gCounts = shuffle(gCounts);
   gPalette = shuffle(gPalette);
   let chord = random(gAllChords);
 
-  for (let i = 0; i < 3; i++) {
-    let count = gCounts[i];
-    let note = chord[i] + random(gOctaves);
+  let num = floor(random(3)) + 1;
+  for (let i = 0; i < num; i++) {
+    let count = gCounts[i % gCounts.length];
+    let note = chord[i % chord.length] + random(gOctaves);
     let interval = str(count) + 'n';
     gRhythms.push(new Rhythm(i, note, count, interval));
   }
-
-  Transport.bpm.value = 60;
   Transport.start();
 }
 
 function draw() {
-  blendMode(NORMAL);
+  blendMode(BLEND);
 
   background(255);
   blendMode(MULTIPLY);
@@ -59,7 +68,11 @@ function draw() {
 }
 
 function mousePressed() {
-  Tone.start();
+  if (!gIsPlaying) {
+    gIsPlaying = true;
+    // Tone.start();
+  }
+  createPolyRhythm();
 }
 
 class Rhythm {
@@ -68,14 +81,14 @@ class Rhythm {
     this.note = note;
     this.beatStr = intervalStr;
     this.beatInterval = Transport.toSeconds(this.beatStr);
-    this.positions = this.setPositions(beatCount, random(0.05, 0.5) * height);
+    this.positions = this.setPositions(beatCount, (index + 1) * 0.1 * height);
     this.curIndex = 0;
     this.targetIndex = 0;
     this.pos = this.positions[this.curIndex];
     this.color = color(gPalette[index % gPalette.length]);
     this.scheduleRhythm(this.beatStr);
     this.prevTime = -1;
-    this.radius = random(0.2, 0.4) * height;
+    this.radius = random(0.15, 0.25) * height;
   }
 
   update() {
