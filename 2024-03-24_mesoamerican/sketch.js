@@ -1,32 +1,46 @@
-// ______ by Antoinette Bumatay-Chan
-// Created for the #WCCChallenge - Topic: Mesoamerican
+// Xolotl by Antoinette Bumatay-Chan
+// Created for the #WCCChallenge - Topic: Chalchiuhtlicue (or Mesoamerican design)
 //
+// This is an abstract piece inspired by this illustration I found of the Aztec god Xolotl.
+// https://cdn1.vectorstock.com/i/1000x1000/29/15/aztec-gods-xolotl-vector-46352915.jpg
 //
+// I also played around with color, which I kinda liked... but something still feels off for me.
+// Toggle color mode by pressing 'c'
+//
+// I need to fix the placement of the dots for the semi-circles. They currently go outside the shape since I'm drawing the whole ring (more apparent in color mode).
+// Adding a little more detail would be nice (e.g. dots on the quads, pinwheel lines on the circles, etc from the inspo pictures).
 //
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
-let isDebug = false;
-let gOGSettings;
-
 let gUnit;
+let gUnitScalar = 0.07; // size of one unit proportional to height
+let gMainCount = 5; // initial branches from (central) shape
+let gBranchCount = 2; // max branches from child shapes
+let gMinScalar = 0.4; // min size for branching to occur
+
 let gShapes;
 let gStrokeWidth = 5;
+
+let gBgColor = '#f8f3e3';
+let gPalette = ['#58b4c9', '#b4b472', '#b1141c', '#ecc35f', '#e38c29'];
+let gIsColor = false;
+// let gPalette = ['#8D5A06', '#3F2C12', '#2E0C09', '#263129'];
 
 function setup() {
   let h = windowHeight < windowWidth ? windowHeight : 0.707 * windowWidth;
   let w = windowHeight < windowWidth ? 1.414 * windowHeight : windowWidth;
   createCanvas(0.95 * w, 0.95 * h);
-  gUnit = height / 15;
-  noLoop();
+  gUnit = gUnitScalar * height;
+  // noLoop();
   strokeWeight(gStrokeWidth);
   fill(0);
-  stroke(255);
+  stroke(gBgColor);
   initShapes();
 }
 
 function draw() {
-  background(255);
+  background(gBgColor);
   gShapes.draw();
 }
 
@@ -36,6 +50,7 @@ function initShapes() {
 
 class Shape {
   constructor(x, y, unit, isCirc, level, angle = -1) {
+    this.seed = ~~random(99999);
     this.isCirc = isCirc;
     this.level = level;
     this.pos = createVector(x, y);
@@ -54,8 +69,8 @@ class Shape {
     }
 
     // add child shapes
-    if (unit > 0.5 * gUnit && level < 4) {
-      let childCount = level === 0 ? 5 : 2;
+    if (unit > gMinScalar * gUnit && level < 10) {
+      let childCount = level === 0 ? gMainCount : ~~random(2, gBranchCount);
       let theta = max(random(QUARTER_PI, TWO_PI) / childCount, QUARTER_PI);
 
       for (let i = 0; i < childCount; i++) {
@@ -129,7 +144,7 @@ class Shape {
   }
 
   draw() {
-    strokeWeight(random(3, 6));
+    if (!gIsColor) strokeWeight(random(2, 6));
     push();
     translate(this.pos.x, this.pos.y);
     rotate(this.angle);
@@ -143,7 +158,10 @@ class Shape {
   }
 
   drawMain() {
+    randomSeed(this.seed);
+    if (gIsColor) stroke(0);
     for (let s of this.mainShape) {
+      fill(gIsColor ? random(gPalette) : 0);
       beginShape();
       for (let pt of s.vertices) {
         vertex(pt.x, pt.y);
@@ -162,12 +180,12 @@ class Shape {
   }
 
   drawRing() {
-    noStroke();
-    fill(255);
+    if (!gIsColor) noStroke();
+    fill(gBgColor);
 
     let count = ~~random(3, 11);
     let theta = TWO_PI / count;
-    let r = map(count, 3, 11, 10, 3); //random(3, 10);
+    let r = gIsColor ? map(count, 3, 11, 15, 10) : map(count, 3, 11, 10, 3); //random(3, 10);
     for (let i = 0; i < count; i++) {
       let angle = theta * i;
       let xp = 0.75 * this.r * cos(angle);
@@ -185,7 +203,13 @@ function getBool() {
 }
 
 function mouseClicked() {
-  console.log('~~~~~~~~~~~~~~~~~~~~~~~~');
   initShapes();
   redraw();
+}
+
+function keyPressed() {
+  if (key == 'c') {
+    gIsColor = !gIsColor;
+    if (gIsColor) strokeWeight(3);
+  }
 }
