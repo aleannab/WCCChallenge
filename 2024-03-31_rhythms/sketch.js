@@ -15,7 +15,7 @@ let gAllChords = [
   ['B', 'D', 'F'],
   ['G', 'B', 'D'],
 ];
-let gOctaves = ['3', '4']; //, '5']; //'3', '4', '5'];
+let gOctaves = ['1', '4', '5']; //'3', '4', '5'];
 let gCounts = [2, 3, 4, 5, 6, 7];
 
 let gPalette = ['#00b8b8', '#e4bd0b', '#de3d83'];
