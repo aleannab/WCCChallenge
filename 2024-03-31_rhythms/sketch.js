@@ -15,7 +15,7 @@ let gAllChords = [
   ['B', 'D', 'F'],
   ['G', 'B', 'D'],
 ];
-let gOctaves = ['1', '4', '5']; //'3', '4', '5'];
+let gOctaves = ['4', '5']; //'3', '4', '5'];
 let gCounts = [2, 3, 4, 5]; //, 6, 7];
 
 let gPalette = ['#00b8b8', '#e4bd0b', '#de3d83'];
@@ -41,7 +41,7 @@ function createPolyRhythm() {
   gPalette = shuffle(gPalette);
   let chord = random(gAllChords);
 
-  let num = floor(random(3)) + 1;
+  let num = floor(random(3)) + 2;
   for (let i = 0; i < num; i++) {
     let count = gCounts[i % gCounts.length];
     let note = chord[i % chord.length] + random(gOctaves);
@@ -59,12 +59,18 @@ function draw() {
 
   push();
   translate(0.5 * width, 0.5 * height);
+  stroke(0);
+  noFill();
+  // ellipse(0, 0, 0.6 * height);
+  noStroke();
   // rotate(millis() * 0.0001);
   for (let beat of gRhythms) {
     beat.draw();
     beat.update();
   }
+
   pop();
+  console.log(frameRate());
 }
 
 function mousePressed() {
@@ -80,15 +86,16 @@ class Rhythm {
     this.note = note;
     this.beatStr = intervalStr;
     this.beatInterval = Transport.toSeconds(this.beatStr);
-    this.positions = this.setPositions(beatCount, (index + 1) * 0.1 * height);
+    this.positions = this.setPositions(beatCount, 0.3 * height); //(index + 1) * 0.1 * height);
     this.curIndex = 0;
     this.targetIndex = 0;
     this.pos = this.positions[this.curIndex];
     this.color = color(gPalette[index % gPalette.length]);
     this.scheduleRhythm(this.beatStr);
     this.prevTime = -1;
-    this.radius = random(0.15, 0.25) * height;
+    this.radius = 0.1 * height; //random(0.15, 0.25) * height;
     this.targetHasUpdated = false;
+    this.midDist = createVector(0, 0);
   }
 
   update() {
@@ -100,6 +107,9 @@ class Rhythm {
         const xp = map(next, 0, 1, this.positions[this.curIndex].x, this.positions[this.targetIndex].x);
         const yp = map(next, 0, 1, this.positions[this.curIndex].y, this.positions[this.targetIndex].y);
         this.pos = createVector(xp, yp);
+        const dist = this.pos.dist(this.midDist);
+
+        this.radius = map(dist, 0, 0.3 * height, 0.01, 0.25) * height;
       }
     }
   }
@@ -111,7 +121,15 @@ class Rhythm {
 
   draw() {
     fill(this.color);
-    ellipse(this.pos.x, this.pos.y, this.radius);
+    // ellipse(this.pos.x, this.pos.y, this.radius);
+
+    const theta = TWO_PI / 3;
+    for (let i = 0; i < 3; i++) {
+      push();
+      rotate(theta * i);
+      ellipse(this.pos.x, this.pos.y, this.radius);
+      pop();
+    }
   }
 
   timeUntilNextBeat() {
@@ -136,6 +154,10 @@ class Rhythm {
     this.curIndex = this.targetIndex;
     this.targetIndex = (this.targetIndex + 1) % this.positions.length;
     this.prevTime = -1;
+    this.midDist = createVector(
+      (this.positions[this.curIndex].x + this.positions[this.targetIndex].x) / 2,
+      (this.positions[this.curIndex].y + this.positions[this.targetIndex].y) / 2
+    );
   }
 
   scheduleRhythm(intervalStr) {
