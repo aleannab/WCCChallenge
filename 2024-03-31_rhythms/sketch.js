@@ -16,7 +16,7 @@ let gAllChords = [
   ['G', 'B', 'D'],
 ];
 let gOctaves = ['4', '5']; //'3', '4', '5'];
-let gCounts = [2, 3, 4, 5]; //, 6, 7];
+let gCounts = [2, 3, 4, 5, 6, 7];
 
 let gPalette = ['#00b8b8', '#e4bd0b', '#de3d83'];
 
@@ -30,7 +30,7 @@ function setup() {
 
   gRadius = 0.5 * height;
 
-  Transport.bpm.value = 60;
+  Transport.bpm.value = 30;
 }
 
 function createPolyRhythm() {
@@ -115,7 +115,7 @@ class Rhythm {
   }
 
   play(time) {
-    this.synth.triggerAttackRelease(this.note, '16n', time);
+    this.synth.triggerAttackRelease(this.note, '32n', time);
     this.updateTargets();
   }
 
