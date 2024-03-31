@@ -16,7 +16,7 @@ let gAllChords = [
   ['G', 'B', 'D'],
 ];
 let gOctaves = ['1', '4', '5']; //'3', '4', '5'];
-let gCounts = [2, 3, 4, 5, 6, 7];
+let gCounts = [2, 3, 4, 5]; //, 6, 7];
 
 let gPalette = ['#00b8b8', '#e4bd0b', '#de3d83'];
 
@@ -59,7 +59,7 @@ function draw() {
 
   push();
   translate(0.5 * width, 0.5 * height);
-  rotate(millis() * 0.0001);
+  // rotate(millis() * 0.0001);
   for (let beat of gRhythms) {
     beat.draw();
     beat.update();
@@ -70,7 +70,6 @@ function draw() {
 function mousePressed() {
   if (!gIsPlaying) {
     gIsPlaying = true;
-    // Tone.start();
   }
   createPolyRhythm();
 }
@@ -89,15 +88,19 @@ class Rhythm {
     this.scheduleRhythm(this.beatStr);
     this.prevTime = -1;
     this.radius = random(0.15, 0.25) * height;
+    this.targetHasUpdated = false;
   }
 
   update() {
     const next = this.timeUntilNextBeat();
-    if (next > this.prevTime) {
-      this.prevTime = next;
-      const xp = map(next, 0, 1, this.positions[this.curIndex].x, this.positions[this.targetIndex].x);
-      const yp = map(next, 0, 1, this.positions[this.curIndex].y, this.positions[this.targetIndex].y);
-      this.pos = createVector(xp, yp);
+    if (!this.targetHasUpdated || (this.targetHasUpdated && next < 0.5)) {
+      if (next > this.prevTime) {
+        if (this.targetHasUpdated) this.targetHasUpdated = false;
+        this.prevTime = next;
+        const xp = map(next, 0, 1, this.positions[this.curIndex].x, this.positions[this.targetIndex].x);
+        const yp = map(next, 0, 1, this.positions[this.curIndex].y, this.positions[this.targetIndex].y);
+        this.pos = createVector(xp, yp);
+      }
     }
   }
 
@@ -129,6 +132,7 @@ class Rhythm {
   }
 
   updateTargets() {
+    this.targetHasUpdated = true;
     this.curIndex = this.targetIndex;
     this.targetIndex = (this.targetIndex + 1) % this.positions.length;
     this.prevTime = -1;
