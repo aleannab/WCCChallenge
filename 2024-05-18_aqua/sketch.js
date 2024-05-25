@@ -12,8 +12,9 @@ function setup() {
   noLoop();
   angleMode(DEGREES);
   background(255);
-  // for whatever reason I have to set a field before being able to specify no field
-  // brush.field('curved');
+  // for whatever reason I have to set a field before being able to
+  // specify no field on OpenProcessing (works fine locally)
+  brush.field('curved');
   brush.noField();
   brush.noStroke();
 }
