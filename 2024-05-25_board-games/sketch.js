@@ -1,4 +1,5 @@
 let gCircles = [];
+let gAllPathSegments = [];
 
 let gPalette = ['#ea0319', '#981183', '#f3e022', '#03a3ee', '#f28b31', '#79d29d'];
 
@@ -17,44 +18,45 @@ function setup() {
 
   //setup mask layer
   gMaskLayer = createGraphics(width, height);
+  //gMaskLayer.strokeCap(PROJECT);
   gMaskLayer.erase();
 
   gMaskLayer.stroke(0);
   gMaskLayer.strokeWeight(30);
   gMaskLayer.noFill();
 
-  createPathCircleRef();
+  createGameBoardPath();
 }
 
 function draw() {
   background(255);
   gMaskLayer.background('#ffffff');
 
-  // calculate control points
-  let controlPoints = [];
-  for (let i = 0; i < gCircles.length; i++) {
-    if (i < gCircles.length - 1) {
-      controlPoints.push(calculateControlPoints(gCircles[i], gCircles[i + 1], random(50, 100), random(50, 100)));
-    }
-  }
   // Draw bezier path
   let colorIndex = 0;
   let prevPos = createVector(0, 0);
 
-  for (let i = 0; i < controlPoints.length; i++) {
-    let x1 = gCircles[i].x;
-    let y1 = gCircles[i].y;
-    let x2 = controlPoints[i][0].x;
-    let y2 = controlPoints[i][0].y;
-    let x3 = controlPoints[i][1].x;
-    let y3 = controlPoints[i][1].y;
-    let x4 = gCircles[i + 1].x;
-    let y4 = gCircles[i + 1].y;
-    gMaskLayer.bezier(x1, y1, x2, y2, x3, y3, x4, y4);
+  for (let i = 0; i < gAllPathSegments.length; i++) {
+    let path = gAllPathSegments[i];
+    // draw segment to mask
+    gMaskLayer.bezier(
+      path.anchor0.x,
+      path.anchor0.y,
+      path.control0.x,
+      path.control0.y,
+      path.control1.x,
+      path.control1.y,
+      path.anchor1.x,
+      path.anchor1.y
+    );
+
+    // divide segment into game spaces
     let percentComplete = 0;
     while (percentComplete <= 1) {
-      let x = bezierPoint(x1, x2, x3, x4, percentComplete);
-      let y = bezierPoint(y1, y2, y3, y4, percentComplete);
+      let x = bezierPoint(path.anchor0.x, path.control0.x, path.control1.x, path.anchor1.x, percentComplete);
+      let y = bezierPoint(path.anchor0.y, path.control0.y, path.control1.y, path.anchor1.y, percentComplete);
+
+      // only create a space if the distance is far enough
       if (dist(x, y, prevPos.x, prevPos.y) > 40) {
         circle(x, y, 80);
         fill(gPalette[colorIndex++ % gPalette.length]);
@@ -65,15 +67,37 @@ function draw() {
       percentComplete += 0.001;
     }
   }
+
   image(gMaskLayer, 0, 0);
 
+  // for (let i = 0; i < gCircles.length; i++) {
+  //   fill(0);
+  //   circle(gCircles[i].x, gCircles[i].y, 50);
+  // }
+}
+
+function createGameBoardPath() {
+  createPathCircleRefs();
+  createPathSegments();
+}
+
+function createPathSegments() {
+  // calculate control points
+  let controlPoints = [];
   for (let i = 0; i < gCircles.length; i++) {
-    fill(0);
-    circle(gCircles[i].x, gCircles[i].y, 50);
+    if (i < gCircles.length - 1) {
+      controlPoints.push(calculateControlPoints(gCircles[i], gCircles[i + 1], random(50, 100), random(50, 100)));
+    }
+  }
+
+  gAllPathSegments = [];
+  for (let i = 0; i < controlPoints.length; i++) {
+    // calculate bezier segments between reference circles
+    gAllPathSegments.push(new PathSegment(gCircles[i], controlPoints[i][0], controlPoints[i][1], gCircles[i + 1]));
   }
 }
 
-function createPathCircleRef() {
+function createPathCircleRefs() {
   gCircles.length = 0;
   let xp = random(gPadding, width / 2);
   let yp = gPadding;
@@ -103,7 +127,7 @@ function calculateControlPoints(start, end, offsetX, offsetY) {
 }
 
 function mousePressed() {
-  createPathCircleRef();
+  createGameBoardPath();
   redraw();
 }
 
@@ -111,4 +135,14 @@ function checkBounds(pos) {
   let xp = constrain(pos.x, gPadding, width - gPadding);
   let yp = constrain(pos.y, gPadding, height - gPadding);
   return createVector(xp, yp);
+}
+
+class PathSegment {
+  constructor(a0, c0, c1, a1) {
+    this.anchor0 = a0;
+    this.control0 = c0;
+    this.control1 = c1;
+    this.anchor1 = a1;
+    this.gameSpaceDivs = [];
+  }
 }
