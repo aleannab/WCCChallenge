@@ -6,6 +6,7 @@ let gPalette = ['#ea0319', '#981183', '#f3e022', '#03a3ee', '#f28b31', '#79d29d'
 let gMaskLayer;
 
 let gPadding = 100;
+let gStrokeWeight = 30;
 
 function setup() {
   //setup canvas
@@ -18,11 +19,10 @@ function setup() {
 
   //setup mask layer
   gMaskLayer = createGraphics(width, height);
-  //gMaskLayer.strokeCap(PROJECT);
   gMaskLayer.erase();
 
   gMaskLayer.stroke(0);
-  gMaskLayer.strokeWeight(30);
+  gMaskLayer.strokeWeight(gStrokeWeight);
   gMaskLayer.noFill();
 
   createGameBoardPath();
@@ -32,40 +32,8 @@ function draw() {
   background(255);
   gMaskLayer.background('#ffffff');
 
-  // Draw bezier path
-  let colorIndex = 0;
-  let prevPos = createVector(0, 0);
-
   for (let i = 0; i < gAllPathSegments.length; i++) {
-    let path = gAllPathSegments[i];
-    // draw segment to mask
-    gMaskLayer.bezier(
-      path.anchor0.x,
-      path.anchor0.y,
-      path.control0.x,
-      path.control0.y,
-      path.control1.x,
-      path.control1.y,
-      path.anchor1.x,
-      path.anchor1.y
-    );
-
-    // divide segment into game spaces
-    let percentComplete = 0;
-    while (percentComplete <= 1) {
-      let x = bezierPoint(path.anchor0.x, path.control0.x, path.control1.x, path.anchor1.x, percentComplete);
-      let y = bezierPoint(path.anchor0.y, path.control0.y, path.control1.y, path.anchor1.y, percentComplete);
-
-      // only create a space if the distance is far enough
-      if (dist(x, y, prevPos.x, prevPos.y) > 40) {
-        circle(x, y, 80);
-        fill(gPalette[colorIndex++ % gPalette.length]);
-
-        prevPos.x = x;
-        prevPos.y = y;
-      }
-      percentComplete += 0.001;
-    }
+    gAllPathSegments[i].draw();
   }
 
   image(gMaskLayer, 0, 0);
@@ -91,9 +59,14 @@ function createPathSegments() {
   }
 
   gAllPathSegments = [];
+  let lastPos = createVector(0, 0);
+  let lastSpaceLine = [createVector(0, 0), createVector(0, 0)];
   for (let i = 0; i < controlPoints.length; i++) {
     // calculate bezier segments between reference circles
-    gAllPathSegments.push(new PathSegment(gCircles[i], controlPoints[i][0], controlPoints[i][1], gCircles[i + 1]));
+    let segment = new PathSegment(gCircles[i], controlPoints[i][0], controlPoints[i][1], gCircles[i + 1], lastPos, lastSpaceLine);
+    gAllPathSegments.push(segment);
+    lastPos = segment.lastPos;
+    lastSpaceLine = segment.gameSpaceLines[segment.gameSpaceLines.length - 1];
   }
 }
 
@@ -138,11 +111,75 @@ function checkBounds(pos) {
 }
 
 class PathSegment {
-  constructor(a0, c0, c1, a1) {
+  constructor(a0, c0, c1, a1, prevPos, lastSpaceLine, colIndex) {
     this.anchor0 = a0;
     this.control0 = c0;
     this.control1 = c1;
     this.anchor1 = a1;
-    this.gameSpaceDivs = [];
+    this.gameSpaceLines = [lastSpaceLine];
+    this.lastPos = createVector(0, 0);
+    this.firstColIndex = 0;
+    this.lastColIndex = 0;
+
+    this.calculateSpacing(prevPos, colIndex);
+  }
+
+  draw() {
+    this.drawSegment();
+    this.drawGameSpaces();
+  }
+
+  drawSegment() {
+    gMaskLayer.bezier(
+      this.anchor0.x,
+      this.anchor0.y,
+      this.control0.x,
+      this.control0.y,
+      this.control1.x,
+      this.control1.y,
+      this.anchor1.x,
+      this.anchor1.y
+    );
+  }
+
+  drawGameSpaces() {
+    let colIndex = this.firstColIndex;
+    let current;
+    for (let i = 0; i < this.gameSpaceLines.length - 1; i++) {
+      current = this.gameSpaceLines[i];
+      let next = this.gameSpaceLines[i + 1];
+      fill(gPalette[colIndex++ % gPalette.length]);
+      quad(current[0].x, current[0].y, current[1].x, current[1].y, next[1].x, next[1].y, next[0].x, next[0].y);
+    }
+    this.lastColIndex = (colIndex - 1) % gPalette.length;
+  }
+
+  calculateSpacing(prevPos) {
+    let percentComplete = 0;
+    let offset = 0.6 * gStrokeWeight;
+    while (percentComplete <= 1) {
+      let xp = bezierPoint(this.anchor0.x, this.control0.x, this.control1.x, this.anchor1.x, percentComplete);
+      let yp = bezierPoint(this.anchor0.y, this.control0.y, this.control1.y, this.anchor1.y, percentComplete);
+
+      // only create a space if the distance is far enough
+      if (dist(xp, yp, prevPos.x, prevPos.y) > 40) {
+        let tangent = createVector(1, 0);
+        tangent.rotate(atan2(yp - prevPos.y, xp - prevPos.x));
+
+        let perpendicular = createVector(-tangent.y, tangent.x);
+        perpendicular.normalize();
+        perpendicular.mult(offset);
+
+        let top = createVector(xp, yp).add(perpendicular);
+        let bottom = createVector(xp, yp).sub(perpendicular);
+        this.gameSpaceLines.push([top, bottom]);
+
+        prevPos.x = xp;
+        prevPos.y = yp;
+      }
+
+      percentComplete += 0.001;
+    }
+    this.lastSpace = prevPos;
   }
 }
