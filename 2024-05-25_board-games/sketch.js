@@ -11,7 +11,7 @@ function setup() {
   createCanvas(0.9 * w, 0.9 * h);
   let xp = 0;
   let yp = 50;
-  let rowCount = 7;
+  let rowCount = 5;
   let colCount = 2;
   let hSpacingMax = 0.9 * (width / (colCount - 1));
   let vSpacing = height / rowCount;
@@ -30,17 +30,16 @@ function setup() {
   gMaskLayer.erase();
 
   gMaskLayer.stroke(0);
-  gMaskLayer.strokeWeight(20);
+  gMaskLayer.strokeWeight(30);
   gMaskLayer.noFill();
-  gMaskLayer.background('#ffffff');
+  noStroke();
 }
 
 function draw() {
   background(255);
+  gMaskLayer.background('#ffffff');
 
-  // draw circles
-  noFill();
-  stroke(0);
+  // draw debug circles
   let controlPoints = [];
   for (let i = 0; i < gCircles.length; i++) {
     circle(gCircles[i].x, gCircles[i].y, 50);
@@ -49,10 +48,10 @@ function draw() {
     }
   }
   // Draw bezier path
-  noFill();
-  stroke(0, 0, 255);
+  let colorIndex = 0;
+  let prevPos = createVector(0, 0);
+
   for (let i = 0; i < controlPoints.length; i++) {
-    noFill();
     let x1 = gCircles[i].x;
     let y1 = gCircles[i].y;
     let x2 = controlPoints[i][0].x;
@@ -62,14 +61,18 @@ function draw() {
     let x4 = gCircles[i + 1].x;
     let y4 = gCircles[i + 1].y;
     gMaskLayer.bezier(x1, y1, x2, y2, x3, y3, x4, y4);
-    let spaceCount = 20;
-    let perInc = 1 / spaceCount;
-    noStroke();
-    for (let j = 0; j < spaceCount; j++) {
-      fill(gPalette[j % gPalette.length]);
-      let x = bezierPoint(x1, x2, x3, x4, j * perInc);
-      let y = bezierPoint(y1, y2, y3, y4, j * perInc);
-      circle(x, y, 50);
+    let percentComplete = 0;
+    while (percentComplete <= 1) {
+      let x = bezierPoint(x1, x2, x3, x4, percentComplete);
+      let y = bezierPoint(y1, y2, y3, y4, percentComplete);
+      if (dist(x, y, prevPos.x, prevPos.y) > 40) {
+        circle(x, y, 80);
+        fill(gPalette[colorIndex++ % gPalette.length]);
+
+        prevPos.x = x;
+        prevPos.y = y;
+      }
+      percentComplete += 0.001;
     }
   }
   image(gMaskLayer, 0, 0);
