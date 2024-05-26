@@ -2,6 +2,8 @@ let gCircles = [];
 
 let gPalette = ['#ea0319', '#981183', '#f3e022', '#03a3ee', '#f28b31', '#79d29d'];
 
+let gMaskLayer;
+
 function setup() {
   let isPortrait = windowWidth < windowHeight;
   let w = isPortrait ? windowWidth : (4 * windowHeight) / 3;
@@ -23,6 +25,14 @@ function setup() {
     xp = isRowOdd ? 50 : width - 50;
     yp += vSpacing;
   }
+
+  gMaskLayer = createGraphics(width, height);
+  gMaskLayer.erase();
+
+  gMaskLayer.stroke(0);
+  gMaskLayer.strokeWeight(20);
+  gMaskLayer.noFill();
+  gMaskLayer.background('#ffffff');
 }
 
 function draw() {
@@ -51,7 +61,7 @@ function draw() {
     let y3 = controlPoints[i][1].y;
     let x4 = gCircles[i + 1].x;
     let y4 = gCircles[i + 1].y;
-    bezier(x1, y1, x2, y2, x3, y3, x4, y4);
+    gMaskLayer.bezier(x1, y1, x2, y2, x3, y3, x4, y4);
     let spaceCount = 20;
     let perInc = 1 / spaceCount;
     noStroke();
@@ -62,6 +72,7 @@ function draw() {
       circle(x, y, 50);
     }
   }
+  image(gMaskLayer, 0, 0);
 }
 
 function calculateControlPoints(start, end, offsetX, offsetY) {
