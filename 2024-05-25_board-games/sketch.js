@@ -1,5 +1,7 @@
 let gCircles = [];
 
+let gPalette = ['#ea0319', '#981183', '#f3e022', '#03a3ee', '#f28b31', '#79d29d'];
+
 function setup() {
   let isPortrait = windowWidth < windowHeight;
   let w = isPortrait ? windowWidth : (4 * windowHeight) / 3;
@@ -40,16 +42,25 @@ function draw() {
   noFill();
   stroke(0, 0, 255);
   for (let i = 0; i < controlPoints.length; i++) {
-    bezier(
-      gCircles[i].x,
-      gCircles[i].y,
-      controlPoints[i][0].x,
-      controlPoints[i][0].y,
-      controlPoints[i][1].x,
-      controlPoints[i][1].y,
-      gCircles[i + 1].x,
-      gCircles[i + 1].y
-    );
+    noFill();
+    let x1 = gCircles[i].x;
+    let y1 = gCircles[i].y;
+    let x2 = controlPoints[i][0].x;
+    let y2 = controlPoints[i][0].y;
+    let x3 = controlPoints[i][1].x;
+    let y3 = controlPoints[i][1].y;
+    let x4 = gCircles[i + 1].x;
+    let y4 = gCircles[i + 1].y;
+    bezier(x1, y1, x2, y2, x3, y3, x4, y4);
+    let spaceCount = 20;
+    let perInc = 1 / spaceCount;
+    noStroke();
+    for (let j = 0; j < spaceCount; j++) {
+      fill(gPalette[j % gPalette.length]);
+      let x = bezierPoint(x1, x2, x3, x4, j * perInc);
+      let y = bezierPoint(y1, y2, y3, y4, j * perInc);
+      circle(x, y, 50);
+    }
   }
 }
 
