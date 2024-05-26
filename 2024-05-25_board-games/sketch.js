@@ -4,6 +4,8 @@ let gPalette = ['#ea0319', '#981183', '#f3e022', '#03a3ee', '#f28b31', '#79d29d'
 
 let gMaskLayer;
 
+let gPadding = 100;
+
 function setup() {
   //setup canvas
   let isPortrait = windowWidth < windowHeight;
@@ -28,12 +30,11 @@ function draw() {
   background(255);
   gMaskLayer.background('#ffffff');
 
-  // draw debug circles
+  // calculate control points
   let controlPoints = [];
   for (let i = 0; i < gCircles.length; i++) {
-    circle(gCircles[i].x, gCircles[i].y, 50);
     if (i < gCircles.length - 1) {
-      controlPoints.push(calculateControlPoints(gCircles[i], gCircles[i + 1], 100, 100));
+      controlPoints.push(calculateControlPoints(gCircles[i], gCircles[i + 1], random(50, 100), random(50, 100)));
     }
   }
   // Draw bezier path
@@ -65,24 +66,32 @@ function draw() {
     }
   }
   image(gMaskLayer, 0, 0);
+
+  for (let i = 0; i < gCircles.length; i++) {
+    fill(0);
+    circle(gCircles[i].x, gCircles[i].y, 50);
+  }
 }
 
 function createPathCircleRef() {
   gCircles.length = 0;
-  let xp = 0;
-  let yp = 50;
-  let rowCount = 5;
-  let colCount = 2;
-  let hSpacingMax = 0.9 * (width / (colCount - 1));
-  let vSpacing = height / rowCount;
+  let xp = random(gPadding, width / 2);
+  let yp = gPadding;
+  let rowCount = int(random(3, 7));
+  let vSpacing = (height - 2 * gPadding) / rowCount;
   for (let row = 0; row < rowCount; row++) {
+    yp = vSpacing * row + gPadding;
     let isRowOdd = row % 2 != 0;
+    let colCount = random() < 0.2 ? 1 : 2;
+    let hSpacingMax = 0.9 * (width / (colCount - 1));
     let hSpacing = isRowOdd ? -hSpacingMax : hSpacingMax;
     for (let col = 0; col < colCount; col++) {
-      gCircles.push(createVector(xp, yp + random(-1, 1) * vSpacing * 0.25));
+      let circlePos = checkBounds(createVector(xp, yp + random(-1, 1) * vSpacing * 0.1));
+
+      gCircles.push(circlePos);
       xp += random(0.5, 0.9) * hSpacing;
     }
-    xp = isRowOdd ? 50 : width - 50;
+    xp = isRowOdd ? random(50, 0.5 * width - 50) : random(0.5 * width + 50, width - 50);
     yp += vSpacing;
   }
 }
@@ -96,4 +105,10 @@ function calculateControlPoints(start, end, offsetX, offsetY) {
 function mousePressed() {
   createPathCircleRef();
   redraw();
+}
+
+function checkBounds(pos) {
+  let xp = constrain(pos.x, gPadding, width - gPadding);
+  let yp = constrain(pos.y, gPadding, height - gPadding);
+  return createVector(xp, yp);
 }
