@@ -6,10 +6,9 @@ let gPalette = ['#ea0319', '#981183', '#f3e022', '#03a3ee', '#f28b31', '#79d29d'
 let gMaskLayer;
 
 let gPadding = 100;
-let gStrokeWeight = 30;
+let gStrokeWeight = 15;
 
 function setup() {
-  //setup canvas
   let isPortrait = windowWidth < windowHeight;
   let w = isPortrait ? windowWidth : (4 * windowHeight) / 3;
   let h = isPortrait ? (4 * windowWidth) / 3 : windowHeight;
@@ -17,7 +16,6 @@ function setup() {
   noStroke();
   noLoop();
 
-  //setup mask layer
   gMaskLayer = createGraphics(width, height);
   gMaskLayer.erase();
 
@@ -29,6 +27,7 @@ function setup() {
 }
 
 function draw() {
+  noStroke();
   background(255);
   gMaskLayer.background('#ffffff');
 
@@ -38,10 +37,11 @@ function draw() {
 
   image(gMaskLayer, 0, 0);
 
-  // for (let i = 0; i < gCircles.length; i++) {
-  //   fill(0);
-  //   circle(gCircles[i].x, gCircles[i].y, 50);
-  // }
+  // gCircles.forEach((circ) => {
+  //   stroke(0);
+  //   noFill();
+  //   circle(circ.x, circ.y, 100);
+  // });
 }
 
 function createGameBoardPath() {
@@ -50,7 +50,6 @@ function createGameBoardPath() {
 }
 
 function createPathSegments() {
-  // calculate control points
   let controlPoints = [];
   for (let i = 0; i < gCircles.length; i++) {
     if (i < gCircles.length - 1) {
@@ -62,7 +61,6 @@ function createPathSegments() {
   let lastPos = createVector(0, 0);
   let lastSpaceLine = [createVector(0, 0), createVector(0, 0)];
   for (let i = 0; i < controlPoints.length; i++) {
-    // calculate bezier segments between reference circles
     let segment = new PathSegment(gCircles[i], controlPoints[i][0], controlPoints[i][1], gCircles[i + 1], lastPos, lastSpaceLine);
     gAllPathSegments.push(segment);
     lastPos = segment.lastPos;
@@ -111,17 +109,15 @@ function checkBounds(pos) {
 }
 
 class PathSegment {
-  constructor(a0, c0, c1, a1, prevPos, lastSpaceLine, colIndex) {
+  constructor(a0, c0, c1, a1, prevPos, lastSpaceLine) {
     this.anchor0 = a0;
     this.control0 = c0;
     this.control1 = c1;
     this.anchor1 = a1;
     this.gameSpaceLines = [lastSpaceLine];
     this.lastPos = createVector(0, 0);
-    this.firstColIndex = 0;
-    this.lastColIndex = 0;
 
-    this.calculateSpacing(prevPos, colIndex);
+    this.calculateSpacing(prevPos);
   }
 
   draw() {
@@ -143,43 +139,41 @@ class PathSegment {
   }
 
   drawGameSpaces() {
-    let colIndex = this.firstColIndex;
-    let current;
     for (let i = 0; i < this.gameSpaceLines.length - 1; i++) {
-      current = this.gameSpaceLines[i];
+      let current = this.gameSpaceLines[i];
       let next = this.gameSpaceLines[i + 1];
-      fill(gPalette[colIndex++ % gPalette.length]);
+      fill(gPalette[i % gPalette.length]);
       quad(current[0].x, current[0].y, current[1].x, current[1].y, next[1].x, next[1].y, next[0].x, next[0].y);
     }
-    this.lastColIndex = (colIndex - 1) % gPalette.length;
   }
 
   calculateSpacing(prevPos) {
     let percentComplete = 0;
     let offset = 0.6 * gStrokeWeight;
+    let stepSize = 0.001;
+    let lastTangent = createVector(1, 0);
     while (percentComplete <= 1) {
       let xp = bezierPoint(this.anchor0.x, this.control0.x, this.control1.x, this.anchor1.x, percentComplete);
       let yp = bezierPoint(this.anchor0.y, this.control0.y, this.control1.y, this.anchor1.y, percentComplete);
 
-      // only create a space if the distance is far enough
-      if (dist(xp, yp, prevPos.x, prevPos.y) > 40) {
-        let tangent = createVector(1, 0);
-        tangent.rotate(atan2(yp - prevPos.y, xp - prevPos.x));
+      let tangent = createVector(
+        bezierTangent(this.anchor0.x, this.control0.x, this.control1.x, this.anchor1.x, percentComplete),
+        bezierTangent(this.anchor0.y, this.control0.y, this.control1.y, this.anchor1.y, percentComplete)
+      ).normalize();
 
-        let perpendicular = createVector(-tangent.y, tangent.x);
-        perpendicular.normalize();
-        perpendicular.mult(offset);
+      let perpendicular = createVector(-tangent.y, tangent.x).mult(offset);
 
-        let top = createVector(xp, yp).add(perpendicular);
-        let bottom = createVector(xp, yp).sub(perpendicular);
+      let top = createVector(xp, yp).add(perpendicular);
+      let bottom = createVector(xp, yp).sub(perpendicular);
+
+      if (dist(xp, yp, prevPos.x, prevPos.y) > gStrokeWeight) {
         this.gameSpaceLines.push([top, bottom]);
-
-        prevPos.x = xp;
-        prevPos.y = yp;
+        prevPos.set(xp, yp);
       }
 
-      percentComplete += 0.001;
+      lastTangent = tangent;
+      percentComplete += stepSize;
     }
-    this.lastSpace = prevPos;
+    this.lastPos.set(prevPos);
   }
 }
