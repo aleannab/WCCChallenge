@@ -5,34 +5,23 @@ let gPalette = ['#ea0319', '#981183', '#f3e022', '#03a3ee', '#f28b31', '#79d29d'
 let gMaskLayer;
 
 function setup() {
+  //setup canvas
   let isPortrait = windowWidth < windowHeight;
   let w = isPortrait ? windowWidth : (4 * windowHeight) / 3;
   let h = isPortrait ? (4 * windowWidth) / 3 : windowHeight;
-  createCanvas(0.9 * w, 0.9 * h);
-  let xp = 0;
-  let yp = 50;
-  let rowCount = 5;
-  let colCount = 2;
-  let hSpacingMax = 0.9 * (width / (colCount - 1));
-  let vSpacing = height / rowCount;
-  for (let row = 0; row < rowCount; row++) {
-    let isRowOdd = row % 2 != 0;
-    let hSpacing = isRowOdd ? -hSpacingMax : hSpacingMax;
-    for (let col = 0; col < colCount; col++) {
-      gCircles.push(createVector(xp, yp + random(-1, 1) * vSpacing * 0.25));
-      xp += random(0.5, 0.9) * hSpacing;
-    }
-    xp = isRowOdd ? 50 : width - 50;
-    yp += vSpacing;
-  }
+  createCanvas(0.95 * w, 0.95 * h);
+  noStroke();
+  noLoop();
 
+  //setup mask layer
   gMaskLayer = createGraphics(width, height);
   gMaskLayer.erase();
 
   gMaskLayer.stroke(0);
   gMaskLayer.strokeWeight(30);
   gMaskLayer.noFill();
-  noStroke();
+
+  createPathCircleRef();
 }
 
 function draw() {
@@ -78,8 +67,33 @@ function draw() {
   image(gMaskLayer, 0, 0);
 }
 
+function createPathCircleRef() {
+  gCircles.length = 0;
+  let xp = 0;
+  let yp = 50;
+  let rowCount = 5;
+  let colCount = 2;
+  let hSpacingMax = 0.9 * (width / (colCount - 1));
+  let vSpacing = height / rowCount;
+  for (let row = 0; row < rowCount; row++) {
+    let isRowOdd = row % 2 != 0;
+    let hSpacing = isRowOdd ? -hSpacingMax : hSpacingMax;
+    for (let col = 0; col < colCount; col++) {
+      gCircles.push(createVector(xp, yp + random(-1, 1) * vSpacing * 0.25));
+      xp += random(0.5, 0.9) * hSpacing;
+    }
+    xp = isRowOdd ? 50 : width - 50;
+    yp += vSpacing;
+  }
+}
+
 function calculateControlPoints(start, end, offsetX, offsetY) {
   let controlPoint1 = createVector(start.x + offsetX, start.y + offsetY);
   let controlPoint2 = createVector(end.x - offsetX, end.y - offsetY);
   return [controlPoint1, controlPoint2];
+}
+
+function mousePressed() {
+  createPathCircleRef();
+  redraw();
 }
