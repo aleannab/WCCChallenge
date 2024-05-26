@@ -6,10 +6,20 @@ function setup() {
   let h = isPortrait ? (4 * windowWidth) / 3 : windowHeight;
   createCanvas(0.9 * w, 0.9 * h);
   let xp = 0;
-  let xSpacingMax = width / 5;
-  for (let i = 0; i < 5; i++) {
-    xp += random(0.5, 1) * xSpacingMax;
-    gCircles.push(createVector(xp, random(height)));
+  let yp = 50;
+  let rowCount = 7;
+  let colCount = 2;
+  let hSpacingMax = 0.9 * (width / (colCount - 1));
+  let vSpacing = height / rowCount;
+  for (let row = 0; row < rowCount; row++) {
+    let isRowOdd = row % 2 != 0;
+    let hSpacing = isRowOdd ? -hSpacingMax : hSpacingMax;
+    for (let col = 0; col < colCount; col++) {
+      gCircles.push(createVector(xp, yp + random(-1, 1) * vSpacing * 0.25));
+      xp += random(0.5, 0.9) * hSpacing;
+    }
+    xp = isRowOdd ? 50 : width - 50;
+    yp += vSpacing;
   }
 }
 
@@ -23,7 +33,7 @@ function draw() {
   for (let i = 0; i < gCircles.length; i++) {
     circle(gCircles[i].x, gCircles[i].y, 50);
     if (i < gCircles.length - 1) {
-      controlPoints.push(calculateControlPoints(gCircles[i], gCircles[i + 1], 100, 0));
+      controlPoints.push(calculateControlPoints(gCircles[i], gCircles[i + 1], 100, 100));
     }
   }
   // Draw bezier path
