@@ -1,16 +1,32 @@
+// Candyland Unwrapped by Antoinette Bumatay-Chan
+// Created for the #WCCChallenge - Topic: Classic Board Games
+//
+// Yay! This was the first time my topic was chosen.
+// This is inspired by the board game Candy Land (classic children's board game in the United States, not sure about internationally).
+// I imagine pulling the board game path off like a super long Hershey's Kiss paper ribbon, and discarding it aside.
+// (we have much better American chocolate! Don't judge us on Hershey, was just apt for the example 😝 lol)
+//
+// There is currently a bug, every so often the canvas is completely black. This happens rarely.
+// Sometimes also the board game spaces get a little funky at the sharp bends of the line.
+//
+// See other submissions here: https://openprocessing.org/curation/78544
+// Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
+
 let gCircles = [];
 let gAllPathSegments = [];
 
 let gPalette = ['#ea0319', '#981183', '#f3e022', '#03a3ee', '#f28b31', '#79d29d'];
+let gBgColor = '#f1f3f4';
 
 let gMaskLayer;
 
 let gPadding = 100;
 let gStrokeWeight = 15;
+let gFirstSkipped = false;
 
 function setup() {
   let isPortrait = windowWidth < windowHeight;
-  let w = isPortrait ? windowWidth : (4 * windowHeight) / 3;
+  let w = isPortrait ? windowWidth : (3 * windowHeight) / 4;
   let h = isPortrait ? (4 * windowWidth) / 3 : windowHeight;
   createCanvas(0.95 * w, 0.95 * h);
   noStroke();
@@ -20,7 +36,7 @@ function setup() {
   gMaskLayer.erase();
 
   gMaskLayer.stroke(0);
-  gMaskLayer.strokeWeight(gStrokeWeight);
+  gMaskLayer.strokeWeight(gStrokeWeight * 0.9);
   gMaskLayer.noFill();
 
   createGameBoardPath();
@@ -28,8 +44,8 @@ function setup() {
 
 function draw() {
   noStroke();
-  background(255);
-  gMaskLayer.background('#ffffff');
+  background(gBgColor);
+  gMaskLayer.background(gBgColor);
 
   for (let i = 0; i < gAllPathSegments.length; i++) {
     gAllPathSegments[i].draw();
@@ -37,11 +53,11 @@ function draw() {
 
   image(gMaskLayer, 0, 0);
 
-  // gCircles.forEach((circ) => {
-  //   stroke(0);
-  //   noFill();
-  //   circle(circ.x, circ.y, 100);
-  // });
+  // stroke(0);
+  // noFill();
+  // for (let i=0; i < gCircles.length; i++){
+  // 	circle(gCircles[i].x, gCircles[i].y, 30);
+  // }
 }
 
 function createGameBoardPath() {
@@ -50,44 +66,52 @@ function createGameBoardPath() {
 }
 
 function createPathSegments() {
+  gFirstSkipped = false;
   let controlPoints = [];
   for (let i = 0; i < gCircles.length; i++) {
     if (i < gCircles.length - 1) {
-      controlPoints.push(calculateControlPoints(gCircles[i], gCircles[i + 1], random(50, 100), random(50, 100)));
+      controlPoints.push(calculateControlPoints(gCircles[i], gCircles[i + 1], random(50, 200), random(50, 200)));
     }
   }
 
   gAllPathSegments = [];
   let lastPos = createVector(0, 0);
   let lastSpaceLine = [createVector(0, 0), createVector(0, 0)];
+  let lastColorIndex = int(random(gPalette.length));
   for (let i = 0; i < controlPoints.length; i++) {
-    let segment = new PathSegment(gCircles[i], controlPoints[i][0], controlPoints[i][1], gCircles[i + 1], lastPos, lastSpaceLine);
+    let segment = new PathSegment(gCircles[i], controlPoints[i][0], controlPoints[i][1], gCircles[i + 1], lastPos, lastSpaceLine, lastColorIndex);
     gAllPathSegments.push(segment);
     lastPos = segment.lastPos;
+    lastColorIndex = segment.lastColorIndex;
     lastSpaceLine = segment.gameSpaceLines[segment.gameSpaceLines.length - 1];
   }
 }
 
 function createPathCircleRefs() {
   gCircles.length = 0;
-  let xp = random(gPadding, width / 2);
-  let yp = gPadding;
-  let rowCount = int(random(3, 7));
+  let xp = random(gPadding, width - gPadding);
+  let yp = gPadding + random() * gPadding;
+  let rowCount = int(random(5, 7));
   let vSpacing = (height - 2 * gPadding) / rowCount;
+  let prevPosX = createVector(-1, -1);
+  let isLeft = random() < 0.5;
   for (let row = 0; row < rowCount; row++) {
+    if (random() < 0.05) continue;
     yp = vSpacing * row + gPadding;
-    let isRowOdd = row % 2 != 0;
-    let colCount = random() < 0.2 ? 1 : 2;
+    isLeft = !isLeft;
+    let colCount = int(random(2, 5));
     let hSpacingMax = 0.9 * (width / (colCount - 1));
-    let hSpacing = isRowOdd ? -hSpacingMax : hSpacingMax;
+    let hSpacing = isLeft ? -hSpacingMax : hSpacingMax;
     for (let col = 0; col < colCount; col++) {
-      let circlePos = checkBounds(createVector(xp, yp + random(-1, 1) * vSpacing * 0.1));
+      let circlePos = checkBounds(createVector(xp, yp + random(-1, 1) * vSpacing * 0.5));
+      if (circlePos.dist(prevPosX) > 100) {
+        gCircles.push(circlePos);
+        prevPosX = circlePos;
+      }
 
-      gCircles.push(circlePos);
-      xp += random(0.5, 0.9) * hSpacing;
+      xp += random(0.6, 1.4) * hSpacing;
     }
-    xp = isRowOdd ? random(50, 0.5 * width - 50) : random(0.5 * width + 50, width - 50);
-    yp += vSpacing;
+    xp = random(gPadding, width - gPadding);
   }
 }
 
@@ -109,13 +133,15 @@ function checkBounds(pos) {
 }
 
 class PathSegment {
-  constructor(a0, c0, c1, a1, prevPos, lastSpaceLine) {
+  constructor(a0, c0, c1, a1, prevPos, lastSpaceLine, colIndex) {
     this.anchor0 = a0;
     this.control0 = c0;
     this.control1 = c1;
     this.anchor1 = a1;
     this.gameSpaceLines = [lastSpaceLine];
     this.lastPos = createVector(0, 0);
+    this.colorIndexStart = colIndex + 1;
+    this.lastColorIndex = 0;
 
     this.calculateSpacing(prevPos);
   }
@@ -139,19 +165,25 @@ class PathSegment {
   }
 
   drawGameSpaces() {
+    let colorIndex = this.colorIndexStart;
     for (let i = 0; i < this.gameSpaceLines.length - 1; i++) {
+      if (!gFirstSkipped) {
+        gFirstSkipped = true;
+        continue;
+      }
       let current = this.gameSpaceLines[i];
       let next = this.gameSpaceLines[i + 1];
-      fill(gPalette[i % gPalette.length]);
+      fill(gPalette[colorIndex % gPalette.length]);
       quad(current[0].x, current[0].y, current[1].x, current[1].y, next[1].x, next[1].y, next[0].x, next[0].y);
+      colorIndex++;
     }
   }
 
   calculateSpacing(prevPos) {
     let percentComplete = 0;
-    let offset = 0.6 * gStrokeWeight;
+    let offset = 0.65 * gStrokeWeight;
     let stepSize = 0.001;
-    let lastTangent = createVector(1, 0);
+    let colorIndex = this.colorIndexStart;
     while (percentComplete <= 1) {
       let xp = bezierPoint(this.anchor0.x, this.control0.x, this.control1.x, this.anchor1.x, percentComplete);
       let yp = bezierPoint(this.anchor0.y, this.control0.y, this.control1.y, this.anchor1.y, percentComplete);
@@ -168,12 +200,13 @@ class PathSegment {
 
       if (dist(xp, yp, prevPos.x, prevPos.y) > gStrokeWeight) {
         this.gameSpaceLines.push([top, bottom]);
+        colorIndex++;
         prevPos.set(xp, yp);
       }
 
-      lastTangent = tangent;
       percentComplete += stepSize;
     }
     this.lastPos.set(prevPos);
+    this.lastColorIndex = (colorIndex - 1) % gPalette.length;
   }
 }
