@@ -26,21 +26,22 @@ function setup() {
 
   gUnit = height / 20;
 
-  gMe = new Person(createVector(width / 2, height / 2));
-  let yp = 0;
+  gMe = new Person(createVector(0.5 * width, 0.65 * height));
+  let yp = -2 * gUnit;
   let isOffset = false;
-  let rowCount = height / 80 + 1;
+  let spacing = 2.2 * gUnit;
+  let rowCount = height / spacing + 1;
   for (let i = 0; i < rowCount; i++) {
     let row0 = new Row(0, yp, isOffset);
     let row1 = new Row(width, yp, isOffset);
-    if (yp < height / 2) {
+    if (yp < 0.75 * height) {
       gRowsBg.push(row0);
       gRowsBg.push(row1);
     } else {
       gRowsFg.push(row0);
       gRowsFg.push(row1);
     }
-    yp += 75;
+    yp += spacing;
     isOffset = !isOffset;
   }
 
@@ -48,7 +49,7 @@ function setup() {
 }
 
 function draw() {
-  background(gBgPalette[2]);
+  background('#762c38');
   time = millis();
 
   gRowsBg.forEach((row) => {
@@ -66,13 +67,13 @@ class Row {
   constructor(xp, yp, isOffset) {
     this.allSeats = [];
     this.yp = yp;
-    let seatWidth = 2 * gUnit;
+    let seatWidth = 3 * gUnit;
     let seatCount = floor(width / seatWidth);
-    let spacing = width / seatCount;
+    let spacing = width / (seatCount + 1);
     this.xp = xp + (isOffset ? spacing / 2 : 0);
     this.timeElapsed = millis();
     for (let i = 0; i < seatCount + 1; i++) {
-      this.allSeats.push(new SingleCircle(i * spacing, 0, 2 * gUnit, 3 * gUnit, '#762c38'));
+      this.allSeats.push(new SingleCircle(i * spacing, 0, seatWidth, 4.5 * gUnit, '#762c38'));
     }
     this.rate = map(yp, 0, height, 0.01, 0.04);
   }
