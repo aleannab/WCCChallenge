@@ -216,12 +216,7 @@ class RoundBodyPart extends BodyPart {
     let adjY = this.isRotate ? -this.bHeight / 2 : this.bPosition.y;
     this.randomSeed = random(0, 9999);
 
-    this.sketchCircles = [];
-    this.sketchCircles.push(new SketchCircle(true, pos.x, adjY, w, h, random(gColorPalette)));
-
-    for (let i = 0; i < 2; i++) {
-      this.sketchCircles.push(new SketchCircle(false, pos.x, adjY, w, h));
-    }
+    this.sketch = new SingleCircle(pos.x, adjY, w, h, random(gColorPalette));
   }
 
   drawPart(time) {
@@ -234,18 +229,33 @@ class RoundBodyPart extends BodyPart {
       rotate(rotationAngle);
     }
 
+    this.sketch.drawCircle();
+
+    pop();
+  }
+}
+
+class SingleCircle {
+  constructor(bPosX, bPosY, bWidth, bHeight, col) {
+    this.sketchCircles = [];
+    this.sketchCircles.push(new SketchCircle(true, bPosX, bPosY, bWidth, bHeight, col));
+
+    for (let i = 0; i < 2; i++) {
+      this.sketchCircles.push(new SketchCircle(false, bPosX, bPosY, bWidth, bHeight));
+    }
+  }
+
+  drawCircle() {
     this.sketchCircles.forEach((sketch) => {
       sketch.drawSketchCircle(time);
     });
-
-    pop();
   }
 }
 
 class SketchCircle {
   constructor(shouldFill, bPosX, bPosY, bWidth, bHeight, col) {
     this.isFilled = shouldFill;
-    this.sWeight = random(2.5, 4);
+    this.sWeight = random(0.5, 1);
     this.sColor = col;
 
     // Randomly adjusting control points
@@ -291,7 +301,7 @@ class SketchCircle {
 class SketchLine {
   constructor(pts) {
     this.slPoints = pts;
-    this.slWeight = random(2, 4);
+    this.slWeight = random(0.5, 0.6);
   }
 
   drawSketchLine() {
