@@ -73,7 +73,7 @@ class Row {
     this.xp = xp + (isOffset ? spacing / 2 : 0);
     this.timeElapsed = millis();
     for (let i = 0; i < seatCount + 1; i++) {
-      this.allSeats.push(new SingleCircle(i * spacing, 0, seatWidth, 4.5 * gUnit, '#762c38'));
+      this.allSeats.push(new Seat(i * spacing, 0, seatWidth));
     }
     this.rate = map(yp, 0, height, 0.01, 0.04);
   }
@@ -87,10 +87,28 @@ class Row {
     push();
     translate(this.xp, this.yp);
     this.allSeats.forEach((seat) => {
-      seat.drawCircle();
+      seat.drawSeat();
     });
     pop();
     this.timeElapsed = time;
+  }
+}
+
+class Seat {
+  constructor(xp, yp, seatWidth) {
+    this.seatBack = new SingleCircle(xp, yp, seatWidth, 4.5 * gUnit, '#762c38');
+
+    let headHeight = 1.5 * gUnit;
+    this.personHead = new SingleCircle(xp, yp - 1.5 * headHeight, gUnit, headHeight, '#ffffff');
+    // /pos: any, w: any, h: any, shouldRotate?: boolean, angleMin?: number, angleMax?: number): QuadBodyPart
+    let torsoWidth = 1.5 * gPartSize.torso.w;
+    this.torso = new QuadBodyPart(createVector(xp - 0.5 * torsoWidth, yp - 0.8 * gPartSize.torso.h), torsoWidth, gPartSize.torso.h); ////{ x: -0.5 * gPartSize.torso.w, y: -1.1 * gPartSize.torso.h }, gPartSize.torso.w, gPartSize.torso.h);
+  }
+
+  drawSeat() {
+    this.seatBack.drawCircle();
+    this.torso.drawPart();
+    this.personHead.drawCircle();
   }
 }
 
