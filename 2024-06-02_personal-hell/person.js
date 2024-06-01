@@ -2,10 +2,10 @@ let gAngularVScalar = 0.005;
 
 // Max and min angles for body part rotation
 let gOffsets = {
-  upperBodyMin: 0,
-  upperBodyMax: Math.PI / 10,
-  headMin: Math.PI / 10,
-  headMax: Math.PI / 4,
+  upperBodyMin: Math.PI / 5,
+  upperBodyMax: Math.PI / 4,
+  headMin: Math.PI / 7,
+  headMax: Math.PI / 5,
   hipMin: -Math.PI / 10,
   hipMax: Math.PI / 8,
   legMin: -Math.PI / 5,
@@ -38,7 +38,7 @@ class Person {
 
   initializeBodyParts() {
     this.pHead = new RoundBodyPart(
-      { x: 0, y: -1.1 * gPartSize.torso.h },
+      { x: 0, y: -1.15 * gPartSize.torso.h },
       gPartSize.head.w,
       gPartSize.head.h,
       random(gMePalette),
@@ -268,11 +268,11 @@ class SingleCircle {
 class SketchCircle {
   constructor(shouldFill, bPosX, bPosY, bWidth, bHeight, col) {
     this.isFilled = shouldFill;
-    this.sWeight = random(0.5, 1);
+    this.sWeight = random(1, 1.2);
     this.sColor = col;
 
     // Randomly adjusting control points
-    let offsets = getRandomValues(4, 15);
+    let offsets = getRandomValues(4, 12);
 
     const baseX = bPosX - bWidth / 2;
     const baseY = bPosY;
@@ -314,7 +314,7 @@ class SketchCircle {
 class SketchLine {
   constructor(pts) {
     this.slPoints = pts;
-    this.slWeight = random(0.5, 0.6);
+    this.slWeight = random(0.8, 1.2);
   }
 
   drawSketchLine() {

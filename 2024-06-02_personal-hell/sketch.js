@@ -10,8 +10,7 @@
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 // Color Palettes
-let gMePalette = ['#007FFF', '#00BFFF', '#1E90FF', '#5CACEE', '#87CEFA'];
-
+let gMePalette = ['#07D1D8', '#08D7DF', '#0ADDE5'];
 let gBgPalette = ['#2f3127', '#3a3029', '#20201f'];
 let gAudiencePalette = ['#820505', '#780404', '#8A0606'];
 
@@ -79,7 +78,7 @@ class Row {
     for (let i = 0; i < seatCount + 1; i++) {
       this.allSeats.push(new Seat(i * spacing, 0, seatWidth));
     }
-    this.rate = map(yp, 0, height, 0.01, 0.04);
+    this.rate = map(yp, 0, height, 0.02, 0.04);
   }
 
   drawRow(time) {
@@ -102,16 +101,17 @@ class Seat {
   constructor(xp, yp, seatWidth) {
     this.seatBack = new SingleCircle(xp, yp, seatWidth, 4.5 * gUnit, gSeatColor);
 
+    let yOffset = random(1.5 * gUnit);
+    xp += random(-0.5, 0.5) * gUnit;
     let headHeight = 1.5 * gUnit;
-    this.personHead = new SingleCircle(xp, yp - 1.5 * headHeight, gUnit, headHeight, random(gAudiencePalette));
-    // /pos: any, w: any, h: any, shouldRotate?: boolean, angleMin?: number, angleMax?: number): QuadBodyPart
+    this.personHead = new SingleCircle(xp, yp - 1.5 * headHeight + yOffset, gUnit, headHeight, random(gAudiencePalette));
     let torsoWidth = 1.5 * gPartSize.torso.w;
     this.torso = new QuadBodyPart(
-      createVector(xp - 0.5 * torsoWidth, yp - 0.8 * gPartSize.torso.h),
+      createVector(xp - 0.5 * torsoWidth, yp - 0.8 * gPartSize.torso.h + yOffset),
       torsoWidth,
-      gPartSize.torso.h,
+      gPartSize.torso.h * 2,
       random(gAudiencePalette)
-    ); ////{ x: -0.5 * gPartSize.torso.w, y: -1.1 * gPartSize.torso.h }, gPartSize.torso.w, gPartSize.torso.h);
+    );
   }
 
   drawSeat() {
