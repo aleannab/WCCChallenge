@@ -22,22 +22,42 @@ let gMe;
 let gRowsBg = [];
 let gRowsFg = [];
 
-let gRandSeed;
+let gSighs = [];
+let gSorrys = [];
+let gBoo;
+
+let gPlaySighTime;
+let gPlaySorryTime;
+
+let gTheBooingBegins;
+
+function preload() {
+  soundFormats('mp3', 'ogg');
+  let sighs = ['sigh00', 'sigh01', 'sigh02', 'sigh03', 'sigh04', 'sigh05', 'sigh06'];
+  for (let s of sighs) {
+    gSighs.push(loadSound(s));
+  }
+  let sorrys = ['excuse00', 'excuse01', 'excuse02', 'other00', 'other01', 'sorry00', 'sorry01', 'sorry02', 'sorry03', 'thanks00', 'thanks01'];
+  for (let s of sorrys) {
+    gSorrys.push(loadSound(s));
+  }
+  gBoo = loadSound('boo');
+}
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
   gUnit = height / 20;
 
-  gMe = new Person(createVector(0.5 * width, 0.65 * height));
+  gMe = new Person(createVector(0.5 * width, 0.6 * height));
   let yp = -2 * gUnit;
   let isOffset = false;
-  let spacing = 2.2 * gUnit;
+  let spacing = 2.3 * gUnit;
   let rowCount = height / spacing + 1;
   for (let i = 0; i < rowCount; i++) {
     let row0 = new Row(0, yp, isOffset);
     let row1 = new Row(width, yp, isOffset);
-    if (yp < 0.75 * height) {
+    if (yp < 0.65 * height) {
       gRowsBg.push(row0);
       gRowsBg.push(row1);
     } else {
@@ -48,12 +68,22 @@ function setup() {
     isOffset = !isOffset;
   }
 
-  //
+  gTheBooingBegins = false;
+  gPlaySorryTime = millis() + random(1000, 2000);
+  gPlaySighTime = millis() + random(2000, 3000);
 }
 
 function draw() {
   background(gSeatColor);
-  time = millis();
+  let time = millis();
+  if (time > gPlaySorryTime) {
+    playSorry();
+    gPlaySorryTime = time + random(3000, 4000);
+  }
+  if (time > gPlaySighTime) {
+    playSigh();
+    gPlaySighTime = time + random(2000, 3000);
+  }
 
   gRowsBg.forEach((row) => {
     row.drawRow(time);
@@ -64,6 +94,19 @@ function draw() {
   gRowsFg.forEach((row) => {
     row.drawRow(time);
   });
+}
+
+function mouseClicked() {
+  if (!gBoo.isPlaying() && gTheBooingBegins) {
+    gBoo.play();
+  } else gTheBooingBegins = true;
+}
+
+function playSorry() {
+  gSorrys[int(random(gSorrys.length))].play();
+}
+function playSigh() {
+  gSighs[int(random(gSighs.length))].play();
 }
 
 class Row {

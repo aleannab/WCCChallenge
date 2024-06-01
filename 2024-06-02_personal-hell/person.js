@@ -260,7 +260,7 @@ class SingleCircle {
 
   drawCircle() {
     this.sketchCircles.forEach((sketch) => {
-      sketch.drawSketchCircle(time);
+      sketch.drawSketchCircle();
     });
   }
 }
@@ -272,7 +272,7 @@ class SketchCircle {
     this.sColor = col;
 
     // Randomly adjusting control points
-    let offsets = getRandomValues(4, 12);
+    let offsets = getRandomValues(10, 12);
 
     const baseX = bPosX - bWidth / 2;
     const baseY = bPosY;
