@@ -4,10 +4,10 @@ let gAngularVScalar = 0.005;
 let gOffsets = {
   upperBodyMin: Math.PI / 5,
   upperBodyMax: Math.PI / 4,
-  headMin: Math.PI / 7,
-  headMax: Math.PI / 5,
-  hipMin: -Math.PI / 10,
-  hipMax: Math.PI / 8,
+  headMin: 0,
+  headMax: Math.PI / 10,
+  hipMin: 0,
+  hipMax: 0,
   legMin: -Math.PI / 5,
   legMax: 0,
   ankleMin: 0,
@@ -17,9 +17,9 @@ let gOffsets = {
 
 // Size scalars for body parts
 let gPartSize = {
-  head: { w: 1, h: 1.5 },
-  torso: { w: 1, h: 2 },
-  hips: { w: 1.2, h: 1 },
+  head: { w: 1, h: 1.4 },
+  torso: { w: 1.1, h: 2.3 },
+  hips: { w: 1.3, h: 1.2 },
   thigh: { w: 0.8, h: 1.75 },
   ankle: { w: 0.6, h: 1.8 },
 };
@@ -54,7 +54,7 @@ class Person {
     );
     this.pBothLegs = this.createLegs();
     this.pHips = new RoundBodyPart(
-      { x: -0.01 * gPartSize.hips.w, y: 0.5 * gPartSize.hips.h },
+      { x: 0, y: 0.5 * gPartSize.hips.h },
       gPartSize.hips.w,
       gPartSize.hips.h,
       random(gMePalette),

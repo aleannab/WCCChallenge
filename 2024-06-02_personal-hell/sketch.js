@@ -1,10 +1,15 @@
-// Created for the #WCCChallenge - Topic: Cubism
-// Inspired by Marcel Duchamp's Nude Descending a Staircase, No. 2
+// Agoraphobic Paruresis by Antoinette Bumatay-Chan
+// Created for the #WCCChallenge - Topic: My Personal Hell
 //
-// Abstract figures are created using bezier curves and quads.
-// The sketchy outlines are drawn by randomly offsetting the control points of the shape
-// Forward movement and rotation transformations for each body part give the illusion of walking
-// Once figure is offscreen, they are moved back to the top of the "staircase"
+// I've thought about this before hahaha.
+// My personal hell would be a movie theater.
+// I'm sitting in the middle of the row, and really need to pee.
+// As I try to make my way out, everyone is getting annoyed at me since it's
+// during an important part of the film and I'm interrupting their experience.
+// The row is neverending.
+// I'm forever inconveniencing people and having them get mad at me.
+//
+// (This is why I like aisle seats hahahaha).
 //
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
@@ -23,23 +28,30 @@ let gRowsBg = [];
 let gRowsFg = [];
 
 let gSighs = [];
+let gSighIndex = 0;
 let gSorrys = [];
+let gSorryIndex = 0;
+let gShushes = [];
 let gBoo;
 
 let gPlaySighTime;
 let gPlaySorryTime;
 
-let gTheBooingBegins;
+let gSoundsOn;
 
 function preload() {
   soundFormats('mp3', 'ogg');
-  let sighs = ['sigh00', 'sigh01', 'sigh02', 'sigh03', 'sigh04', 'sigh05', 'sigh06'];
+  let sighs = ['sigh00', 'sigh01', 'sigh02', 'sigh03', 'sigh04', 'sigh05', 'sigh06', 'sigh07', 'sigh08'];
   for (let s of sighs) {
     gSighs.push(loadSound(s));
   }
   let sorrys = ['excuse00', 'excuse01', 'excuse02', 'other00', 'other01', 'sorry00', 'sorry01', 'sorry02', 'sorry03', 'thanks00', 'thanks01'];
   for (let s of sorrys) {
     gSorrys.push(loadSound(s));
+  }
+  let shushes = ['shush00', 'shush01', 'shush02', 'shush03'];
+  for (let s of shushes) {
+    gShushes.push(loadSound(s));
   }
   gBoo = loadSound('boo');
 }
@@ -68,7 +80,7 @@ function setup() {
     isOffset = !isOffset;
   }
 
-  gTheBooingBegins = false;
+  gSoundsOn = false;
   gPlaySorryTime = millis() + random(1000, 2000);
   gPlaySighTime = millis() + random(2000, 3000);
 }
@@ -76,13 +88,16 @@ function setup() {
 function draw() {
   background(gSeatColor);
   let time = millis();
-  if (time > gPlaySorryTime) {
-    playSorry();
-    gPlaySorryTime = time + random(3000, 4000);
-  }
-  if (time > gPlaySighTime) {
-    playSigh();
-    gPlaySighTime = time + random(2000, 3000);
+
+  if (gSoundsOn) {
+    if (time > gPlaySorryTime) {
+      playSorry();
+      gPlaySorryTime = time + random(3000, 4000);
+    }
+    if (time > gPlaySighTime) {
+      playSigh();
+      gPlaySighTime = time + random(3000, 5000);
+    }
   }
 
   gRowsBg.forEach((row) => {
@@ -94,19 +109,29 @@ function draw() {
   gRowsFg.forEach((row) => {
     row.drawRow(time);
   });
+
+  console.log(frameRate());
 }
 
 function mouseClicked() {
-  if (!gBoo.isPlaying() && gTheBooingBegins) {
-    gBoo.play();
-  } else gTheBooingBegins = true;
+  if (!gSoundsOn) {
+    gSoundsOn = true;
+  } else if (!gShushes[0].isPlaying() && !gBoo.isPlaying()) {
+    if (random() > 0.1) {
+      gShushes.forEach((s) => s.play());
+    } else {
+      gBoo.play();
+    }
+  }
 }
 
 function playSorry() {
-  gSorrys[int(random(gSorrys.length))].play();
+  gSorryIndex = (gSorryIndex + int(random(1, 5))) % gSorrys.length;
+  gSorrys[gSorryIndex].play();
 }
 function playSigh() {
-  gSighs[int(random(gSighs.length))].play();
+  gSighIndex = (gSighIndex + int(random(1, 5))) % gSighs.length;
+  gSighs[gSighIndex].play();
 }
 
 class Row {
