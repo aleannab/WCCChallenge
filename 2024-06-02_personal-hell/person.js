@@ -41,16 +41,23 @@ class Person {
       { x: 0, y: -1.1 * gPartSize.torso.h },
       gPartSize.head.w,
       gPartSize.head.h,
+      random(gMePalette),
       true,
       gOffsets.headMax,
       gOffsets.headMin
     );
-    this.pTorso = new QuadBodyPart({ x: -0.5 * gPartSize.torso.w, y: -1.1 * gPartSize.torso.h }, gPartSize.torso.w, gPartSize.torso.h);
+    this.pTorso = new QuadBodyPart(
+      { x: -0.5 * gPartSize.torso.w, y: -1.1 * gPartSize.torso.h },
+      gPartSize.torso.w,
+      gPartSize.torso.h,
+      random(gMePalette)
+    );
     this.pBothLegs = this.createLegs();
     this.pHips = new RoundBodyPart(
       { x: -0.01 * gPartSize.hips.w, y: 0.5 * gPartSize.hips.h },
       gPartSize.hips.w,
       gPartSize.hips.h,
+      random(gMePalette),
       true,
       gOffsets.hipMin,
       gOffsets.hipMax
@@ -60,11 +67,17 @@ class Person {
   createLegs() {
     let legs = [];
     for (let i = 0; i < 2; i++) {
-      let thigh = new QuadBodyPart({ x: -0.5 * gPartSize.thigh.w, y: 0.05 * gPartSize.thigh.h }, gPartSize.thigh.w, gPartSize.thigh.h);
+      let thigh = new QuadBodyPart(
+        { x: -0.5 * gPartSize.thigh.w, y: 0.05 * gPartSize.thigh.h },
+        gPartSize.thigh.w,
+        gPartSize.thigh.h,
+        random(gMePalette)
+      );
       let ankle = new QuadBodyPart(
         { x: -0.5 * gPartSize.ankle.w, y: 0.95 * gPartSize.thigh.h },
         gPartSize.ankle.w,
         gPartSize.ankle.h,
+        random(gMePalette),
         true,
         gOffsets.ankleMin,
         gOffsets.ankleMax
@@ -107,21 +120,21 @@ class Person {
 }
 
 class BodyPart {
-  constructor(pos, w, h, angleMin, angleMax) {
+  constructor(pos, w, h, col, angleMin, angleMax) {
     this.bPosition = pos;
     this.bWidth = w;
     this.bHeight = h;
     this.bIsRotate = false;
     this.rotateMin = angleMin;
     this.rotateMax = angleMax;
-    this.bColor = random(gColorPalette);
+    this.bColor = col; //random(gColorPalette);
     this.bPoints = [];
   }
 }
 
 class QuadBodyPart extends BodyPart {
-  constructor(pos, w, h, shouldRotate = false, angleMin = -1, angleMax = -1) {
-    super(pos, w, h, angleMin, angleMax);
+  constructor(pos, w, h, col, shouldRotate = false, angleMin = -1, angleMax = -1) {
+    super(pos, w, h, col, angleMin, angleMax);
 
     let offsets = getRandomValues(3, 10);
     let pt0 = { x: offsets[0], y: offsets[1] };
@@ -209,14 +222,14 @@ class Leg {
 }
 
 class RoundBodyPart extends BodyPart {
-  constructor(pos, w, h, shouldRotate, angleMin = -1, angleMax = -1) {
-    super(pos, w, h, angleMin, angleMax);
+  constructor(pos, w, h, col, shouldRotate, angleMin = -1, angleMax = -1) {
+    super(pos, w, h, col, angleMin, angleMax);
     this.isRotate = shouldRotate;
 
     let adjY = this.isRotate ? -this.bHeight / 2 : this.bPosition.y;
     this.randomSeed = random(0, 9999);
 
-    this.sketch = new SingleCircle(pos.x, adjY, w, h, random(gColorPalette));
+    this.sketch = new SingleCircle(pos.x, adjY, w, h, col);
   }
 
   drawPart(time) {
