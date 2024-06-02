@@ -33,7 +33,6 @@ let gSighs = [];
 let gSighIndex = 0;
 let gSorrys = [];
 let gSorryIndex = 0;
-let gShushes = [];
 let gBoo;
 
 let gPlaySighTime;
@@ -43,18 +42,16 @@ let gSoundsOn;
 
 function preload() {
   soundFormats('mp3', 'ogg');
-  let sighs = ['sigh00', 'sigh01', 'sigh02', 'sigh03', 'sigh04', 'sigh05', 'sigh06', 'sigh07', 'sigh08'];
+  let sighs = ['sigh00', 'sigh02', 'sigh03', 'sigh04', 'sigh05', 'sigh06', 'sigh07', 'sigh08'];
   for (let s of sighs) {
     gSighs.push(loadSound(s));
   }
-  let sorrys = ['excuse00', 'excuse02', 'other00', 'other01', 'sorry00', 'sorry01', 'sorry02', 'sorry03', 'thanks00', 'thanks01'];
+  gSighs = shuffle(gSighs);
+  let sorrys = ['excuse00', 'excuse01', 'other00', 'other01', 'sorry00', 'sorry01', 'sorry02', 'sorry03', 'thanks00', 'thanks01'];
   for (let s of sorrys) {
     gSorrys.push(loadSound(s));
   }
-  let shushes = ['shush00', 'shush01', 'shush02', 'shush03'];
-  for (let s of shushes) {
-    gShushes.push(loadSound(s));
-  }
+  gSorrys = shuffle(gSorrys);
   gBoo = loadSound('boo');
 }
 
@@ -94,11 +91,11 @@ function draw() {
   if (gSoundsOn) {
     if (time > gPlaySorryTime) {
       playSorry();
-      gPlaySorryTime = time + random(3000, 4000);
+      gPlaySorryTime = time + random(3000, 5000);
     }
     if (time > gPlaySighTime) {
       playSigh();
-      gPlaySighTime = time + random(3000, 5000);
+      gPlaySighTime = time + random(3000, 6000);
     }
   }
 
@@ -118,22 +115,20 @@ function draw() {
 function mouseClicked() {
   if (!gSoundsOn) {
     gSoundsOn = true;
-  } else if (!gShushes[0].isPlaying() && !gBoo.isPlaying()) {
-    if (random() > 0.1) {
-      gShushes.forEach((s) => s.play());
-    } else {
-      gBoo.play();
-    }
+  } else if (!gBoo.isPlaying()) {
+    gBoo.play();
   }
 }
 
 function playSorry() {
-  gSorryIndex = (gSorryIndex + int(random(1, gSorrys.length - 1))) % gSorrys.length;
   gSorrys[gSorryIndex].play();
+  gSorryIndex = (gSorryIndex + 1) % gSorrys.length;
+  //if (gSorryIndex === 0) gSorrys = shuffle(gSorrys);
 }
 function playSigh() {
-  gSighIndex = (gSighIndex + int(random(1, gSorrys.length - 1))) % gSighs.length;
   gSighs[gSighIndex].play();
+  gSighIndex = (gSighIndex + 1) % gSighs.length;
+  //if (gSighIndex === 0) gSighs = shuffle(gSighs);
 }
 
 class Row {
