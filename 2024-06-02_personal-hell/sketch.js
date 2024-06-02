@@ -3,11 +3,13 @@
 //
 // I've thought about this before hahaha.
 // My personal hell would be a movie theater.
-// I'm sitting in the middle of the row, and really need to pee.
-// As I try to make my way out, everyone is getting annoyed at me since it's
-// during an important part of the film and I'm interrupting their experience.
+// I'm sitting in the middle of the row, and I really need to pee.
+// I try to make my way out inconspicuously,
+// but everyone is getting annoyed at me since it's during an
+// important part of the film and I'm interrupting their experience.
 // The row is neverending.
-// I'm forever inconveniencing people and having them get mad at me.
+// I'm forever inconveniencing people and having them get mad at me...
+// while desperately still needing to pee.
 //
 // (This is why I like aisle seats hahahaha).
 //
@@ -21,7 +23,7 @@ let gAudiencePalette = ['#820505', '#780404', '#8A0606'];
 
 let gSeatColor = '#520013';
 
-let gVelocityScalar = 0.03;
+// let gVelocityScalar = 0.03;
 
 let gMe;
 let gRowsBg = [];
@@ -45,7 +47,7 @@ function preload() {
   for (let s of sighs) {
     gSighs.push(loadSound(s));
   }
-  let sorrys = ['excuse00', 'excuse01', 'excuse02', 'other00', 'other01', 'sorry00', 'sorry01', 'sorry02', 'sorry03', 'thanks00', 'thanks01'];
+  let sorrys = ['excuse00', 'excuse02', 'other00', 'other01', 'sorry00', 'sorry01', 'sorry02', 'sorry03', 'thanks00', 'thanks01'];
   for (let s of sorrys) {
     gSorrys.push(loadSound(s));
   }
@@ -126,11 +128,11 @@ function mouseClicked() {
 }
 
 function playSorry() {
-  gSorryIndex = (gSorryIndex + int(random(1, 5))) % gSorrys.length;
+  gSorryIndex = (gSorryIndex + int(random(1, gSorrys.length - 1))) % gSorrys.length;
   gSorrys[gSorryIndex].play();
 }
 function playSigh() {
-  gSighIndex = (gSighIndex + int(random(1, 5))) % gSighs.length;
+  gSighIndex = (gSighIndex + int(random(1, gSorrys.length - 1))) % gSighs.length;
   gSighs[gSighIndex].play();
 }
 
