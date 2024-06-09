@@ -1,18 +1,20 @@
+// Creeping Deviations by Antoinette Bumatay-Chan
 // Created for the #WCCChallenge - Topic: Unsatisfying
 //
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
-let gWorld;
-
-let gBarCount = 50;
-
+let gBarCount = 100;
 let gBars = [];
+let gBarWidth;
 
 let gNextDropInterval = 3000;
 let gDropTime = 2000;
 let gHue = 0;
+let gHueInc = 50;
 let gSaturation = 0.5;
+
+let gVaryOdds = 0.1;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -21,68 +23,65 @@ function setup() {
   noStroke();
 
   createBars();
-
-  let dropTime = millis() + 3000;
-  let dropInc = dropTime / gBarCount;
-
-  gBars.forEach((bar) => {
-    bar.initStart(dropTime);
-    dropTime += dropInc;
-  });
 }
 
 function draw() {
   background(255);
-  let currentTime = millis();
+  let t = millis();
 
   gBars.forEach((bar) => {
-    bar.update(currentTime);
+    bar.update(t);
     bar.draw();
   });
 }
 
 function createBars() {
-  let barWidth = width / gBarCount;
+  gVaryOdds = 1 / gBarCount;
+  let spacing = ceil(width / gBarCount);
+  gBarWidth = spacing - 1;
 
   for (let i = 0; i < gBarCount; i++) {
-    gBars.push(new Bar(barWidth * i, barWidth));
+    gBars.push(new Bar(spacing * i));
   }
 
-  gBars[int(random(gBars.length))].off = 2;
-}
+  let dropTime = millis() + 1000;
+  let dropInc = dropTime / gBarCount;
 
-function easeInQuart(t) {
-  return t * t * t * t;
+  gBars.forEach((bar) => {
+    bar.startTime = dropTime;
+    dropTime += dropInc;
+  });
 }
 
 class Bar {
-  constructor(xp, w, off = 1) {
-    this.width = w;
-    this.col0 = color(gHue, gSaturation, map(xp, 0, width, 1, 0.5));
-    this.col1 = color(map(xp, 0, width, 1, 0.5));
+  constructor(xp) {
     this.pos = createVector(xp, 0);
-    this.off = off;
     this.startTime = -1;
     this.isDropping = false;
     this.isFirstDrop = true;
-    this.hue = gHue;
-    this.hueInc = 50;
-    this.sat = gSaturation;
-  }
 
-  initStart(t) {
-    this.startTime = t;
+    this.hue = gHue;
+    this.sat = gSaturation;
+    this.bright = map(xp, 0, width, 1, 0.5);
+
+    this.col0 = color(this.hue, this.sat, this.bright);
+    this.col1 = color(map(xp, 0, width, 1, 0.5));
+
+    this.odds = gVaryOdds;
+    this.dropTime = gDropTime;
   }
 
   drop() {
     if (!this.isFirstDrop) {
       this.col1 = this.col0;
-      if (random() < 1 / gBarCount) {
+      if (random() < this.odds) {
         this.addVariance();
-      } else {
-        this.hue = (this.hue + this.hueInc) % 360;
+        this.odds *= 2;
+        console.log(this.odds);
       }
-      this.col0 = color(this.hue, this.sat, map(this.pos.x, 0, width, 1, 0.5));
+
+      this.hue = (this.hue + gHueInc) % 360;
+      this.col0 = color(this.hue, this.sat, this.bright);
     }
 
     this.isDropping = true;
@@ -90,15 +89,22 @@ class Bar {
   }
 
   addVariance() {
-    let variantType = int(random(2));
+    let variantType = int(random(4));
     switch (variantType) {
       case 0:
-        this.hue = (this.hue + int(random(0.5 * this.hueInc))) % 360;
+        this.hue += random(0.25, 0.5) * gHueInc;
+        this.hue = constrain(this.hue, 0, 360);
         break;
       case 1:
         this.sat += random(-0.1, 0.1);
         this.sat = constrain(this.sat, 0, 1);
-        this.hue = (this.hue + this.hueInc) % 360;
+        break;
+      case 2:
+        this.dropTime *= random(0.9, 1.1);
+        break;
+      case 3:
+        this.bright += random(-0.1, 0.1);
+        this.bright = constrain(this.bright, 0, 1);
         break;
     }
   }
@@ -110,8 +116,8 @@ class Bar {
 
     if (this.isDropping) {
       let elapsed = now - this.startTime;
-      let t = constrain(elapsed / gDropTime, 0, 1);
-      let easeValue = easeInQuart(t);
+      let t = constrain(elapsed / this.dropTime, 0, 1);
+      let easeValue = this.easeInQuad(t);
 
       this.pos.y = lerp(0, height, easeValue);
 
@@ -124,8 +130,12 @@ class Bar {
 
   draw() {
     fill(this.col0);
-    rect(this.pos.x, 0, this.width, height);
+    rect(this.pos.x, 0, gBarWidth, height);
     fill(this.col1);
-    rect(this.pos.x, this.pos.y, this.width, height);
+    rect(this.pos.x, this.pos.y, gBarWidth, height);
+  }
+
+  easeInQuad(t) {
+    return t * t * t * t;
   }
 }
