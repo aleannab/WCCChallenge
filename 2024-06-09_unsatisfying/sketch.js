@@ -1,28 +1,44 @@
 // Creeping Deviations by Antoinette Bumatay-Chan
 // Created for the #WCCChallenge - Topic: Unsatisfying
 //
+// I had a hard time with this challenge. I toyed around with a few concepts,
+// but never felt truly satisfied that it was unsatisfying enough.
+// ...so I guess that is on theme afterall? Haha.
+//
+// Here's where I landed. It's pretty straight forward.
+// Bars are falling downwards.
+// There is a small chance a slight variation will be added to an individual bar
+// (hue, saturation, brightness, time of drop, easing type).
+// Once a bar has deviated, the chances of it deviating again doubles.
+//
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
-let gBarCount = 100;
+let gBarCount = 50;
 let gBars = [];
 let gBarWidth;
 
 let gNextDropInterval = 3000;
 let gDropTime = 2000;
 let gHue = 0;
-let gHueInc = 50;
+let gHueInc = 60;
 let gSaturation = 0.5;
 
-let gVaryOdds = 0.1;
+let gVaryOdds;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSB, 360, 1, 1);
 
+  gHue = int(random(360));
+
   noStroke();
 
+  noLoop();
+}
+function mouseClicked() {
   createBars();
+  loop();
 }
 
 function draw() {
@@ -36,7 +52,7 @@ function draw() {
 }
 
 function createBars() {
-  gVaryOdds = 1 / gBarCount;
+  gVaryOdds = 10 / gBarCount;
   let spacing = ceil(width / gBarCount);
   gBarWidth = spacing - 1;
 
@@ -69,6 +85,8 @@ class Bar {
 
     this.odds = gVaryOdds;
     this.dropTime = gDropTime;
+
+    this.easeType = 0;
   }
 
   drop() {
@@ -77,7 +95,6 @@ class Bar {
       if (random() < this.odds) {
         this.addVariance();
         this.odds *= 2;
-        console.log(this.odds);
       }
 
       this.hue = (this.hue + gHueInc) % 360;
@@ -89,10 +106,10 @@ class Bar {
   }
 
   addVariance() {
-    let variantType = int(random(4));
+    let variantType = int(random(5));
     switch (variantType) {
       case 0:
-        this.hue += random(0.25, 0.5) * gHueInc;
+        this.hue += random(0.4, 0.5) * gHueInc;
         this.hue = constrain(this.hue, 0, 360);
         break;
       case 1:
@@ -106,6 +123,8 @@ class Bar {
         this.bright += random(-0.1, 0.1);
         this.bright = constrain(this.bright, 0, 1);
         break;
+      case 4:
+        this.easeType = (this.easeType + 1) % 4;
     }
   }
 
@@ -117,7 +136,7 @@ class Bar {
     if (this.isDropping) {
       let elapsed = now - this.startTime;
       let t = constrain(elapsed / this.dropTime, 0, 1);
-      let easeValue = this.easeInQuad(t);
+      let easeValue = this.ease(t);
 
       this.pos.y = lerp(0, height, easeValue);
 
@@ -135,7 +154,36 @@ class Bar {
     rect(this.pos.x, this.pos.y, gBarWidth, height);
   }
 
-  easeInQuad(t) {
+  ease(t) {
+    switch (this.easeType) {
+      case 0:
+        t = this.easeInQuart(t);
+        break;
+      case 1:
+        t = this.easeInQuad(t);
+        break;
+      case 2:
+        t = this.easeInSine(t);
+        break;
+      case 3:
+        t = this.easeInQuint(t);
+    }
+    return t;
+  }
+
+  easeInQuart(t) {
     return t * t * t * t;
+  }
+
+  easeInQuad(t) {
+    return t * t;
+  }
+
+  easeInSine(t) {
+    return 1 - cos((t * PI) / 2);
+  }
+
+  easeInQuint(t) {
+    return t * t * t * t * t;
   }
 }
