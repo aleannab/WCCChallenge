@@ -40,9 +40,35 @@ let gPlaySorryTime;
 
 let gSoundsOn;
 
+let gAudienceSound;
+
 function preload() {
   soundFormats('mp3', 'ogg');
-  let sighs = ['sigh00', 'sigh02', 'sigh03', 'sigh04', 'sigh05', 'sigh06', 'sigh07', 'sigh08'];
+  let sighs = [
+    'cantbelieve00',
+    'cmon00',
+    'cmon01',
+    'cmon02',
+    'excuseyou00',
+    'geez00',
+    'getout00',
+    'groan',
+    'mmhm00',
+    'omg00',
+    'rightnow00',
+    'sigh00',
+    'sigh03',
+    'sigh04',
+    'sigh05',
+    'sigh06',
+    'sigh07',
+    'sigh08',
+    'sigh09',
+    'ugh00',
+    'ugh01',
+    'ugh02',
+    'what00',
+  ];
   for (let s of sighs) {
     gSighs.push(loadSound(s));
   }
@@ -53,14 +79,17 @@ function preload() {
   }
   gSorrys = shuffle(gSorrys);
   gBoo = loadSound('boo');
+  gAudienceSound = loadSound('hell-recording');
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  gUnit = height / 20;
+  let div = 40;
+  gUnit = height / div;
+  let yMe = (div * 2) / 3 - 0.75;
 
-  gMe = new Person(createVector(0.5 * width, 0.6 * height));
+  gMe = new Person(createVector(0.5 * width, gUnit * yMe));
   let yp = -2 * gUnit;
   let isOffset = false;
   let spacing = 2.3 * gUnit;
@@ -113,6 +142,7 @@ function draw() {
 }
 
 function mouseClicked() {
+  // gAudienceSound.play();
   if (!gSoundsOn) {
     gSoundsOn = true;
   } else if (!gBoo.isPlaying()) {
