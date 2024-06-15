@@ -7,7 +7,7 @@ let gRopeCount;
 let gRopeSpacing = 50;
 let gKnotRad = 5;
 
-let gColorPalette = ['#c1b3a6'];
+let gColorPalette = ['#c1b3a6', '#f2e9e3'];
 let gKnotPalette = ['#c1b3a6'];
 
 function setup() {
@@ -19,12 +19,11 @@ function setup() {
 }
 
 function createMacrameHanging() {
-  gRopeCount = floor(width / gRopeSpacing);
-  console.log(gRopeSpacing);
+  gRopeCount = floor(width / gRopeSpacing) + 1;
 
   for (let i = 0; i < gRopeCount; i++) {
     for (let j = 0; j < 2; j++) {
-      gRopeStrings.push(new RopeString(i * gRopeSpacing + j * 10, 50, height - 50));
+      gRopeStrings.push(new RopeString(i * gRopeSpacing + j * 10, -50, height + 100));
     }
   }
 }
@@ -45,8 +44,8 @@ class RopeString {
     this.color = random(gColorPalette);
     this.knots = [];
 
-    let knotCount = 20;
-    let spacing = this.length / knotCount;
+    let knotCount = 10;
+    let spacing = this.length / (knotCount - 1);
     let x = this.pos.x;
     for (let i = 0; i < knotCount; i++) {
       this.knots.push(new Knot(x, this.pos.y + spacing * i));
@@ -59,17 +58,24 @@ class RopeString {
 
   draw() {
     stroke(this.color);
+    strokeWeight(4);
     noFill();
     beginShape();
+    curveVertex(this.knots[0].pos.x, this.knots[0].pos.y);
     this.knots.forEach((knot) => {
       curveVertex(knot.pos.x, knot.pos.y);
     });
+    curveVertex(this.knots[this.knots.length - 1].pos.x, this.knots[this.knots.length - 1].pos.y);
     endShape();
-    beginShape();
-    this.knots.forEach((knot) => {
-      curveVertex(this.pos.x, knot.pos.y);
-    });
-    endShape();
+
+    // beginShape();
+    // curveVertex(this.pos.x, this.knots[0].pos.y);
+    // this.knots.forEach((knot) => {
+    //   curveVertex(this.pos.x, knot.pos.y);
+    // });
+    // curveVertex(this.pos.x, this.knots[0].pos.y);
+    // endShape();
+
     this.knots.forEach((knot) => {
       knot.draw();
     });
