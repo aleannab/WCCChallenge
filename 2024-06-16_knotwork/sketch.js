@@ -4,97 +4,129 @@
 
 let gRopeStrings = [];
 let gRopeCount;
-let gRopeSpacing = 50;
-let gKnotRad = 5;
+let gRowSpacing = 50;
+let gRopeSpacing = 30;
+let gKnotRad = 1.5;
+let gRopeThickness = 1;
 
-let gColorPalette = ['#c1b3a6', '#f2e9e3'];
-let gKnotPalette = ['#c1b3a6'];
+let gKnotJunctions = [];
+
+let gColorPalette = ['#d94e41', '#d9863d', '#f2b950', '#95bf93', '#46788c', '#556484'];
+let gBgColor = '#f2f7f1';
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSB);
-  strokeWeight(1);
+  strokeWeight(gRopeThickness);
 
   createMacrameHanging();
 }
 
 function createMacrameHanging() {
   gRopeCount = floor(width / gRopeSpacing) + 1;
+  gRowCount = floor(height / gRowSpacing) + 2;
 
   for (let i = 0; i < gRopeCount; i++) {
-    for (let j = 0; j < 2; j++) {
-      gRopeStrings.push(new RopeString(i * gRopeSpacing + j * 10, -50, height + 100));
+    let knotRow = [];
+    let ropeX = gRopeSpacing * (i + random(-0.4, 0.4));
+    for (let j = 0; j < gRowCount; j++) {
+      let yp = j * gRowSpacing;
+      if (j != 0 && j != gRowCount - 1) {
+        yp += random(-1, 1) * gRowSpacing;
+      }
+      knotRow.push(new Knot(ropeX + 0.2 * sin(j) * gRopeSpacing, yp));
+    }
+    gKnotJunctions.push(knotRow);
+  }
+
+  for (let i = 0; i < gRopeCount; i++) {
+    let ropePosition = i;
+    let ropeVertices = [];
+    let ropeColor = random(gColorPalette);
+    for (let j = 0; j < gRowCount; j++) {
+      gKnotJunctions[ropePosition][j].addColor(ropeColor);
+      ropeVertices.push(gKnotJunctions[ropePosition][j].pos);
+
+      ropePosition = ropePosition + (random() < 0.5 ? -1 : 1);
+      if (ropePosition < 0) ropePosition += 2;
+      else if (ropePosition > gRopeCount - 1) ropePosition -= 2;
+    }
+    gRopeStrings.push(new RopeString(ropeVertices, ropeColor));
+  }
+
+  for (let i = 0; i < gRopeCount; i++) {
+    let ropeColor = gRopeStrings[i].color;
+    for (let j = 0; j < gRowCount; j++) {
+      gKnotJunctions[i][j].addColor(ropeColor);
     }
   }
 }
 
 function draw() {
-  noStroke();
-  background(50);
+  background(gBgColor);
+
+  for (let rope = 0; rope < gRopeCount; rope++) {
+    stroke(gRopeStrings[rope].color);
+    beginShape();
+    curveVertex(gKnotJunctions[rope][0].pos.x, gKnotJunctions[rope][0].pos.y);
+    curveVertex(gKnotJunctions[rope][0].pos.x, gKnotJunctions[rope][0].pos.y);
+    for (let row = 0; row < gRowCount; row++) {
+      let knotRef = gKnotJunctions[rope][row];
+      if (knotRef.threadColors.length > 1) curveVertex(knotRef.pos.x, knotRef.pos.y);
+    }
+    curveVertex(gKnotJunctions[rope][gRowCount - 1].pos.x, gKnotJunctions[rope][gRowCount - 1].pos.y);
+    curveVertex(gKnotJunctions[rope][gRowCount - 1].pos.x, gKnotJunctions[rope][gRowCount - 1].pos.y);
+    endShape();
+  }
 
   gRopeStrings.forEach((rope) => {
     rope.draw();
   });
+
+  gKnotJunctions.forEach((row) => {
+    row.forEach((knot) => {
+      knot.draw();
+    });
+  });
 }
 
 class RopeString {
-  constructor(xp, yp, l) {
-    this.pos = createVector(xp, yp);
-    this.length = l;
-    this.color = random(gColorPalette);
-    this.knots = [];
-
-    let knotCount = 10;
-    let spacing = this.length / (knotCount - 1);
-    let x = this.pos.x;
-    for (let i = 0; i < knotCount; i++) {
-      this.knots.push(new Knot(x, this.pos.y + spacing * i));
-      x = x + (random() < 0.5 ? -gRopeSpacing : gRopeSpacing);
-
-      if (x < 0) x += 2 * gRopeSpacing;
-      else if (x > width) x -= 2 * gRopeSpacing;
-    }
+  constructor(vertices, col) {
+    this.vertices = vertices;
+    this.color = col;
   }
 
   draw() {
     stroke(this.color);
-    strokeWeight(4);
     noFill();
     beginShape();
-    curveVertex(this.knots[0].pos.x, this.knots[0].pos.y);
-    this.knots.forEach((knot) => {
-      curveVertex(knot.pos.x, knot.pos.y);
+    curveVertex(this.vertices[0].x, this.vertices[0].y);
+    this.vertices.forEach((vertex) => {
+      curveVertex(vertex.x, vertex.y);
     });
-    curveVertex(this.knots[this.knots.length - 1].pos.x, this.knots[this.knots.length - 1].pos.y);
+    curveVertex(this.vertices[this.vertices.length - 1].x, this.vertices[this.vertices.length - 1].y);
     endShape();
-
-    // beginShape();
-    // curveVertex(this.pos.x, this.knots[0].pos.y);
-    // this.knots.forEach((knot) => {
-    //   curveVertex(this.pos.x, knot.pos.y);
-    // });
-    // curveVertex(this.pos.x, this.knots[0].pos.y);
-    // endShape();
-
-    this.knots.forEach((knot) => {
-      knot.draw();
-    });
   }
 }
 
 class Knot {
   constructor(xp, yp) {
     this.randSeed = xp * yp;
-    this.c = random(0, 1) > 0.7 ? gKnotPalette[0] : random(gKnotPalette);
+    this.threadColors = [];
     this.pos = createVector(xp, yp);
+  }
+
+  addColor(col) {
+    this.threadColors.push(col);
     this.vertices = [];
-    let offset = 0.5 * gKnotRad;
+    let adjKnotRad = gKnotRad * (1 + 0.5 * this.threadColors.length);
+    let offset = 0.5 * adjKnotRad;
     let vCount = 5;
     let angleInc = 360 / vCount;
 
     for (let i = 0; i < vCount; i++) {
       let angle = radians(angleInc * i);
-      let adjRad = gKnotRad + random(0, offset);
+      let adjRad = adjKnotRad + random(0, offset);
       let xp = adjRad * cos(angle);
       let yp = adjRad * sin(angle);
       this.vertices.push(createVector(xp, yp));
@@ -103,13 +135,13 @@ class Knot {
 
   draw() {
     randomSeed(this.randSeed);
-    strokeWeight(4);
-    stroke(this.c);
+    if (this.threadColors.length <= 1) return;
+    strokeWeight(this.gRopeThickness / 2);
     noFill();
     push();
     translate(this.pos.x, this.pos.y);
     for (let i = 0; i < 50; i++) {
-      stroke(hue(this.c), saturation(this.c) + random(-5, 5), brightness(this.c) + random(-10, 10));
+      stroke(random(this.threadColors));
       let v0 = random(this.vertices);
       let v1 = random(this.vertices);
       line(v0.x, v0.y, v1.x, v1.y);
