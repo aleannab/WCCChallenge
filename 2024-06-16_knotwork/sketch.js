@@ -1,6 +1,12 @@
-// Created for the #Genuary2024 - In the style of Anni Albers (1899-1994).
-// https://genuary.art/prompts#jan11
-// Inspired by Anni Albers, Dotted, 1959
+// Knotted Threads by Antoinette Bumatay-Chan
+// Created for the #WCCChallenge - Topic: Knotwork
+//
+// I was initially inspired by the process of creating a macrame wall hanging.
+// I have a bunch of 'threads' running vertically across the canvas.
+// As you work your way downwards, adjacent threads are randomly knotted up.
+//
+// See other submissions here: https://openprocessing.org/curation/78544
+// Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 let gThreads = [];
 let gThreadCount;
@@ -25,9 +31,9 @@ function setup() {
 
 function createMacrameHanging() {
   gThreadSpacing = random(15, 50);
-  gThreadThickness = 2; //random(1, 2);
+  gThreadThickness = random(1, 2);
   gKnotSpacing = random(15, 50);
-  gKnotRad = map(gThreadThickness, 1, 2, 0.75, 0.5) * gThreadThickness;
+  gKnotRad = map(gThreadThickness, 1, 2, 1.5, 0.75) * gThreadThickness;
   gKnotJunctions = [];
   gThreads = [];
   gThreadCount = floor(width / gThreadSpacing) + 2;
