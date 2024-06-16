@@ -2,62 +2,76 @@
 // https://genuary.art/prompts#jan11
 // Inspired by Anni Albers, Dotted, 1959
 
-let gRopeStrings = [];
-let gRopeCount;
-let gRowSpacing = 50;
-let gRopeSpacing = 30;
-let gKnotRad = 1.5;
-let gRopeThickness = 1;
-
+let gThreads = [];
+let gThreadCount;
 let gKnotJunctions = [];
+let gKnotRowCount;
+
+let gThreadSpacing = 30;
+let gThreadThickness = 2;
+let gKnotSpacing = 50;
+let gKnotRad = 2;
 
 let gColorPalette = ['#d94e41', '#d9863d', '#f2b950', '#95bf93', '#46788c', '#556484'];
 let gBgColor = '#f2f7f1';
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  colorMode(HSB);
-  strokeWeight(gRopeThickness);
+  noFill();
+  noLoop();
 
   createMacrameHanging();
 }
 
 function createMacrameHanging() {
-  gRopeCount = floor(width / gRopeSpacing) + 1;
-  gRowCount = floor(height / gRowSpacing) + 2;
+  gThreadSpacing = random(15, 50);
+  gThreadThickness = 2; //random(1, 2);
+  gKnotSpacing = random(15, 50);
+  gKnotRad = map(gThreadThickness, 1, 2, 0.75, 0.5) * gThreadThickness;
+  gKnotJunctions = [];
+  gThreads = [];
+  gThreadCount = floor(width / gThreadSpacing) + 2;
+  gKnotRowCount = floor(height / gKnotSpacing) + 2;
+  curveTightness(random(-0.5, 2));
 
-  for (let i = 0; i < gRopeCount; i++) {
+  let spacingVarX = map(gThreadSpacing, 15, 50, 0.3, 0.1) * gThreadSpacing;
+  let spacingVarY = random();
+  for (let i = 0; i < gThreadCount; i++) {
     let knotRow = [];
-    let ropeX = gRopeSpacing * (i + random(-0.4, 0.4));
-    for (let j = 0; j < gRowCount; j++) {
-      let yp = j * gRowSpacing;
-      if (j != 0 && j != gRowCount - 1) {
-        yp += random(-1, 1) * gRowSpacing;
+    let xp = gThreadSpacing * i;
+    for (let j = 0; j < gKnotRowCount; j++) {
+      let yp = j * gKnotSpacing;
+      if (j === 0) {
+        yp -= random() * gKnotSpacing;
+      } else if (j === gKnotRowCount - 1) {
+        yp += random() * gKnotSpacing;
+      } else {
+        yp += random(-1, 1) * spacingVarY * gKnotSpacing;
       }
-      knotRow.push(new Knot(ropeX + 0.2 * sin(j) * gRopeSpacing, yp));
+      knotRow.push(new Knot(xp + spacingVarX * sin(j + random(QUARTER_PI) * i), yp));
     }
     gKnotJunctions.push(knotRow);
   }
 
-  for (let i = 0; i < gRopeCount; i++) {
-    let ropePosition = i;
-    let ropeVertices = [];
-    let ropeColor = random(gColorPalette);
-    for (let j = 0; j < gRowCount; j++) {
-      gKnotJunctions[ropePosition][j].addColor(ropeColor);
-      ropeVertices.push(gKnotJunctions[ropePosition][j].pos);
+  for (let i = 0; i < gThreadCount; i++) {
+    let threadIndex = i;
+    let threadVertices = [];
+    let threadColor = random(gColorPalette);
+    for (let j = 0; j < gKnotRowCount; j++) {
+      gKnotJunctions[threadIndex][j].addColor(threadColor);
+      threadVertices.push(gKnotJunctions[threadIndex][j].pos);
 
-      ropePosition = ropePosition + (random() < 0.5 ? -1 : 1);
-      if (ropePosition < 0) ropePosition += 2;
-      else if (ropePosition > gRopeCount - 1) ropePosition -= 2;
+      threadIndex = threadIndex + (random() < 0.5 ? -1 : 1);
+      if (threadIndex < 0) threadIndex += 2;
+      else if (threadIndex > gThreadCount - 1) threadIndex -= 2;
     }
-    gRopeStrings.push(new RopeString(ropeVertices, ropeColor));
+    gThreads.push(new RopeString(threadVertices, threadColor));
   }
 
-  for (let i = 0; i < gRopeCount; i++) {
-    let ropeColor = gRopeStrings[i].color;
-    for (let j = 0; j < gRowCount; j++) {
-      gKnotJunctions[i][j].addColor(ropeColor);
+  for (let i = 0; i < gThreadCount; i++) {
+    let threadColor = gThreads[i].color;
+    for (let j = 0; j < gKnotRowCount; j++) {
+      gKnotJunctions[i][j].addColor(threadColor);
     }
   }
 }
@@ -65,21 +79,9 @@ function createMacrameHanging() {
 function draw() {
   background(gBgColor);
 
-  for (let rope = 0; rope < gRopeCount; rope++) {
-    stroke(gRopeStrings[rope].color);
-    beginShape();
-    curveVertex(gKnotJunctions[rope][0].pos.x, gKnotJunctions[rope][0].pos.y);
-    curveVertex(gKnotJunctions[rope][0].pos.x, gKnotJunctions[rope][0].pos.y);
-    for (let row = 0; row < gRowCount; row++) {
-      let knotRef = gKnotJunctions[rope][row];
-      if (knotRef.threadColors.length > 1) curveVertex(knotRef.pos.x, knotRef.pos.y);
-    }
-    curveVertex(gKnotJunctions[rope][gRowCount - 1].pos.x, gKnotJunctions[rope][gRowCount - 1].pos.y);
-    curveVertex(gKnotJunctions[rope][gRowCount - 1].pos.x, gKnotJunctions[rope][gRowCount - 1].pos.y);
-    endShape();
-  }
+  drawVertThreads();
 
-  gRopeStrings.forEach((rope) => {
+  gThreads.forEach((rope) => {
     rope.draw();
   });
 
@@ -90,6 +92,29 @@ function draw() {
   });
 }
 
+function drawVertThreads() {
+  strokeWeight(gThreadThickness);
+
+  for (let rope = 0; rope < gThreadCount; rope++) {
+    stroke(gThreads[rope].color);
+    beginShape();
+    curveVertex(gKnotJunctions[rope][0].pos.x, gKnotJunctions[rope][0].pos.y);
+    curveVertex(gKnotJunctions[rope][0].pos.x, gKnotJunctions[rope][0].pos.y);
+    for (let row = 0; row < gKnotRowCount; row++) {
+      let knotRef = gKnotJunctions[rope][row];
+      if (knotRef.threadColors.length > 1) curveVertex(knotRef.pos.x, knotRef.pos.y);
+    }
+    curveVertex(gKnotJunctions[rope][gKnotRowCount - 1].pos.x, gKnotJunctions[rope][gKnotRowCount - 1].pos.y);
+    curveVertex(gKnotJunctions[rope][gKnotRowCount - 1].pos.x, gKnotJunctions[rope][gKnotRowCount - 1].pos.y);
+    endShape();
+  }
+}
+
+function mouseClicked() {
+  createMacrameHanging();
+  redraw();
+}
+
 class RopeString {
   constructor(vertices, col) {
     this.vertices = vertices;
@@ -98,7 +123,6 @@ class RopeString {
 
   draw() {
     stroke(this.color);
-    noFill();
     beginShape();
     curveVertex(this.vertices[0].x, this.vertices[0].y);
     this.vertices.forEach((vertex) => {
@@ -111,7 +135,6 @@ class RopeString {
 
 class Knot {
   constructor(xp, yp) {
-    this.randSeed = xp * yp;
     this.threadColors = [];
     this.pos = createVector(xp, yp);
   }
@@ -121,7 +144,7 @@ class Knot {
     this.vertices = [];
     let adjKnotRad = gKnotRad * (1 + 0.5 * this.threadColors.length);
     let offset = 0.5 * adjKnotRad;
-    let vCount = 5;
+    let vCount = 10;
     let angleInc = 360 / vCount;
 
     for (let i = 0; i < vCount; i++) {
@@ -134,14 +157,12 @@ class Knot {
   }
 
   draw() {
-    randomSeed(this.randSeed);
     if (this.threadColors.length <= 1) return;
-    strokeWeight(this.gRopeThickness / 2);
-    noFill();
+    strokeWeight(gThreadThickness * 0.75);
     push();
     translate(this.pos.x, this.pos.y);
     for (let i = 0; i < 50; i++) {
-      stroke(random(this.threadColors));
+      stroke(this.threadColors[i % this.threadColors.length]);
       let v0 = random(this.vertices);
       let v1 = random(this.vertices);
       line(v0.x, v0.y, v1.x, v1.y);
