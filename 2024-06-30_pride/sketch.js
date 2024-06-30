@@ -14,12 +14,12 @@
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
-let gBarCount = 100;
+let gBarCount = 50;
 let gBars = [];
 let gBarWidth;
 
 const gHoldTime = 3000;
-const gDropTime = 2000;
+const gDropTime = 1000;
 const gIntervalTime = gHoldTime + gDropTime;
 let gStartNextTime;
 
@@ -46,7 +46,6 @@ function setup() {
   gMaskLayer.noStroke();
   createPrideMask();
 
-  gFlagColorIndex = 0;
   gStartNextTime = millis(); // + gIntervalTime;
 }
 
@@ -63,7 +62,7 @@ function draw() {
   }
 
   gBars.forEach((bar) => {
-    if (shouldTrigger) bar.drop(now);
+    if (shouldTrigger) bar.triggerDrop(now);
     bar.update(now);
     bar.draw();
   });
@@ -90,13 +89,12 @@ function createBars() {
     gBars.push(new Bar(spacing * i));
   }
 
-  let dropTime = millis() + 1000;
-  let dropInc = dropTime / gBarCount;
+  // let dropInc = gDropTime / gBarCount;
 
-  gBars.forEach((bar) => {
-    bar.startTime = dropTime;
-    dropTime += dropInc;
-  });
+  // gBars.forEach((bar) => {
+  //   bar.delay = dropInc;
+  //   dropInc += dropInc;
+  // });
 }
 
 class Bar {
@@ -104,39 +102,37 @@ class Bar {
     this.pos = createVector(xp, 0);
     this.startTime = -1;
     this.isDropping = false;
-    this.isFirstDrop = true;
 
     this.activePalette = gFlagPalettes[gFlagColorIndex];
-    this.col0 = color('#ffffff');
-    this.col1 = color('#ffffff');
+    this.col0 = gBgColor;
+    this.col1 = gBgColor;
 
     this.updateColor();
 
     this.odds = gVaryOdds;
     this.dropTime = gDropTime;
+    this.delay = 0;
 
     this.easeType = 0;
   }
 
+  triggerDrop(now) {
+    this.startTime = now + this.delay;
+  }
+
   drop(now) {
-    this.startTime = now; // + gIntervalTime;
-    if (!this.isFirstDrop) {
-      this.col1 = this.col0;
-      // if (random() < this.odds) {
-      //   this.addVariance();
-      //   this.odds *= 2;
-      // }
+    // + gIntervalTime;
+    this.col1 = this.col0;
+    // if (random() < this.odds) {
+    //   this.addVariance();
+    //   this.odds *= 2;
+    // }
 
-      // if (this.isWhite) {
-      //   this.col0 = color('#ffffff');
-      // } else {
-      this.updateColor();
-      // }
-    }
-
-    this.isDropping = true;
-    this.isFirstDrop = false;
-    this.isWhite = !this.isWhite;
+    // if (this.isWhite) {
+    //   this.col0 = color('#ffffff');
+    // } else {
+    this.updateColor();
+    // }
   }
 
   updateColor() {
@@ -169,21 +165,23 @@ class Bar {
   }
 
   update(now) {
+    if (!this.isDropping && now > this.startTime) {
+      this.isDropping = true;
+      this.drop(now);
+    }
+
     if (this.isDropping) {
-      // console.log('DROPPING NOW: ' + now);
       let elapsed = now - this.startTime;
       let progress = constrain(elapsed / this.dropTime, 0, 1);
       let easeValue = this.ease(progress);
       this.pos.y = lerp(0, height, easeValue);
       if (progress >= 1) {
-        // this.startTime = now + gNextDropInterval;
         this.isDropping = false;
       }
     }
   }
 
   draw() {
-    noStroke();
     fill(this.col0);
     rect(this.pos.x, 0, gBarWidth, height);
     fill(this.col1);
