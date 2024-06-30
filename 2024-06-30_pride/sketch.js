@@ -18,8 +18,8 @@ let gBarCount = 100;
 let gBars = [];
 let gBarWidth;
 
-const gHoldTime = 5000;
-const gDropTime = 1000;
+const gHoldTime = 10000;
+const gDropTime = 800;
 let gStartNextTime;
 
 let gHueInc = 60;
@@ -45,21 +45,21 @@ const gFlagPalettes = [
   ['#203856', '#62AEDC', '#FFFFFF', '#ECCD00', '#E28C00'], // AROACE
 ];
 
-const gFlagNames = [
-  'PRIDE',
-  'BISEXUAL',
-  'TRANS',
-  'LESBIAN',
-  'PANSEXUAL',
-  'ASEXUAL',
-  'GENDERQUEER',
-  'NONBINARY',
-  'INTERSEX',
-  'GAY MEN',
-  'AROMANTIC',
-  'GENDERFLUID',
-  'AGENDER',
-  'ARO & ACE',
+const gFlagDetails = [
+  { name: 'PRIDE', slogan: 'Love is love.' },
+  { name: 'BISEXUAL', slogan: 'Visibility matters.' },
+  { name: 'TRANS', slogan: 'Trans rights are human rights.' },
+  { name: 'LESBIAN', slogan: 'Lesbian and proud.' },
+  { name: 'PANSEXUAL', slogan: 'Hearts, not parts.' },
+  { name: 'ASEXUAL', slogan: 'Ace and proud.' },
+  { name: 'GENDERQUEER', slogan: 'Break the binary.' },
+  { name: 'NONBINARY', slogan: 'Beyond the binary.' },
+  { name: 'INTERSEX', slogan: 'Intersex and proud.' },
+  { name: 'GAY MEN', slogan: 'Gay and proud.' },
+  { name: 'AROMANTIC', slogan: 'Love takes many forms.' },
+  { name: 'GENDERFLUID', slogan: 'Fluidity is beautiful.' },
+  { name: 'AGENDER', slogan: 'No gender, no problem.' },
+  { name: 'ARO & ACE', slogan: 'Aro-ace and proud.' },
 ];
 const gBgColor = '#F5F5F5';
 
@@ -117,11 +117,12 @@ function createPrideMask() {
   gMaskLayer.blendMode(BLEND);
   gMaskLayer.erase();
   gMaskLayer.textAlign(CENTER, CENTER);
-  let flag = gFlagNames[gFlagColorIndex];
-  console.log(flag);
-  let size = findTextSize(flag, width);
+  let flag = gFlagDetails[gFlagColorIndex];
+  let size = findTextSize(flag.slogan, width);
   gMaskLayer.textSize(size);
-  gMaskLayer.text(flag, width / 2, height / 2);
+  gMaskLayer.text(flag.slogan, width / 2, height / 2);
+  gMaskLayer.text(flag.slogan, width / 2, height / 2 - 0.8 * size);
+  gMaskLayer.text(flag.slogan, width / 2, height / 2 + 0.8 * size);
   gMaskLayer.noErase();
 }
 
@@ -230,6 +231,10 @@ class Bar {
         break;
       case 3:
         this.easeType = (this.easeType + 1) % 4;
+        break;
+      case 4:
+        this.dropTime *= random(0.9, 1.1);
+        break;
     }
     this.col0 = color(h, s, b);
   }
