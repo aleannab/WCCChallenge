@@ -89,12 +89,14 @@ function createBars() {
     gBars.push(new Bar(spacing * i));
   }
 
-  // let dropInc = gDropTime / gBarCount;
+  let dropInc = gDropTime / gBarCount;
 
-  // gBars.forEach((bar) => {
-  //   bar.delay = dropInc;
-  //   dropInc += dropInc;
-  // });
+  let delay = 0;
+
+  gBars.forEach((bar) => {
+    bar.delay = delay;
+    delay += dropInc;
+  });
 }
 
 class Bar {
