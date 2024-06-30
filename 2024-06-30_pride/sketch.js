@@ -30,12 +30,47 @@ let gMaskLayer;
 
 const gFlagPalettes = [
   ['#E40303', '#FF8C00', '#FFED00', '#008026', '#004DFF', '#750787'], // rainbow
+  ['#D60270', '#9B4F96', '#0033A0'], // bisexual
   ['#5BCEFA', '#F7A8B8', '#FFFFFF'], // transgender
+  ['#D62900', '#FF9B55', '#FFD780', '#FFFFFF', '#D461A6', '#BC3784', '#A60061'], // lesbian
+  ['#FF1B8D', '#FFDA00', '#1BB3FF'], // pansexual
+  ['#000000', '#A3A3A3', '#FFFFFF', '#810082'], // asexual
+  ['#B57EDC', '#FFFFFF', '#4A8123'], // genderqueer
+  ['#FFF433', '#FFFFFF', '#9B59D0', '#000000'], //non-binary
+  ['#FFDA00', '#7900CD'], // intersex
+  ['#078D70', '#26CEAA', '#99E8C2', '#FFFFFF', '#7BADE3', '#5049CB', '#3E1A78'], // gay men
+  ['#3DA542', '#A7D379', '#FFFFFF', '#A9A9A9', '#000000'], // AROMANTIC
+  ['#FF75A2', '#F5F5F5', '#BE18D6', '#2C2C2C', '#333EBD'], // GENDERFLUID
+  ['#000000', '#B9B9B9', '#FFFFFF', '#B8F483'], //AGENDER
+  ['#203856', '#62AEDC', '#FFFFFF', '#ECCD00', '#E28C00'], // AROACE
 ];
-const gBgColor = '#ffffff';
 
-let gFlagColorIndex = -1;
+const gFlagNames = [
+  'PRIDE',
+  'BISEXUAL',
+  'TRANS',
+  'LESBIAN',
+  'PANSEXUAL',
+  'ASEXUAL',
+  'GENDERQUEER',
+  'NONBINARY',
+  'INTERSEX',
+  'GAY MEN',
+  'AROMANTIC',
+  'GENDERFLUID',
+  'AGENDER',
+  'ARO & ACE',
+];
+const gBgColor = '#F5F5F5';
+
+let gFlagColorIndex = 0;
 let gIsTransition = true;
+
+let gFont;
+
+function preload() {
+  gFont = loadFont('Roboto-Black.ttf');
+}
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -46,6 +81,7 @@ function setup() {
 
   gMaskLayer = createGraphics(width, height);
   gMaskLayer.noStroke();
+  gMaskLayer.textFont(gFont);
   createPrideMask();
 
   gStartNextTime = millis();
@@ -62,6 +98,8 @@ function draw() {
     gStartNextTime += gIsTransition ? 3 * gDropTime : gHoldTime;
     if (gIsTransition) {
       gFlagColorIndex = (gFlagColorIndex + 1) % gFlagPalettes.length;
+    } else {
+      createPrideMask();
     }
     gIsTransition = !gIsTransition;
   }
@@ -71,16 +109,32 @@ function draw() {
     bar.update(now);
     bar.draw();
   });
-  // image(gMaskLayer, 0, 0);
+  image(gMaskLayer, 0, 0);
 }
 
 function createPrideMask() {
-  gMaskLayer.background('#ffffff');
+  gMaskLayer.background(gBgColor);
   gMaskLayer.blendMode(BLEND);
   gMaskLayer.erase();
-  gMaskLayer.textAlign(CENTER);
-  gMaskLayer.textSize(500);
-  gMaskLayer.text('pride', width / 2, height / 2);
+  gMaskLayer.textAlign(CENTER, CENTER);
+  let flag = gFlagNames[gFlagColorIndex];
+  console.log(flag);
+  let size = findTextSize(flag, width);
+  gMaskLayer.textSize(size);
+  gMaskLayer.text(flag, width / 2, height / 2);
+  gMaskLayer.noErase();
+}
+
+function findTextSize(word, targetWidth) {
+  let size = 1;
+  textSize(size);
+
+  while (textWidth(word) < targetWidth) {
+    size += 1;
+    textSize(size);
+  }
+
+  return size - 1;
 }
 
 function createBars() {
