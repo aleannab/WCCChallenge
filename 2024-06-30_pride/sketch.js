@@ -14,16 +14,17 @@
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
-let gBarCount = 50;
+let gBarCount = 100;
 let gBars = [];
 let gBarWidth;
 
-const gHoldTime = 3000;
+const gHoldTime = 5000;
 const gDropTime = 1000;
-const gIntervalTime = gHoldTime + gDropTime;
 let gStartNextTime;
 
-let gVaryOdds;
+let gHueInc = 60;
+
+let gVaryOdds = 0.75;
 
 let gMaskLayer;
 
@@ -47,7 +48,7 @@ function setup() {
   gMaskLayer.noStroke();
   createPrideMask();
 
-  gStartNextTime = millis(); // + gIntervalTime;
+  gStartNextTime = millis();
 }
 
 function draw() {
@@ -58,7 +59,7 @@ function draw() {
   let shouldTrigger = now > gStartNextTime;
 
   if (shouldTrigger) {
-    gStartNextTime += gIntervalTime;
+    gStartNextTime += gIsTransition ? 3 * gDropTime : gHoldTime;
     if (gIsTransition) {
       gFlagColorIndex = (gFlagColorIndex + 1) % gFlagPalettes.length;
     }
@@ -66,7 +67,7 @@ function draw() {
   }
 
   gBars.forEach((bar) => {
-    if (shouldTrigger) bar.triggerDrop(now);
+    if (shouldTrigger) bar.toggleTransition();
     bar.update(now);
     bar.draw();
   });
@@ -75,11 +76,10 @@ function draw() {
 
 function createPrideMask() {
   gMaskLayer.background('#ffffff');
-
   gMaskLayer.blendMode(BLEND);
   gMaskLayer.erase();
   gMaskLayer.textAlign(CENTER);
-  gMaskLayer.textSize(400);
+  gMaskLayer.textSize(500);
   gMaskLayer.text('pride', width / 2, height / 2);
 }
 
@@ -100,6 +100,7 @@ function createBars() {
   gBars.forEach((bar) => {
     bar.delay = delay;
     delay += dropInc;
+    bar.triggerDrop(millis());
   });
 }
 
@@ -108,6 +109,7 @@ class Bar {
     this.pos = createVector(xp, 0);
     this.startTime = -1;
     this.isDropping = false;
+    this.droppingStarted = false;
 
     this.activePalette = gFlagPalettes[0];
     this.col0 = gBgColor;
@@ -115,30 +117,37 @@ class Bar {
 
     //this.updateColor();
 
-    this.odds = gVaryOdds;
     this.dropTime = gDropTime;
     this.delay = 0;
 
     this.easeType = 0;
+    this.inTransition = false;
+  }
+
+  toggleTransition() {
+    this.inTransition = !this.inTransition;
   }
 
   triggerDrop(now) {
     this.startTime = now + this.delay;
+    this.waitingToDrop = true;
   }
 
   drop(now) {
-    // + gIntervalTime;
     this.col1 = this.col0;
-    // if (random() < this.odds) {
-    //   this.addVariance();
-    //   this.odds *= 2;
-    // }
 
-    if (gIsTransition) {
+    if (this.inTransition) {
       this.col0 = gBgColor;
     } else {
+      // this.inTransition = false;
       this.updateColor();
+      if (random() < gVaryOdds) {
+        this.addVariance();
+      }
     }
+
+    this.isDropping = true;
+    this.waitingToDrop = false;
   }
 
   updateColor() {
@@ -148,31 +157,31 @@ class Bar {
   }
 
   addVariance() {
-    let variantType = int(random(5));
+    let variantType = int(random(4));
+    let h = hue(this.col0);
+    let s = saturation(this.col0);
+    let b = brightness(this.col0);
     switch (variantType) {
       case 0:
-        this.hue += random(0.4, 0.5) * gHueInc;
-        this.hue = constrain(this.hue, 0, 360);
+        h += random(0.4, 0.5) * gHueInc;
+        h = constrain(h, 0, 360);
         break;
       case 1:
-        this.sat += random(-0.1, 0.1);
-        this.sat = constrain(this.sat, 0, 1);
+        s += random(-0.1, 0.1);
+        s = constrain(s, 0, 1);
         break;
       case 2:
-        // this.dropTime *= random(0.9, 1.1);
+        b += random(-0.1, 0.1);
+        b = constrain(b, 0, 1);
         break;
       case 3:
-        this.bright += random(-0.1, 0.1);
-        this.bright = constrain(this.bright, 0, 1);
-        break;
-      case 4:
         this.easeType = (this.easeType + 1) % 4;
     }
+    this.col0 = color(h, s, b);
   }
 
   update(now) {
-    if (!this.isDropping && now > this.startTime) {
-      this.isDropping = true;
+    if (this.waitingToDrop && now > this.startTime) {
       this.drop(now);
     }
 
@@ -183,6 +192,7 @@ class Bar {
       this.pos.y = lerp(0, height, easeValue);
       if (progress >= 1) {
         this.isDropping = false;
+        this.triggerDrop(now);
       }
     }
   }
