@@ -33,7 +33,8 @@ const gFlagPalettes = [
 ];
 const gBgColor = '#ffffff';
 
-let gFlagColorIndex = 0;
+let gFlagColorIndex = -1;
+let gIsTransition = true;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -58,7 +59,10 @@ function draw() {
 
   if (shouldTrigger) {
     gStartNextTime += gIntervalTime;
-    gFlagColorIndex = (gFlagColorIndex + 1) % gFlagPalettes.length;
+    if (gIsTransition) {
+      gFlagColorIndex = (gFlagColorIndex + 1) % gFlagPalettes.length;
+    }
+    gIsTransition = !gIsTransition;
   }
 
   gBars.forEach((bar) => {
@@ -105,11 +109,11 @@ class Bar {
     this.startTime = -1;
     this.isDropping = false;
 
-    this.activePalette = gFlagPalettes[gFlagColorIndex];
+    this.activePalette = gFlagPalettes[0];
     this.col0 = gBgColor;
     this.col1 = gBgColor;
 
-    this.updateColor();
+    //this.updateColor();
 
     this.odds = gVaryOdds;
     this.dropTime = gDropTime;
@@ -130,11 +134,11 @@ class Bar {
     //   this.odds *= 2;
     // }
 
-    // if (this.isWhite) {
-    //   this.col0 = color('#ffffff');
-    // } else {
-    this.updateColor();
-    // }
+    if (gIsTransition) {
+      this.col0 = gBgColor;
+    } else {
+      this.updateColor();
+    }
   }
 
   updateColor() {
