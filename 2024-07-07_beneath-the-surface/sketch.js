@@ -9,6 +9,11 @@
 let gWaterColor = '#a4e0ccf0';
 let gWaterStroke = '#bff2d8';
 
+let tentacles = [];
+let noiseMax = 5;
+let blobRadius = 100;
+let tentacleLength = 500;
+
 class Agent extends c2.Point {
   constructor() {
     let x = random(width);
@@ -60,15 +65,19 @@ function setup() {
   stroke(gWaterStroke);
   noFill();
 
+  noiseDetail(4, 0.5);
+  // Generate tentacle angles
+  for (let i = 0; i < 8; i++) {
+    tentacles.push(random(TWO_PI));
+  }
+
   for (let i = 0; i < agents.length; i++) agents[i] = new Agent();
 }
 
 function draw() {
   background(gWaterColor);
 
-  fill(0);
-
-  circle(width / 2, height / 2, 100);
+  drawCreature();
 
   let voronoi = new c2.Voronoi();
   voronoi.compute(agents);
@@ -108,6 +117,50 @@ function drawPolygon(vertices) {
   beginShape();
   for (let v of vertices) curveVertex(v.x, v.y);
   endShape(CLOSE);
+}
+
+function drawCreature() {
+  fill(0);
+
+  push();
+
+  translate(width / 2, height / 2);
+  // Draw blob
+  beginShape();
+  for (let angle = 0; angle < TWO_PI; angle += 0.1) {
+    let xoff = map(cos(angle), -1, 1, 0, noiseMax);
+    let yoff = map(sin(angle), -1, 1, 0, noiseMax);
+    let r = map(noise(xoff, yoff), 0, 1, blobRadius * 0.8, blobRadius);
+    let x = r * cos(angle);
+    let y = r * sin(angle);
+    vertex(x, y);
+  }
+  endShape(CLOSE);
+
+  noFill();
+  stroke(0);
+  strokeWeight(30);
+
+  // Draw tentacles
+  for (let i = 0; i < tentacles.length; i++) {
+    let angle = tentacles[i];
+    let xoff = map(cos(angle), -1, 1, 0, noiseMax);
+    let yoff = map(sin(angle), -1, 1, 0, noiseMax);
+    let r = map(noise(xoff, yoff), 0, 1, blobRadius * 0.8, blobRadius);
+    let startX = r * cos(angle);
+    let startY = r * sin(angle);
+
+    // Calculate control points for bezier curve
+    let control1X = startX + tentacleLength * 0.3 * cos(angle + PI / 4);
+    let control1Y = startY + tentacleLength * 0.3 * sin(angle + PI / 4);
+    let control2X = startX + tentacleLength * 0.6 * cos(angle - PI / 4);
+    let control2Y = startY + tentacleLength * 0.6 * sin(angle - PI / 4);
+    let endX = startX + tentacleLength * cos(angle);
+    let endY = startY + tentacleLength * sin(angle);
+
+    bezier(startX, startY, control1X, control1Y, control2X, control2Y, endX, endY);
+  }
+  pop();
 }
 
 function drawBoat(x, y, boatWidth, boatHeight) {
