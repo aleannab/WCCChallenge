@@ -55,6 +55,8 @@ function setup() {
 
   curveTightness(1);
   strokeWeight(2);
+  strokeCap(SQUARE);
+
   stroke(gWaterStroke);
   noFill();
 
@@ -100,20 +102,24 @@ function draw() {
 }
 
 function drawPolygon(vertices) {
+  stroke(gWaterStroke);
+
   fill(gWaterColor);
   beginShape();
   for (let v of vertices) curveVertex(v.x, v.y);
   endShape(CLOSE);
 }
 
-function drawBoat(x, y, boatWidth, boatHeight, oarLength, oarWidth) {
+function drawBoat(x, y, boatWidth, boatHeight) {
   // Draw boat hull
   curveTightness(0.3);
-  fill(139, 69, 19); // Brown color for the hull
+  fill('#d5d1c3'); // Brown color for the hull
   push();
   translate(x, y);
   beginShape();
-  noStroke();
+  // noStroke();
+  stroke('#f3f3f4');
+  strokeWeight(5);
   curveVertex(-boatWidth / 2, boatHeight / 2);
   curveVertex(-boatWidth / 2, boatHeight / 2);
   curveVertex(-boatWidth / 2, 0);
@@ -121,7 +127,13 @@ function drawBoat(x, y, boatWidth, boatHeight, oarLength, oarWidth) {
   curveVertex(boatWidth / 2, boatHeight / 2);
   curveVertex(0, boatHeight);
   curveVertex(-boatWidth / 2, boatHeight / 2);
-
   endShape(CLOSE);
+  strokeWeight(10);
+  line(-boatWidth / 2, boatHeight / 4, boatWidth / 2, boatHeight / 4);
+  noStroke();
+  fill('#cd364e');
+  ellipse(0, boatHeight / 4, 30, 10);
+  fill(0);
+  ellipse(0, boatHeight / 4 + 4, 15);
   pop();
 }
