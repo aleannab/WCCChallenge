@@ -12,14 +12,17 @@ let gWaterStroke = '#bff2d8';
 let gBoatColor = '#f3f3f4';
 let gBoatDarkColor = '#d5d1c3';
 let gBoatPosition;
+let gBoat;
 
 let gTentacles = [];
 let noiseMax = 5;
 let gCreatureRadius = 100;
 let gCreaturePosition;
-let gTentacleLength;
+let gSeaCreature;
 
-let gAgents = new Array(100);
+let gAgents = [];
+let gAgentCount = 100;
+let gAgentBoatRef;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -29,21 +32,24 @@ function setup() {
   strokeWeight(2);
   strokeCap(SQUARE);
 
-  gTentacleLength = windowWidth < windowHeight ? windowHeight : windowWidth;
+  let maxWidth = windowWidth < windowHeight ? windowHeight : windowWidth;
 
   stroke(gWaterStroke);
   noFill();
 
   noiseDetail(4, 0.5);
-  // Generate tentacle angles
-  for (let i = 0; i < 8; i++) {
-    gTentacles.push(random(TWO_PI));
+
+  for (let i = 0; i < gAgentCount; i++) {
+    gAgents.push(new Agent(random(width), random(height)));
   }
 
-  for (let i = 0; i < gAgents.length; i++) gAgents[i] = new Agent();
-
   gBoatPosition = getRulesOfThirdsPos();
+  gAgents.push(new Agent(gBoatPosition.x, gBoatPosition.y));
+  gAgentBoatRef = gAgents.length - 1;
   gCreaturePosition = getRulesOfThirdsPos();
+
+  gSeaCreature = new SeaCreature(maxWidth);
+  gBoat = new Boat(40, 100);
 }
 
 function getRulesOfThirdsPos() {
@@ -55,11 +61,11 @@ function getRulesOfThirdsPos() {
 function draw() {
   background(gWaterColor);
 
-  drawCreature();
+  gSeaCreature.draw();
 
   drawWater();
 
-  drawBoat(40, 100);
+  gBoat.draw();
 }
 
 function drawWater() {
@@ -70,6 +76,10 @@ function drawWater() {
   curveTightness(1);
   for (let i = 0; i < regions.length; i++) {
     drawPolygon(regions[i].vertices);
+  }
+
+  for (let i = 0; i < gAgents.length; i++) {
+    gAgents[i].update();
   }
 }
 
@@ -82,94 +92,144 @@ function drawPolygon(vertices) {
   endShape(CLOSE);
 }
 
-function drawCreature() {
-  randomSeed(9);
+class SeaCreature {
+  constructor(maxWidth) {
+    this.tentacles = [];
+    for (let i = 0; i < 8; i++) {
+      this.tentacles.push(new Tentacle(maxWidth, random(TWO_PI)));
+    }
 
-  stroke(0);
-  fill(0);
-
-  push();
-  translate(gCreaturePosition.x, gCreaturePosition.y);
-
-  // Draw blob
-  beginShape();
-  let num = 15;
-  let angleInc = TWO_PI / num;
-  for (let i = 0; i < num; i++) {
-    let angle = i * angleInc;
-    let xoff = map(cos(angle), -1, 1, 0, noiseMax);
-    let yoff = map(sin(angle), -1, 1, 0, noiseMax);
-    let r = map(noise(xoff, yoff), 0, 1, gCreatureRadius, gCreatureRadius * 1.5);
-    let x = r * cos(angle);
-    let y = r * sin(angle);
-    curveVertex(x, y);
+    this.blobPts = [];
+    let num = 15;
+    let angleInc = TWO_PI / num;
+    for (let i = 0; i < num; i++) {
+      let angle = i * angleInc;
+      let xoff = map(cos(angle), -1, 1, 0, noiseMax);
+      let yoff = map(sin(angle), -1, 1, 0, noiseMax);
+      let r = map(noise(xoff, yoff), 0, 1, gCreatureRadius, gCreatureRadius * 1.5);
+      let x = r * cos(angle);
+      let y = r * sin(angle);
+      this.blobPts.push(createVector(x, y));
+    }
   }
-  endShape(CLOSE);
 
-  // Draw tentacles
-  noFill();
+  draw() {
+    stroke(0);
+    fill(0);
 
-  for (let i = 0; i < gTentacles.length; i++) {
-    let angle = gTentacles[i];
-    strokeWeight(random(20, 50));
+    push();
+    translate(gCreaturePosition.x, gCreaturePosition.y);
+    let t = millis() * 0.00001;
+    rotate(PI * noise(t));
 
-    let control1X = gTentacleLength * random() * cos(angle + PI / 4);
-    let control1Y = gTentacleLength * random() * sin(angle + PI / 4);
-    let control2X = gTentacleLength * random() * cos(angle - PI / 4);
-    let control2Y = gTentacleLength * random() * sin(angle - PI / 4);
-    let endX = gTentacleLength * cos(angle);
-    let endY = gTentacleLength * sin(angle);
+    // Draw blob
+    beginShape();
+    this.blobPts.forEach((pt) => {
+      curveVertex(pt.x, pt.y);
+    });
+    endShape(CLOSE);
 
-    bezier(0, 0, control1X, control1Y, control2X, control2Y, endX, endY);
+    // Draw tentacles
+    noFill();
+    this.tentacles.forEach((tenti) => {
+      tenti.draw();
+    });
+
+    pop();
   }
-  pop();
 }
 
-function drawBoat(boatWidth, boatHeight) {
-  curveTightness(0.3);
-  fill(gBoatDarkColor);
-  stroke(gBoatColor);
+class Tentacle {
+  constructor(length, angle) {
+    this.control1X = length * random() * cos(angle + PI / 4);
+    this.control1Y = length * random() * sin(angle + PI / 4);
+    this.control2X = length * random() * cos(angle - PI / 4);
+    this.control2Y = length * random() * sin(angle - PI / 4);
+    this.endX = length * cos(angle);
+    this.endY = length * sin(angle);
+    this.sizeMax = random(0.8, 0.5);
 
-  push();
+    this.timeScalar = millis() * 0.001;
+  }
 
-  translate(gBoatPosition.x, gBoatPosition.y);
-  rotate(random(TWO_PI));
+  draw() {
+    stroke(0);
+    fill(0);
+    // strokeWeight(this.strokeWeight);
+    push();
+    this.timeScalar = millis() * 0.0001;
 
-  beginShape();
-  strokeWeight(5);
-  curveVertex(-boatWidth / 2, boatHeight / 2);
-  curveVertex(-boatWidth / 2, boatHeight / 2);
-  curveVertex(-boatWidth / 2, 0);
-  curveVertex(boatWidth / 2, 0);
-  curveVertex(boatWidth / 2, boatHeight / 2);
-  curveVertex(0, boatHeight);
-  curveVertex(-boatWidth / 2, boatHeight / 2);
-  endShape(CLOSE);
-  strokeWeight(10);
-  line(-boatWidth / 2, boatHeight / 4, boatWidth / 2, boatHeight / 4);
-  noStroke();
-  fill('#cd364e');
-  ellipse(0, boatHeight / 4, 30, 10);
-  fill(0);
-  ellipse(0, boatHeight / 4 + 4, 15);
-  pop();
+    let numPoints = 200;
+    for (let t = 0; t <= 1; t += 1 / numPoints) {
+      let x = bezierPoint(0, this.adjust(this.control1X), this.adjust(this.control2X), this.adjust(this.endX), t);
+      let y = bezierPoint(0, this.adjust(this.control1Y), this.adjust(this.control2Y), this.adjust(this.endY), t);
+      ellipse(x, y, map(t, 0, 1, this.sizeMax, 0.1) * gCreatureRadius);
+    }
+    pop();
+  }
+
+  adjust(x) {
+    return x + 200 * sin(x / width + this.timeScalar);
+  }
+}
+
+class Boat {
+  constructor(boatWidth, boatHeight) {
+    this.boatWidth = boatWidth;
+    this.boatHeight = boatHeight;
+    this.angle = random(TWO_PI);
+    this.boatPts = [
+      createVector(-boatWidth / 2, boatHeight / 2),
+      createVector(-boatWidth / 2, boatHeight / 2),
+      createVector(-boatWidth / 2, 0),
+      createVector(boatWidth / 2, 0),
+      createVector(boatWidth / 2, boatHeight / 2),
+      createVector(0, boatHeight),
+      createVector(-boatWidth / 2, boatHeight / 2),
+    ];
+  }
+
+  draw() {
+    curveTightness(0.3);
+    fill(gBoatDarkColor);
+    stroke(gBoatColor);
+    push();
+
+    let t = millis() * 0.001;
+    translate(gAgents[gAgentBoatRef].x, gAgents[gAgentBoatRef].y);
+    rotate(this.angle + 0.1 * noise(0.005 * t));
+
+    beginShape();
+    strokeWeight(5);
+    this.boatPts.forEach((pt) => {
+      curveVertex(pt.x, pt.y);
+    });
+    endShape(CLOSE);
+    strokeWeight(10);
+    line(-this.boatWidth / 2, this.boatHeight / 4, this.boatWidth / 2, this.boatHeight / 4);
+    noStroke();
+    fill('#cd364e');
+    ellipse(0, this.boatHeight / 4, 30, 10);
+    fill(0);
+    ellipse(0, this.boatHeight / 4 + 4, 15);
+    pop();
+  }
 }
 
 // From c2 library samples
 class Agent extends c2.Point {
-  constructor() {
-    let x = random(width);
-    let y = random(height);
+  constructor(xp, yp) {
+    let x = xp;
+    let y = yp;
     super(x, y);
 
-    let offset = 0.1;
-    this.vx = random(-offset, offset);
-    this.vy = random(-offset, offset);
+    this.initPosition = createVector(x, y);
   }
 
   update() {
-    this.x += this.vx;
-    this.y += this.vy;
+    let t = millis() * 0.01;
+    this.x = this.initPosition.x + 100 * noise(0.005 * t + this.initPosition.x);
+    this.y = this.initPosition.y + 100 * noise(0.005 * t + this.initPosition.y);
 
     if (this.x < 0) {
       this.x = 0;
