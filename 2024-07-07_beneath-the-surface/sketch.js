@@ -15,7 +15,6 @@ let gBoatPosition;
 let gBoat;
 
 let gTentacles = [];
-let noiseMax = 5;
 let gCreatureRadius = 100;
 let gCreaturePosition;
 let gSeaCreature;
@@ -23,6 +22,8 @@ let gSeaCreature;
 let gAgents = [];
 let gAgentCount = 100;
 let gAgentBoatRef;
+
+let gTimeFactor;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -46,9 +47,9 @@ function setup() {
   gBoatPosition = getRulesOfThirdsPos();
   gAgents.push(new Agent(gBoatPosition.x, gBoatPosition.y));
   gAgentBoatRef = gAgents.length - 1;
-  gCreaturePosition = getRulesOfThirdsPos();
+  gCreaturePosition = gBoatPosition.add(createVector(random(-100, 100), random(-100, 100)));
 
-  gSeaCreature = new SeaCreature(maxWidth);
+  gSeaCreature = new SeaCreature(maxWidth / 2);
   gBoat = new Boat(40, 100);
 }
 
@@ -59,6 +60,7 @@ function getRulesOfThirdsPos() {
 }
 
 function draw() {
+  gTimeFactor = millis() * 0.001;
   background(gWaterColor);
 
   gSeaCreature.draw();
@@ -102,6 +104,7 @@ class SeaCreature {
     this.blobPts = [];
     let num = 15;
     let angleInc = TWO_PI / num;
+    let noiseMax = 5;
     for (let i = 0; i < num; i++) {
       let angle = i * angleInc;
       let xoff = map(cos(angle), -1, 1, 0, noiseMax);
@@ -119,8 +122,7 @@ class SeaCreature {
 
     push();
     translate(gCreaturePosition.x, gCreaturePosition.y);
-    let t = millis() * 0.00001;
-    rotate(PI * noise(t));
+    // rotate(PI * noise(0.01 * gTimeFactor));
 
     // Draw blob
     beginShape();
@@ -148,28 +150,33 @@ class Tentacle {
     this.endX = length * cos(angle);
     this.endY = length * sin(angle);
     this.sizeMax = random(0.8, 0.5);
-
-    this.timeScalar = millis() * 0.001;
+    this.noiseSeed = random(999);
   }
 
   draw() {
     stroke(0);
     fill(0);
-    // strokeWeight(this.strokeWeight);
     push();
-    this.timeScalar = millis() * 0.0001;
+    rotate(PI * noise(this.noiseSeed + 0.01 * gTimeFactor));
 
     let numPoints = 200;
     for (let t = 0; t <= 1; t += 1 / numPoints) {
-      let x = bezierPoint(0, this.adjust(this.control1X), this.adjust(this.control2X), this.adjust(this.endX), t);
-      let y = bezierPoint(0, this.adjust(this.control1Y), this.adjust(this.control2Y), this.adjust(this.endY), t);
+      let x = bezierPoint(0, this.control1X, this.control2X, this.endX, t);
+      let y = bezierPoint(0, this.control1Y, this.adjust(this.control2Y), this.endY, t);
       ellipse(x, y, map(t, 0, 1, this.sizeMax, 0.1) * gCreatureRadius);
     }
     pop();
   }
 
   adjust(x) {
-    return x + 200 * sin(x / width + this.timeScalar);
+    randomSeed(x);
+    // Add more unpredictable wobble effect
+    let amplitude = random(200, 500); // Random amplitude
+    let frequency = random(0.1, 0.2); // Random frequency
+    let phase = random(TWO_PI); // Random phase shift
+
+    let wobble = amplitude * sin(frequency * x + phase + 0.1 * gTimeFactor);
+    return x + wobble;
   }
 }
 
@@ -195,9 +202,9 @@ class Boat {
     stroke(gBoatColor);
     push();
 
-    let t = millis() * 0.001;
+    let t = millis() * 0.0001;
     translate(gAgents[gAgentBoatRef].x, gAgents[gAgentBoatRef].y);
-    rotate(this.angle + 0.1 * noise(0.005 * t));
+    rotate(this.angle + 0.2 * noise(t));
 
     beginShape();
     strokeWeight(5);
@@ -227,7 +234,7 @@ class Agent extends c2.Point {
   }
 
   update() {
-    let t = millis() * 0.01;
+    let t = gTimeFactor * 0.01;
     this.x = this.initPosition.x + 100 * noise(0.005 * t + this.initPosition.x);
     this.y = this.initPosition.y + 100 * noise(0.005 * t + this.initPosition.y);
 
