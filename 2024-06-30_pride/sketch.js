@@ -1,7 +1,7 @@
 // Rights for All, Love for All by Antoinette Bumatay-Chan
 // Created for the #WCCChallenge - Topic: Pride Flags
 //
-// Repurposed my (failed 😝) unsatisfying submission for the word/color transitions.
+// Repurposed my (failed 😝) WCCC unsatisfying submission for the flag transitions.
 //
 // Thank you jordanne for your pride flag color palettes 🌈
 // https://openprocessing.org/sketch/1985103
@@ -9,11 +9,11 @@
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
-let gBarCount = 100;
+let gBarCount = 50;
 let gBars = [];
 let gBarWidth;
 
-const gHoldTime = 10000;
+const gHoldTime = 5000;
 const gDropTime = 800;
 let gStartNextTime;
 
@@ -24,24 +24,24 @@ let gVaryOdds = 0.9;
 let gMaskLayer;
 
 const gFlagDetails = [
-  { palette: ['#E40303', '#FF8C00', '#FFED00', '#008026', '#004DFF', '#750787'], name: 'PRIDE', phrase: 'Love is love.' },
-  { palette: ['#D60270', '#9B4F96', '#0033A0'], name: 'BISEXUAL', phrase: 'Visibility matters.' },
-  { palette: ['#5BCEFA', '#F7A8B8', '#FFFFFF'], name: 'TRANS', phrase: 'Trans rights are human rights.' },
+  { palette: ['#E40303', '#FF8C00', '#FFED00', '#008026', '#004DFF', '#750787'], name: 'PRIDE', phrase: 'Rights for all.  Love for all. ' },
+  { palette: ['#5BCEFA', '#F7A8B8', '#FFFFFF', '#F7A8B8', '#5BCEFA'], name: 'TRANS', phrase: 'Trans rights are human rights.' },
+  { palette: ['#D60270', '#D60270', '#9B4F96', '#0033A0', '#0033A0'], name: 'BISEXUAL', phrase: 'Visibility matters.' },
   { palette: ['#D62900', '#FF9B55', '#FFD780', '#FFFFFF', '#D461A6', '#BC3784', '#A60061'], name: 'LESBIAN', phrase: 'Love and solidarity.' },
+  // { palette: ['#FFDA00', '#7900CD', '#FFDA00', '#7900CD', '#FFDA00'], name: 'INTERSEX', phrase: 'Recognize our existence.' },
+  { palette: ['#FFF433', '#FFFFFF', '#9B59D0', '#000000'], name: 'NONBINARY', phrase: 'Exist beyond the binary.' },
+  { palette: ['#078D70', '#26CEAA', '#99E8C2', '#FFFFFF', '#7BADE3', '#5049CB', '#3E1A78'], name: 'GAY MEN', phrase: 'Love wins. Love wins.' },
   { palette: ['#FF1B8D', '#FFDA00', '#1BB3FF'], name: 'PANSEXUAL', phrase: 'Love beyond gender.' },
   { palette: ['#000000', '#A3A3A3', '#FFFFFF', '#810082'], name: 'ASEXUAL', phrase: 'Valid in every way.' },
-  { palette: ['#B57EDC', '#FFFFFF', '#4A8123'], name: 'GENDERQUEER', phrase: 'Embrace your identity.' },
-  { palette: ['#FFF433', '#FFFFFF', '#9B59D0', '#000000'], name: 'NONBINARY', phrase: 'Exist beyond the binary.' },
-  { palette: ['#FFDA00', '#7900CD'], name: 'INTERSEX', phrase: 'Recognize our existence.' },
-  { palette: ['#078D70', '#26CEAA', '#99E8C2', '#FFFFFF', '#7BADE3', '#5049CB', '#3E1A78'], name: 'GAY MEN', phrase: 'Proud to love.' },
-  { palette: ['#3DA542', '#A7D379', '#FFFFFF', '#A9A9A9', '#000000'], name: 'AROMANTIC', phrase: 'Love takes many forms.' },
+  { palette: ['#B57EDC', '#FFFFFF', '#4A8123'], name: 'GENDERQUEER', phrase: 'Recognize our existence.' },
   { palette: ['#FF75A2', '#F5F5F5', '#BE18D6', '#2C2C2C', '#333EBD'], name: 'GENDERFLUID', phrase: 'Fluidity is beautiful.' },
-  { palette: ['#000000', '#B9B9B9', '#FFFFFF', '#B8F483'], name: 'AGENDER', phrase: 'Identity beyond gender.' },
-  { palette: ['#203856', '#62AEDC', '#FFFFFF', '#ECCD00', '#E28C00'], name: 'ARO & ACE', phrase: 'Our spectrum, our strength.' },
+  // { palette: ['#000000', '#B9B9B9', '#FFFFFF', '#B8F483', '#FFFFFF', '#B9B9B9', '#000000'], name: 'AGENDER', phrase: 'Freedom from gender.' },
+  // { palette: ['#3DA542', '#A7D379', '#FFFFFF', '#A9A9A9', '#000000'], name: 'AROMANTIC', phrase: 'Love takes many forms.' },
+  // { palette: ['#203856', '#62AEDC', '#FFFFFF', '#ECCD00', '#E28C00'], name: 'ARO & ACE', phrase: 'Our spectrum, our strength.' },
 ];
 const gBgColor = '#EAE5F5';
 
-let gFlagColorIndex = 0;
+let gFlagColorIndex = -1;
 let gIsTransition = true;
 
 let gFont;
@@ -91,12 +91,13 @@ function draw() {
 }
 
 function createPrideMask() {
+  if (gFlagColorIndex < 0) return;
   gMaskLayer.background(gBgColor);
   gMaskLayer.blendMode(BLEND);
   gMaskLayer.erase();
   gMaskLayer.textAlign(CENTER, CENTER);
   let flag = gFlagDetails[gFlagColorIndex];
-  let count = floor(random(3)) + 1;
+  let count = floor(random(1));
   let phrase = flag.phrase;
   for (let i = 0; i < count; i++) {
     phrase += ' ' + flag.phrase;
@@ -107,7 +108,7 @@ function createPrideMask() {
   let combined = phrase + ' ' + phrase + ' ' + phrase;
   let xInc = width / count;
   for (let i = 0; i < count; i++) {
-    gMaskLayer.text(combined, xInc * i, size * i);
+    gMaskLayer.text(combined, random(width), size * i);
   }
   gMaskLayer.noErase();
 }
@@ -191,27 +192,16 @@ class Bar {
   }
 
   addVariance() {
-    let variantType = int(random(4));
-    let h = hue(this.col0);
-    let s = saturation(this.col0);
-    let b = brightness(this.col0);
-    switch (variantType) {
-      case 0:
-        h += random(0.3, 0.4) * gHueInc;
-        h = constrain(h, 0, 360);
-        break;
-      case 1:
-        s += random(-0.1, 0.1);
-        s = constrain(s, 0, 1);
-        break;
-      case 2:
-        b += random(-0.05, 0.05);
-        b = constrain(b, 0, 1);
-        break;
-      case 3:
-        this.easeType = (this.easeType + 1) % 4;
-        break;
-    }
+    let hDir = random() > 0.5 ? 1 : -1;
+    let h = hue(this.col0) + random(0.15, 0.3) * gHueInc * hDir;
+    h = constrain(h, 0, 360);
+
+    let s = saturation(this.col0) + random(-0.2, 0.2);
+    s = constrain(s, 0, 1);
+
+    let b = brightness(this.col0) + random(-0.1, 0.1);
+    b = constrain(b, 0, 1);
+    this.easeType = int(random(5));
     this.col0 = color(h, s, b);
   }
 
