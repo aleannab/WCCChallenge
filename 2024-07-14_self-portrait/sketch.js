@@ -2,7 +2,7 @@ let gImageOG;
 let gImageRef;
 let gDotLayers = [];
 let gDensityMin = 0.01;
-let gDensityMax = 0.15;
+let gDensityMax = 0.2;
 let gPadding = 0.05;
 let gBounds;
 let gPositionOffset;
@@ -10,8 +10,7 @@ let gPositionOffset;
 let gColorPalette = ['#d94e41', '#d9863d', '#f2b950', '#95bf93', '#46788c', '#556484'];
 
 function preload() {
-  gImageOG = loadImage('test.jpg');
-  // gImageOG = loadImage('test02.png');
+  gImageOG = loadImage('test03.jpg');
 }
 
 function setup() {
@@ -24,7 +23,6 @@ function setup() {
 
   gDensityMax *= length;
   gDensityMin *= length;
-  // console.log('max: ' + gDensityMax + ', min: ' + gDensityMin);
   gPadding *= length;
 
   setupDotLayers();
@@ -35,8 +33,6 @@ function draw() {
   background(255);
   push();
   translate(gPositionOffset.x, gPositionOffset.y);
-
-  noStroke();
   gDotLayers.forEach((layer) => {
     layer.draw();
   });
@@ -53,16 +49,16 @@ function setupDotLayers() {
   gDotLayers = [];
   gBounds = { xMin: 999, xMax: 0, yMin: 999, yMax: 0 }; // Reset gBounds
   let densities = [];
-  let count = 5;
+  let count = 3;
   for (let i = 0; i < count; i++) {
     densities.push(int(random(gDensityMin, gDensityMax)));
   }
 
   densities = sort(densities);
   for (let i = 0; i < densities.length; i++) {
-    gDotLayers.push(new DotLayer(densities[i], gColorPalette[i % gColorPalette.length]));
+    gDotLayers.push(new DotLayer(densities[i], color(0))); // gColorPalette[i % gColorPalette.length]));
   }
-  // gDotLayers.push(new DotLayer(gDensityMax, gColorPalette[densities.length % gColorPalette.length]));
+  // gDotLayers.push(new DotLayer(gDensityMax, color(0)));
 
   let xp = (width - (gBounds.xMax - gBounds.xMin)) / 2 - gBounds.xMin;
   let yp = (height - (gBounds.yMax - gBounds.yMin)) / 2 - gBounds.yMin;
@@ -77,8 +73,7 @@ function checkBounds(xp, yp) {
   gBounds.yMin = min(gBounds.yMin, yp);
   gBounds.yMax = max(gBounds.yMax, yp);
 }
-
-function groupNeighbors(vertices, threshold) {
+function groupNeighbors(vertices, threshold, level = 0) {
   let groups = [];
 
   // Create an array to keep track of visited vertices
@@ -106,18 +101,66 @@ function groupNeighbors(vertices, threshold) {
           }
         }
       }
+
       // Add the group to the list of groups
       groups.push(group);
     }
   }
 
+  if (level < 100) {
+    // Check for small groups and re-group them with a bigger threshold
+    let smallGroups = groups.filter((group) => group.length < 4);
+    if (smallGroups.length > 0) {
+      // Combine all small groups into a single array of vertices
+      let combinedVertices = smallGroups.flat();
+
+      // Remove small groups from the main groups array
+      groups = groups.filter((group) => group.length >= 4);
+
+      // Recursively group the combined vertices with an increased threshold
+      let increasedThreshold = threshold * 1.5; // Increase the threshold
+      let newGroups = groupNeighbors(combinedVertices, increasedThreshold, level + 1);
+
+      // Add the newly formed groups back to the main groups array
+      groups = groups.concat(newGroups);
+    }
+  }
+
+  // Sort all groups by proximity
+  groups = groups.map((group) => sortVerticesByProximity(group));
+
   return groups;
+}
+
+function sortVerticesByProximity(vertices) {
+  let sorted = [];
+  let current = vertices[0];
+  sorted.push(current);
+
+  while (vertices.length > 1) {
+    vertices = vertices.filter((v) => v !== current);
+    let nearest = null;
+    let nearestDist = Infinity;
+
+    for (let i = 0; i < vertices.length; i++) {
+      let dist = current.dist(vertices[i]);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = vertices[i];
+      }
+    }
+
+    current = nearest;
+    sorted.push(current);
+  }
+
+  return sorted;
 }
 
 class DotLayer {
   constructor(density, dotColor) {
-    let edges = edgeDetect(gImageOG);
-    let image = edges.get(0, 0, gImageOG.width, gImageOG.height);
+    // let edges = edgeDetect(gImageOG);
+    let image = gImageOG.get(0, 0, gImageOG.width, gImageOG.height);
     image.resize(0, density);
     image.filter(THRESHOLD, 0.3);
 
@@ -132,7 +175,7 @@ class DotLayer {
     for (let y = 0; y < image.height; y++) {
       for (let x = 0; x < image.width; x++) {
         let index = (x + y * image.width) * 4;
-        if (image.pixels[index] === 0) {
+        if (image.pixels[index] === 0 && random() > 0.2) {
           let xp = sectionWidth * x;
           let yp = sectionHeight * y;
           checkBounds(xp - this.size, yp - this.size);
@@ -142,7 +185,7 @@ class DotLayer {
         }
       }
     }
-    this.groups = groupNeighbors(this.points, 1.5 * sectionWidth);
+    this.groups = groupNeighbors(this.points, 1.1 * sectionWidth);
 
     this.color = dotColor;
     this.offset = createVector(random(-2, 2) * sectionWidth, random(-2, 2) * sectionWidth);
@@ -150,24 +193,22 @@ class DotLayer {
 
   draw() {
     push();
-    translate(this.offset.x, this.offset.y);
-    fill(this.color);
+    // translate(this.offset.x, this.offset.y);
+    // fill(this.color);
+    noFill();
     noStroke();
     stroke(this.color);
     strokeWeight(1);
-    strokeCap(SQUARE);
 
     this.groups.forEach((group) => {
       if (group.length < 4) {
-        strokeWeight(5);
         group.forEach((pt) => {
-          // point(pt.x, pt.y);
+          point(pt.x, pt.y);
         });
       } else {
         beginShape();
         curveVertex(group[0].x, group[0].y);
 
-        strokeWeight(1);
         group.forEach((pt) => {
           if (random() < 0.5) curveVertex(pt.x, pt.y);
         });
@@ -178,8 +219,11 @@ class DotLayer {
       }
     });
     beginShape();
+    // fill(255);
+    noStroke();
+    fill(0);
     this.points.forEach((pt) => {
-      // ellipse(pt.x, pt.y, this.size * random(0.8, 1.2));
+      // ellipse(pt.x, pt.y, 3); //this.size * random(0.8, 1.2));
       // curveVertex(pt.x, pt.y);
       // line(pt.x, pt.y, pt.x + this.size * 2, pt.y);
     });
