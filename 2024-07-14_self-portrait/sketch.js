@@ -2,15 +2,17 @@ let gImageOG;
 let gImageRef;
 let gDotLayers = [];
 let gDensityMin = 0.01;
-let gDensityMax = 0.2;
+let gDensityMax = 0.1;
 let gPadding = 0.05;
 let gBounds;
 let gPositionOffset;
 
-let gColorPalette = ['#d94e41', '#d9863d', '#f2b950', '#95bf93', '#46788c', '#556484'];
+let gColorPalette = ['#c14d8d', '#b54a7f', '#a24a6a', '#703a4b', '#2f0e27', '#3a1329', '#200c1f'];
+let gColorDark = '#1E1E29';
+let gColorLight = '#E7E1CD';
 
 function preload() {
-  gImageOG = loadImage('test03.jpg');
+  gImageOG = loadImage('portrait.jpg');
 }
 
 function setup() {
@@ -47,18 +49,19 @@ function setupDotLayers() {
   gColorPalette = shuffle(gColorPalette);
 
   gDotLayers = [];
-  gBounds = { xMin: 999, xMax: 0, yMin: 999, yMax: 0 }; // Reset gBounds
+  gBounds = { xMin: 999, xMax: 0, yMin: 999, yMax: 0 };
+
   let densities = [];
   let count = 3;
   for (let i = 0; i < count; i++) {
     densities.push(int(random(gDensityMin, gDensityMax)));
   }
-
   densities = sort(densities);
-  for (let i = 0; i < densities.length; i++) {
-    gDotLayers.push(new DotLayer(densities[i], color(0))); // gColorPalette[i % gColorPalette.length]));
+
+  for (let i = 0; i < densities.length - 1; i++) {
+    gDotLayers.push(new DotLayer(densities[i], gColorPalette[i % gColorPalette.length]));
   }
-  // gDotLayers.push(new DotLayer(gDensityMax, color(0)));
+  gDotLayers.push(new DotLayer(densities[densities.length - 1], gColorDark));
 
   let xp = (width - (gBounds.xMax - gBounds.xMin)) / 2 - gBounds.xMin;
   let yp = (height - (gBounds.yMax - gBounds.yMin)) / 2 - gBounds.yMin;
@@ -73,96 +76,12 @@ function checkBounds(xp, yp) {
   gBounds.yMin = min(gBounds.yMin, yp);
   gBounds.yMax = max(gBounds.yMax, yp);
 }
-function groupNeighbors(vertices, threshold, level = 0) {
-  let groups = [];
-
-  // Create an array to keep track of visited vertices
-  let visited = new Array(vertices.length).fill(false);
-
-  for (let i = 0; i < vertices.length; i++) {
-    if (!visited[i]) {
-      // Start a new group
-      let group = [];
-      // Use a queue to perform a breadth-first search (BFS)
-      let queue = [i];
-
-      while (queue.length > 0) {
-        let current = queue.shift();
-
-        if (!visited[current]) {
-          visited[current] = true;
-          group.push(vertices[current]);
-
-          // Check all other vertices to see if they are within the threshold distance
-          for (let j = 0; j < vertices.length; j++) {
-            if (!visited[j] && vertices[current].dist(vertices[j]) <= threshold) {
-              queue.push(j);
-            }
-          }
-        }
-      }
-
-      // Add the group to the list of groups
-      groups.push(group);
-    }
-  }
-
-  if (level < 100) {
-    // Check for small groups and re-group them with a bigger threshold
-    let smallGroups = groups.filter((group) => group.length < 4);
-    if (smallGroups.length > 0) {
-      // Combine all small groups into a single array of vertices
-      let combinedVertices = smallGroups.flat();
-
-      // Remove small groups from the main groups array
-      groups = groups.filter((group) => group.length >= 4);
-
-      // Recursively group the combined vertices with an increased threshold
-      let increasedThreshold = threshold * 1.5; // Increase the threshold
-      let newGroups = groupNeighbors(combinedVertices, increasedThreshold, level + 1);
-
-      // Add the newly formed groups back to the main groups array
-      groups = groups.concat(newGroups);
-    }
-  }
-
-  // Sort all groups by proximity
-  groups = groups.map((group) => sortVerticesByProximity(group));
-
-  return groups;
-}
-
-function sortVerticesByProximity(vertices) {
-  let sorted = [];
-  let current = vertices[0];
-  sorted.push(current);
-
-  while (vertices.length > 1) {
-    vertices = vertices.filter((v) => v !== current);
-    let nearest = null;
-    let nearestDist = Infinity;
-
-    for (let i = 0; i < vertices.length; i++) {
-      let dist = current.dist(vertices[i]);
-      if (dist < nearestDist) {
-        nearestDist = dist;
-        nearest = vertices[i];
-      }
-    }
-
-    current = nearest;
-    sorted.push(current);
-  }
-
-  return sorted;
-}
 
 class DotLayer {
   constructor(density, dotColor) {
-    // let edges = edgeDetect(gImageOG);
     let image = gImageOG.get(0, 0, gImageOG.width, gImageOG.height);
     image.resize(0, density);
-    image.filter(THRESHOLD, 0.3);
+    image.filter(THRESHOLD, 0.8);
 
     let sectionWidth = (width - 2 * gPadding) / density;
 
@@ -171,11 +90,12 @@ class DotLayer {
     let yCount = floor((height - 2 * gPadding) / sectionWidth);
     let sectionHeight = (height - 2 * gPadding) / yCount;
     image.loadPixels();
+
     this.points = [];
     for (let y = 0; y < image.height; y++) {
       for (let x = 0; x < image.width; x++) {
         let index = (x + y * image.width) * 4;
-        if (image.pixels[index] === 0 && random() > 0.2) {
+        if (image.pixels[index] === 0) {
           let xp = sectionWidth * x;
           let yp = sectionHeight * y;
           checkBounds(xp - this.size, yp - this.size);
@@ -185,91 +105,29 @@ class DotLayer {
         }
       }
     }
-    this.groups = groupNeighbors(this.points, 1.1 * sectionWidth);
 
     this.color = dotColor;
-    this.offset = createVector(random(-2, 2) * sectionWidth, random(-2, 2) * sectionWidth);
+    this.offset = createVector(random(-1, 1) * sectionWidth, random(-2, 2) * sectionWidth);
   }
 
   draw() {
     push();
-    // translate(this.offset.x, this.offset.y);
-    // fill(this.color);
-    noFill();
-    noStroke();
+    translate(this.offset.x, this.offset.y);
     stroke(this.color);
-    strokeWeight(1);
 
-    this.groups.forEach((group) => {
-      if (group.length < 4) {
-        group.forEach((pt) => {
-          point(pt.x, pt.y);
-        });
-      } else {
-        beginShape();
-        curveVertex(group[0].x, group[0].y);
-
-        group.forEach((pt) => {
-          if (random() < 0.5) curveVertex(pt.x, pt.y);
-        });
-        let lastIndex = group.length - 1;
-        vertex(group[lastIndex].x, group[lastIndex].y);
-
-        endShape();
-      }
-    });
     beginShape();
-    // fill(255);
-    noStroke();
-    fill(0);
+    let isEllipse = random() < 0.5;
     this.points.forEach((pt) => {
-      // ellipse(pt.x, pt.y, 3); //this.size * random(0.8, 1.2));
-      // curveVertex(pt.x, pt.y);
-      // line(pt.x, pt.y, pt.x + this.size * 2, pt.y);
+      if (isEllipse) {
+        fill(this.color);
+        noStroke();
+        circle(pt.x, pt.y, this.size);
+      } else {
+        strokeWeight(this.size * 0.5);
+        line(pt.x - this.size, pt.y, pt.x + this.size, pt.y);
+      }
     });
     endShape();
     pop();
   }
-}
-
-function edgeDetect() {
-  // We are going to look at both image's pixels
-  let destination = createImage(gImageOG.width, gImageOG.height);
-  gImageOG.loadPixels();
-  destination.loadPixels();
-
-  // Since we are looking at left neighbors
-  // We skip the first column
-  for (var x = 1; x < gImageOG.width; x++) {
-    for (var y = 0; y < gImageOG.height; y++) {
-      var loc = (x + y * gImageOG.width) * 4;
-      // The functions red(), green(), and blue() pull out the three color components from a pixel.
-      var r = gImageOG.pixels[loc];
-      var g = gImageOG.pixels[loc + 1];
-      var b = gImageOG.pixels[loc + 2];
-
-      // Pixel to the left location and color
-      var leftLoc = (x - 1 + y * gImageOG.width) * 4;
-      var rleft = gImageOG.pixels[leftLoc];
-      var gleft = gImageOG.pixels[leftLoc + 1];
-      var bleft = gImageOG.pixels[leftLoc + 2];
-      // New color is difference between pixel and left neighbor
-      var diff = 255 - abs((r + g + b) / 3 - (rleft + gleft + bleft) / 3);
-      destination.pixels[loc] = diff;
-      destination.pixels[loc + 1] = diff;
-      destination.pixels[loc + 2] = diff;
-      destination.pixels[loc + 3] = 255; // Always have to set alpha
-    }
-  }
-
-  // We changed the pixels in destination
-  destination.updatePixels();
-  // Display the destination
-
-  destination.resize(0, 500);
-  destination.filter(THRESHOLD, 0.985);
-  // destination.filter(ERODE);
-  // destination.filter(THRESHOLD, 0.97);
-  destination.resize(gImageOG.width, gImageOG.height);
-  return destination;
 }
