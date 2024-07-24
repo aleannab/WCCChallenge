@@ -19,8 +19,10 @@ let gWaterPalette = ['#a4e0ccf0', '#a4dfccf0', '#a4e1ccf0', '#a4e0cbf0', '#a4e0c
 
 let gWaterStroke = '#bff2d8';
 
-let gBoatColor = '#B8B29D';
-let gBoatDarkColor = '#967653';
+let gBoatColor = '#CD9A4C';
+let gBoatDarkColor = '#8F6628';
+let gOarColor = '#e1b341';
+let gHatColor = '#d00000';
 let gBoatPosition;
 let gBoat;
 
@@ -43,6 +45,8 @@ function setup() {
   stroke(gWaterStroke);
   noFill();
 
+  rectMode(CENTER);
+
   noiseDetail(4, 0.5);
 
   initializeScene();
@@ -64,9 +68,9 @@ function initializeScene() {
 
   gCreatureRadius = 0.08 * maxWidth;
   gSeaCreature = new SeaCreature(maxWidth * 0.8);
-  let bLength = 0.04 * maxWidth;
-  gBoat = new Boat(0.5 * bLength, bLength);
-  gAgentCount = floor(4 * bLength);
+  let bLength = 0.02 * maxWidth;
+  gBoat = new Boat(bLength, 1.75 * bLength);
+  gAgentCount = floor(maxWidth / bLength);
 
   gAgents = [];
   for (let i = 0; i < gAgentCount; i++) {
@@ -101,7 +105,6 @@ function drawWater() {
 function drawPolygon(vertices) {
   stroke(gWaterStroke);
 
-  // fill(gWaterColor);
   beginShape();
   for (let v of vertices) vertex(v.x, v.y);
   endShape(CLOSE);
@@ -208,14 +211,18 @@ class Boat {
     this.boatHeight = boatHeight;
     this.angle = random(TWO_PI);
     this.boatPts = [
-      createVector(-0.5 * boatWidth, 0.6 * boatHeight),
-      createVector(-0.5 * boatWidth, 0.6 * boatHeight),
       createVector(-0.5 * boatWidth, 0),
+      createVector(-0.5 * boatWidth, 0),
+      createVector(-0.3 * boatWidth, -0.7 * boatHeight),
+      createVector(-0.1 * boatWidth, -boatHeight),
+      createVector(0.1 * boatWidth, -boatHeight),
+      createVector(0.3 * boatWidth, -0.7 * boatHeight),
       createVector(0.5 * boatWidth, 0),
-      createVector(0.5 * boatWidth, 0.6 * boatHeight),
-      createVector(0.2 * boatWidth, boatHeight),
-      createVector(-0.2 * boatWidth, boatHeight),
-      createVector(-0.5 * boatWidth, 0.6 * boatHeight),
+      createVector(0.3 * boatWidth, 0.7 * boatHeight),
+      createVector(0.1 * boatWidth, boatHeight),
+      createVector(-0.1 * boatWidth, boatHeight),
+      createVector(-0.3 * boatWidth, 0.7 * boatHeight),
+      createVector(-0.5 * boatWidth, 0),
     ];
   }
 
@@ -230,23 +237,42 @@ class Boat {
     rotate(this.angle + 0.2 * noise(t));
 
     beginShape();
-    strokeWeight(2);
+    strokeWeight(4);
     this.boatPts.forEach((pt) => {
       curveVertex(pt.x, pt.y);
     });
     endShape(CLOSE);
-    strokeWeight(12);
-    line(-this.boatWidth / 2, this.boatHeight / 4, this.boatWidth / 2, this.boatHeight / 4);
+    noStroke();
+    fill(gBoatColor);
+    rect(0, 0, this.boatWidth, 0.3 * this.boatWidth);
+    rect(0, -this.boatHeight * 0.4, 0.9 * this.boatWidth, 0.2 * this.boatWidth);
+    rect(0, this.boatHeight * 0.4, 0.9 * this.boatWidth, 0.2 * this.boatWidth);
 
     //person
     noStroke();
 
-    fill('#0f688b');
-    ellipse(0, 0.45 * this.boatHeight, this.boatWidth * 0.5, this.boatWidth * 0.4);
-    fill('#cd364e');
-    ellipse(0, 0.3 * this.boatHeight, this.boatWidth * 0.8, this.boatWidth * 0.4);
-    fill(0);
-    ellipse(0, this.boatHeight / 3, this.boatWidth * 0.5);
+    // pants
+    fill('#3b293d');
+    ellipse(0, 0.1 * this.boatHeight, this.boatWidth * 0.5, this.boatWidth * 0.5);
+
+    // oars
+    stroke(gOarColor);
+    strokeWeight(3);
+    push();
+    rotate(1.1 + 0.2 * sin(3 * t));
+    line(0, 0, 0, this.boatHeight * 0.9);
+    pop();
+    push();
+    rotate(-(1.1 + 0.2 * sin(3 * t)));
+    line(0, 0, 0, this.boatHeight * 0.9);
+    pop();
+    // hat
+    stroke('#780000');
+    strokeWeight(1);
+    fill(gHatColor);
+    ellipse(0, 0, this.boatWidth * 0.6);
+    strokeWeight(2);
+    ellipse(0, 0, this.boatWidth * 0.2);
     pop();
   }
 }
