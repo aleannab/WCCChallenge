@@ -19,10 +19,12 @@ let gWaterPalette = ['#a4e0ccf0', '#a4dfccf0', '#a4e1ccf0', '#a4e0cbf0', '#a4e0c
 
 let gWaterStroke = '#bff2d8';
 
-let gBoatColor = '#CD9A4C';
-let gBoatDarkColor = '#8F6628';
-let gOarColor = '#e1b341';
-let gHatColor = '#d00000';
+let gBoatColor = '#771B0F';
+let gBoatDarkColor = '#4A1008';
+let gOarColor = '#61160C';
+let gHatColor = '#F2D22E';
+let gHatStroke = '#E7A727';
+let gPantsColor = '#BF1120';
 let gBoatPosition;
 let gBoat;
 
@@ -68,9 +70,9 @@ function initializeScene() {
 
   gCreatureRadius = 0.08 * maxWidth;
   gSeaCreature = new SeaCreature(maxWidth * 0.8);
-  let bLength = 0.02 * maxWidth;
+  let bLength = 0.015 * maxWidth;
   gBoat = new Boat(bLength, 1.75 * bLength);
-  gAgentCount = floor(maxWidth / bLength);
+  gAgentCount = 0.1 * maxWidth;
 
   gAgents = [];
   for (let i = 0; i < gAgentCount; i++) {
@@ -252,27 +254,26 @@ class Boat {
     noStroke();
 
     // pants
-    fill('#3b293d');
-    ellipse(0, 0.1 * this.boatHeight, this.boatWidth * 0.5, this.boatWidth * 0.5);
+    fill(gPantsColor);
+    ellipse(0, 0.2 * this.boatHeight, this.boatWidth * 0.5, this.boatWidth * 0.4);
 
     // oars
     stroke(gOarColor);
-    strokeWeight(3);
+    strokeWeight(2);
     push();
     rotate(1.1 + 0.2 * sin(3 * t));
-    line(0, 0, 0, this.boatHeight * 0.9);
+    line(0, 0, 0, this.boatHeight);
     pop();
     push();
     rotate(-(1.1 + 0.2 * sin(3 * t)));
-    line(0, 0, 0, this.boatHeight * 0.9);
+    line(0, 0, 0, this.boatHeight);
     pop();
     // hat
-    stroke('#780000');
+    stroke(gHatStroke);
     strokeWeight(1);
     fill(gHatColor);
-    ellipse(0, 0, this.boatWidth * 0.6);
-    strokeWeight(2);
-    ellipse(0, 0, this.boatWidth * 0.2);
+    ellipse(0, 0, this.boatWidth * 0.8);
+    ellipse(0, 0, this.boatWidth * 0.3);
     pop();
   }
 }
