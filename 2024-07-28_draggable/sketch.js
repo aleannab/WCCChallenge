@@ -13,6 +13,8 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSL, 100);
 
+  rectMode(CENTER);
+
   gSideLength = min(windowWidth, windowHeight) * 0.6;
   let xOffset = (windowWidth - gSideLength) / 2;
   let yOffset = (windowHeight - gSideLength) / 2;
@@ -28,6 +30,8 @@ function setup() {
 
 function draw() {
   background(0);
+  fill(25);
+  rect(width / 2, height / 2, gSideLength, gSideLength);
   for (let i = 0; i < gShapes.length; i++) {
     gShapes[i].draw();
   }
