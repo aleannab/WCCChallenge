@@ -40,6 +40,9 @@ let gAgentBoatRef;
 let gTimeFactor;
 
 function setup() {
+  // let h = windowHeight < windowWidth ? windowHeight : (9 / 16) * windowWidth;
+  // let w = windowHeight < windowWidth ? (16 / 9) * windowHeight : windowWidth;
+  // createCanvas(w, h);
   createCanvas(windowWidth, windowHeight);
   strokeWeight(2);
   strokeCap(SQUARE);
@@ -82,7 +85,7 @@ function initializeScene() {
   gBoatPosition = getRulesOfThirdsPos();
   gAgents.push(new Agent(gBoatPosition.x, gBoatPosition.y));
   gAgentBoatRef = gAgents.length - 1;
-  gCreaturePosition = gBoatPosition.add(createVector(random(-100, 100), random(-100, 100)));
+  gCreaturePosition = getRulesOfThirdsPos().add(createVector(random(-100, 100), random(-100, 100)));
 }
 
 function mouseClicked() {
@@ -115,7 +118,7 @@ function drawPolygon(vertices) {
 function getRulesOfThirdsPos() {
   const p0 = floor(random(1, 3));
   const p1 = floor(random(1, 3));
-  return createVector(0.33 * p0 * width, 0.33 * p1 * height);
+  return createVector((0.33 + random(-0.05, 0.05)) * p0 * width, (0.33 + random(-0.05, 0.05)) * p1 * height);
 }
 
 class SeaCreature {
