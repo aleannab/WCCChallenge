@@ -78,6 +78,7 @@ function sign(px, py, p1, p2) {
 
 function mousePressed() {
   for (let i = gShapes.length - 1; i >= 0; i--) {
+    if (gShapes[i].isStatic) continue;
     if (containsPoint(gShapes[i], mouseX, mouseY)) {
       gSelected = gShapes.splice(i, 1)[0];
       gShapes.push(gSelected);
@@ -97,6 +98,10 @@ function mouseDragged() {
 }
 
 function mouseReleased() {
+  if (gSelected.isStatic) {
+    let lastItem = gShapes.pop();
+    gShapes.unshift(lastItem);
+  }
   gSelected = null;
 }
 
