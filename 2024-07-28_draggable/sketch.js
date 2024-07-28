@@ -26,6 +26,10 @@ function setup() {
 
   subdivide({ p1: p1, p2: p2, p3: p3 });
   subdivide({ p1: p2, p2: p3, p3: p4 });
+
+  gShapes.forEach((shape) => {
+    shape.move();
+  });
 }
 
 function draw() {
@@ -46,7 +50,7 @@ function triangleArea(p1, p2, p3) {
 }
 
 function subdivide(shape) {
-  let minArea = 50 * gSideLength;
+  let minArea = 200 * gSideLength;
   if (triangleArea(shape.p1, shape.p2, shape.p3) < minArea) {
     gShapes.push(new Shape(shape.p1, shape.p2, shape.p3));
     return;
@@ -98,26 +102,53 @@ function mouseReleased() {
 
 class Shape {
   constructor(p1, p2, p3) {
-    this.p1 = p1.copy();
-    this.p2 = p2.copy();
-    this.p3 = p3.copy();
-    this.cx = (p1.x + p2.x + p3.x) / 3;
-    this.cy = (p1.y + p2.y + p3.y) / 3;
+    this.ogP1 = p1;
+    this.ogP2 = p2;
+    this.ogP3 = p3;
+
+    let centroid = createVector((p1.x + p2.x + p3.x) / 3, (p1.y + p2.y + p3.y) / 3);
+
+    // Calculate max offsets to keep shape within the canvas bounds
+    let maxOffsetX = min(centroid.x, width - centroid.x);
+    let maxOffsetY = min(centroid.y, height - centroid.y);
+
+    // Add random offset within bounds
+    let offset = createVector(random(-maxOffsetX, maxOffsetX), random(-maxOffsetY, maxOffsetY));
+    this.p1 = p1.copy().add(offset);
+    this.p2 = p2.copy().add(offset);
+    this.p3 = p3.copy().add(offset);
+
+    // recaluclate centroids
+    this.cx = (this.p1.x + this.p2.x + this.p3.x) / 3;
+    this.cy = (this.p1.y + this.p2.y + this.p3.y) / 3;
+
     this.color = randomColor();
+    this.isStatic = false;
   }
 
   move(dx, dy) {
+    if (this.isStatic) return;
     this.p1.add(dx, dy);
     this.p2.add(dx, dy);
     this.p3.add(dx, dy);
     this.cx = (this.p1.x + this.p2.x + this.p3.x) / 3;
     this.cy = (this.p1.y + this.p2.y + this.p3.y) / 3;
+
+    if (this.boundCheck(this.p1, this.ogP1) && this.boundCheck(this.p2, this.ogP2) && this.boundCheck(this.p3, this.ogP3)) {
+      this.p1 = this.ogP1;
+      this.p2 = this.ogP2;
+      this.p3 = this.ogP3;
+      this.isStatic = true;
+    }
+  }
+
+  boundCheck(p1, p2) {
+    return dist(p1.x, p1.y, p2.x, p2.y) < 10;
   }
 
   draw() {
     push();
     fill(this.color);
-    stroke(0);
     triangle(this.p1.x, this.p1.y, this.p2.x, this.p2.y, this.p3.x, this.p3.y);
     pop();
   }
