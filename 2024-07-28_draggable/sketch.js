@@ -12,6 +12,8 @@ let gSideLength;
 function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSL, 100);
+  strokeWeight(5);
+  strokeJoin(BEVEL);
 
   rectMode(CENTER);
 
@@ -27,14 +29,19 @@ function setup() {
   subdivide({ p1: p1, p2: p2, p3: p3 });
   subdivide({ p1: p2, p2: p3, p3: p4 });
 
-  gShapes.forEach((shape) => {
-    shape.move();
-  });
+  let hInc = 100 / gShapes.length;
+  let h = int(random(100));
+  for (let i = 0; i < gShapes.length; i++) {
+    gShapes[i].color = color(h, 100, 60);
+    gShapes[i].move();
+    h = (h + hInc) % 100;
+  }
 }
 
 function draw() {
-  background(0);
-  fill(25);
+  background(100);
+  noStroke();
+  fill(80);
   rect(width / 2, height / 2, gSideLength, gSideLength);
   for (let i = 0; i < gShapes.length; i++) {
     gShapes[i].draw();
@@ -152,9 +159,9 @@ class Shape {
   }
 
   draw() {
-    push();
     fill(this.color);
+    stroke(0);
+
     triangle(this.p1.x, this.p1.y, this.p2.x, this.p2.y, this.p3.x, this.p3.y);
-    pop();
   }
 }
