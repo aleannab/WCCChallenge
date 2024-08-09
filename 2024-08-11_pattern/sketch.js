@@ -1,12 +1,21 @@
-// Created for the #WCCChallenge
-let gPattern;
+// Marimekko by Antoinette Bumatay-Chan
+// Created for the #WCCChallenge - Topic: Pattern
+//
+// I found inspiration in the Marimekko's textile patterns.
+// They often feature big, eye-catching shapes with a mix of simplicity and playfulness.
+//
+// I'd love to expand this to add more nature-inspired shapes and organic lines.
+//
+// https://www.marimekko.com/com_en/maripedia/patterns/
+//
+// See other submissions here: https://openprocessing.org/curation/78544
+// Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2blet gPattern;
 
-let gColorPalette = ['#d6cbbb', '#b87b6a', '#bb343a', '#e3d66b'];
+let gColorPalette = ['#d6cbbb', '#b87b6a', '#bb343a', '#e3d66b', '#708087'];
 
-let gFlowerColors = [];
 let gBgColor = '#2f292f';
 
-let gFlowerTypes = [];
+let gShapeTypes = [];
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -26,24 +35,25 @@ function draw() {
 }
 
 function createPattern() {
-  createFlowers();
-  const pW = random(0.4, 0.8) * width;
-  const pH = random(0.4, 0.8) * height;
+  createShapes();
+  const pW = random(0.2, 0.6) * width;
+  const pH = random(0.2, 0.6) * height;
   gPattern = new Pattern(pW, pH);
 }
 
-function createFlowers() {
-  const typeOfFlowers = int(random(1, 5));
+function createShapes() {
+  const shapeCount = int(random(1, 4));
 
-  gFlowerTypes = [];
-  for (let i = 0; i < typeOfFlowers; i++) {
+  gShapeTypes = [];
+  for (let i = 0; i < shapeCount; i++) {
     gColorPalette = shuffle(gColorPalette);
+    let colorChoices = gColorPalette.slice(0, 3);
     let palette = [];
     let layerCount = int(random(1, 3));
     for (let j = 0; j < layerCount; j++) {
-      palette.push(gColorPalette[j % gColorPalette.length]);
+      palette.push(colorChoices[j % colorChoices.length]);
     }
-    gFlowerTypes.push(new FlowerType(palette));
+    gShapeTypes.push(new ShapeType(palette));
   }
 }
 
@@ -56,44 +66,43 @@ class Pattern {
   constructor(w, h) {
     this.w = w;
     this.h = h;
-    this.count = int(random(10, 20));
+    this.count = int(random(30, 60));
     const shortSide = min(w, h);
-    this.unitSize = shortSide / sqrt(this.count);
+    this.unitSize = shortSide / sqrt(0.3 * this.count);
 
-    this.flowers = [];
-    this.createFlowers();
+    this.shapes = [];
+    this.createShapes();
   }
 
-  createFlowers() {
-    const buffer = 0;
-    0.2 * this.unitSize;
+  createShapes() {
+    const buffer = 0.2 * this.unitSize;
 
-    for (let i = 0; i < 3 * this.count; i++) {
-      let flowerType = random(gFlowerTypes);
-      let typeVar = flowerType.getRandomParameters();
+    for (let i = 0; i < this.count; i++) {
+      let shapeType = random(gShapeTypes);
+      let typeVar = shapeType.getRandomParameters();
 
-      let radius = typeVar.flowerSize * this.unitSize;
-      let flower;
-      let overlapping = true;
+      let radius = typeVar.shapeSize * this.unitSize;
+      let shape;
+      let tooMuchOverlap = true;
       let count = 0;
 
-      while (overlapping || count < 100) {
+      while (tooMuchOverlap && count < 100) {
         count++;
-        overlapping = false;
+        tooMuchOverlap = false;
         let x = random(buffer, this.w - buffer);
         let y = random(buffer, this.h - buffer);
-        flower = { x: x, y: y, r: radius };
+        shape = { x: x, y: y, r: radius };
 
-        for (let j = 0; j < this.flowers.length; j++) {
-          let other = this.flowers[j];
-          let d = dist(flower.x, flower.y, other.x, other.y);
-          if (d < 0.5 * (flower.r + other.r)) {
-            overlapping = true;
+        for (let j = 0; j < this.shapes.length; j++) {
+          let other = this.shapes[j];
+          let d = dist(shape.x, shape.y, other.x, other.y);
+          if (d < 0.5 * (shape.r + other.r)) {
+            tooMuchOverlap = true;
             break;
           }
         }
       }
-      this.flowers.push(new Flower(flower.x, flower.y, flower.r, typeVar));
+      this.shapes.push(new Shape(shape.x, shape.y, shape.r, typeVar));
     }
   }
 
@@ -104,8 +113,8 @@ class Pattern {
       while (xp < width + this.w) {
         push();
         translate(xp, yp);
-        this.flowers.forEach((flower) => {
-          flower.draw();
+        this.shapes.forEach((shape) => {
+          shape.draw();
         });
         pop();
         xp += this.w;
@@ -116,83 +125,83 @@ class Pattern {
   }
 }
 
-class Flower {
+class Shape {
   constructor(x, y, rad, type) {
     this.x = x;
     this.y = y;
     this.r = rad;
-    this.flowerLayers = [];
+    this.shapeLayers = [];
 
-    let radScalars = type.layerScalars;
-    let flowerColors = type.palette;
-    for (let i = 0; i < flowerColors.length; i++) {
-      this.flowerLayers.push(new FlowerBase(radScalars[i] * rad, flowerColors[i], type));
+    let shapeColors = type.palette;
+    for (let i = 0; i < shapeColors.length; i++) {
+      this.shapeLayers.push(new ShapeBase(type.layerData[i].scalar * rad, shapeColors[i], type.layerData[i].count, type.layerData[i].petalDef));
     }
   }
 
   draw() {
     push();
     translate(this.x, this.y);
-    this.flowerLayers.forEach((flower) => {
-      flower.draw();
+    this.shapeLayers.forEach((shape) => {
+      shape.draw();
     });
     pop();
   }
 }
 
-class FlowerBase {
-  constructor(rad, col, type) {
-    this.flowerPoints = [];
+class ShapeBase {
+  constructor(rad, col, count, petalDef) {
+    this.shapePoints = [];
     this.color = col;
-    let num = type.pointCount;
+    let num = random(count.min, count.max);
     let angleInc = TWO_PI / num;
-    this.flowerRadius = rad;
-    let minRad = type.petalDefinition; //random(0.3, 0.8);
+    this.shapeRadius = rad;
+    let minRad = random(petalDef.min, petalDef.max); //random(0.3, 0.8);
     let offset = random(TWO_PI);
-    for (let i = 0; i < num; i++) {
+    for (let i = 0; i < num - 1; i++) {
       let angle = i * angleInc + offset;
-      let r = map(i % 2 === 0 ? 0 : random(0.1, 0.5), 0, 1, minRad * this.flowerRadius, this.flowerRadius);
+      let r = map(i % 2 === 0 ? 0 : random(0.1, 0.5), 0, 1, minRad * this.shapeRadius, this.shapeRadius);
       let x = r * cos(angle);
       let y = r * sin(angle);
-      this.flowerPoints.push(createVector(x, y));
+      this.shapePoints.push(createVector(x, y));
     }
   }
   draw() {
     fill(this.color);
     beginShape();
-    this.flowerPoints.forEach((pt) => {
+    this.shapePoints.forEach((pt) => {
       curveVertex(pt.x, pt.y);
     });
     endShape(CLOSE);
   }
 }
 
-class FlowerType {
+class ShapeType {
   constructor(palette) {
     this.palette = palette;
-    this.count = this.init(12, 20);
-    this.size = this.init(0.3, 0.6);
-    this.petalDef = this.init(0.3, 0.9);
+    this.size = this.init(0.4, 0.6);
+    this.layerData = [];
     this.layerScalars = [];
     let curScalar = 1;
+    let def = random(0.5, 0.9);
     for (let i = 0; i < palette.length; i++) {
-      this.layerScalars.push(curScalar);
-      curScalar *= random(0.1, 0.5);
+      this.layerData.push({ scalar: curScalar, count: this.init(6, 12), petalDef: this.initVar(def) });
+      curScalar *= random(0.3, 0.5);
     }
-    console.log(this.palette);
+  }
+
+  initVar(m) {
+    let v = random(0.01, 0.03);
+    return { min: m * (1 - v), max: m * (1 + v) };
   }
 
   init(x, y) {
     let m = random(x, y);
-    let variance = random(0.02, 0.1);
-    return { min: m - variance, max: m + variance };
+    let v = random(0.01, 0.05);
+    return { min: m * (1 - v), max: m * (1 + v) };
   }
 
   getRandomParameters() {
-    let count = random(this.count.min, this.count.max);
-    // if (count % 2 != 0) count += 1;
     const size = random(this.size.min, this.size.max);
-    const petals = random(this.petalDef.min, this.petalDef.max);
-    return { pointCount: count, flowerSize: size, petalDefinition: petals, palette: this.palette, layerScalars: this.layerScalars };
+    return { shapeSize: size, palette: this.palette, layerData: this.layerData };
   }
 }
