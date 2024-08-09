@@ -12,14 +12,15 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
 
   strokeWeight(3);
-  stroke(gBgColor);
   noLoop();
 
+  // curveTightness();
   createPattern();
 }
 
 function draw() {
   background(gBgColor);
+  stroke(gBgColor);
 
   gPattern.draw();
 }
@@ -32,18 +33,17 @@ function createPattern() {
 }
 
 function createFlowers() {
-  gColorPalette = shuffle(gColorPalette);
-  gFlowerColors = [
-    [gColorPalette[0], gColorPalette[1]],
-    [gColorPalette[1], gColorPalette[0]],
-    [gColorPalette[2], gColorPalette[0]],
-    [gColorPalette[2], gColorPalette[1]],
-    [gColorPalette[3]],
-  ];
+  const typeOfFlowers = int(random(1, 5));
 
   gFlowerTypes = [];
-  for (let i = 0; i < gFlowerColors.length; i++) {
-    gFlowerTypes.push(new FlowerType(gFlowerColors[i]));
+  for (let i = 0; i < typeOfFlowers; i++) {
+    gColorPalette = shuffle(gColorPalette);
+    let palette = [];
+    let layerCount = int(random(1, 3));
+    for (let j = 0; j < layerCount; j++) {
+      palette.push(gColorPalette[j % gColorPalette.length]);
+    }
+    gFlowerTypes.push(new FlowerType(palette));
   }
 }
 
@@ -123,7 +123,7 @@ class Flower {
     this.r = rad;
     this.flowerLayers = [];
 
-    const radScalars = [1, random(0.2, 0.3), random(0.05, 0.1)];
+    let radScalars = type.layerScalars;
     let flowerColors = type.palette;
     for (let i = 0; i < flowerColors.length; i++) {
       this.flowerLayers.push(new FlowerBase(radScalars[i] * rad, flowerColors[i], type));
@@ -148,8 +148,9 @@ class FlowerBase {
     let angleInc = TWO_PI / num;
     this.flowerRadius = rad;
     let minRad = type.petalDefinition; //random(0.3, 0.8);
+    let offset = random(TWO_PI);
     for (let i = 0; i < num; i++) {
-      let angle = i * angleInc;
+      let angle = i * angleInc + offset;
       let r = map(i % 2 === 0 ? 0 : random(0.1, 0.5), 0, 1, minRad * this.flowerRadius, this.flowerRadius);
       let x = r * cos(angle);
       let y = r * sin(angle);
@@ -171,7 +172,14 @@ class FlowerType {
     this.palette = palette;
     this.count = this.init(12, 20);
     this.size = this.init(0.3, 0.6);
-    this.petalDef = this.init(0.3, 0.8);
+    this.petalDef = this.init(0.3, 0.9);
+    this.layerScalars = [];
+    let curScalar = 1;
+    for (let i = 0; i < palette.length; i++) {
+      this.layerScalars.push(curScalar);
+      curScalar *= random(0.1, 0.5);
+    }
+    console.log(this.palette);
   }
 
   init(x, y) {
@@ -181,9 +189,10 @@ class FlowerType {
   }
 
   getRandomParameters() {
-    const count = random(this.count.min, this.count.max);
+    let count = random(this.count.min, this.count.max);
+    // if (count % 2 != 0) count += 1;
     const size = random(this.size.min, this.size.max);
     const petals = random(this.petalDef.min, this.petalDef.max);
-    return { pointCount: count, flowerSize: size, petalDefinition: petals, palette: this.palette };
+    return { pointCount: count, flowerSize: size, petalDefinition: petals, palette: this.palette, layerScalars: this.layerScalars };
   }
 }
