@@ -1,7 +1,13 @@
 // Created for the #WCCChallenge
 let gPattern;
 
-let gPoppyColors = ['#da0500', '#0d0000', '#BC9785'];
+// let gPoppyColors = ['#da0500', '#0d0000', '#BC9785'];
+let gFlowerColors = [
+  ['#d6cbbb', '#b87b6a'],
+  ['#b87b6a', '#d6cbbb'],
+  ['#bb343a', '#b87b6a'],
+  ['#bb343a', '#d6cbbb'],
+];
 
 let gTestFlower;
 
@@ -15,14 +21,14 @@ function setup() {
 }
 
 function draw() {
-  background(255);
+  background('#2f292f');
 
   gPattern.draw();
 }
 
 function createPattern() {
-  const pW = random(0.2, 0.6) * width;
-  const pH = random(0.2, 0.6) * height;
+  const pW = random(0.4, 0.8) * width;
+  const pH = random(0.4, 0.8) * height;
   gPattern = new Pattern(pW, pH);
 }
 
@@ -46,11 +52,13 @@ class Pattern {
   createFlowers() {
     const buffer = 0;
     0.2 * this.unitSize;
-    for (let i = 0; i < this.count; i++) {
-      let radius = random(0.1, 0.4) * this.unitSize;
+    for (let i = 0; i < 3 * this.count; i++) {
+      let radius = random(0.3, 0.6) * this.unitSize;
       let flower;
       let overlapping = true;
-      while (overlapping) {
+      let count = 0;
+      while (overlapping || count > 100) {
+        count++;
         overlapping = false;
         let x = random(buffer, this.w - buffer);
         let y = random(buffer, this.h - buffer);
@@ -59,7 +67,7 @@ class Pattern {
         for (let j = 0; j < this.flowers.length; j++) {
           let other = this.flowers[j];
           let d = dist(flower.x, flower.y, other.x, other.y);
-          if (d < flower.r + other.r) {
+          if (d < 0.5 * (flower.r + other.r)) {
             overlapping = true;
             break;
           }
@@ -99,8 +107,9 @@ class Poppy {
     this.flowerLayers = [];
 
     const radScalars = [1, random(0.2, 0.3), random(0.05, 0.1)];
-    for (let i = 0; i < gPoppyColors.length; i++) {
-      this.flowerLayers.push(new FlowerBase(radScalars[i] * rad, gPoppyColors[i]));
+    let flowerColors = random(gFlowerColors);
+    for (let i = 0; i < flowerColors.length; i++) {
+      this.flowerLayers.push(new FlowerBase(radScalars[i] * rad, flowerColors[i]));
     }
   }
 
@@ -130,12 +139,13 @@ class FlowerBase {
   constructor(rad, col) {
     this.flowerPoints = [];
     this.color = col;
-    let num = 12;
+    let num = int(random(12, 20));
     let angleInc = TWO_PI / num;
     this.flowerRadius = rad;
+    let minRad = random(0.3, 0.8);
     for (let i = 0; i < num; i++) {
       let angle = i * angleInc;
-      let r = map(i % 2 === 0 ? 0 : random(0.1, 0.5), 0, 1, this.flowerRadius, this.flowerRadius * 1.5);
+      let r = map(i % 2 === 0 ? 0 : random(0.1, 0.5), 0, 1, minRad * this.flowerRadius, this.flowerRadius);
       let x = r * cos(angle);
       let y = r * sin(angle);
       this.flowerPoints.push(createVector(x, y));
