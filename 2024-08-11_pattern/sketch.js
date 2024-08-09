@@ -1,9 +1,7 @@
 // Created for the #WCCChallenge
-let gPattern = [];
+let gPattern;
 
 let gPoppyColors = ['#da0500', '#0d0000', '#BC9785'];
-
-let gPoppyPet;
 
 let gTestFlower;
 
@@ -19,11 +17,13 @@ function setup() {
 function draw() {
   background(255);
 
-  gTestFlower.draw();
+  gPattern.draw();
 }
 
 function createPattern() {
-  gTestFlower = new Poppy(100);
+  const pW = random(0.2, 0.6) * width;
+  const pH = random(0.2, 0.6) * height;
+  gPattern = new Pattern(pW, pH);
 }
 
 function mouseClicked() {
@@ -32,16 +32,70 @@ function mouseClicked() {
 }
 
 class Pattern {
-  constructor() {
+  constructor(w, h) {
+    this.w = w;
+    this.h = h;
+    this.count = int(random(10, 20));
+    const shortSide = min(w, h);
+    this.unitSize = shortSide / sqrt(this.count);
+
     this.flowers = [];
-    createPattern();
+    this.createFlowers();
   }
 
-  createPattern() {}
+  createFlowers() {
+    const buffer = 0;
+    0.2 * this.unitSize;
+    for (let i = 0; i < this.count; i++) {
+      let radius = random(0.1, 0.4) * this.unitSize;
+      let flower;
+      let overlapping = true;
+      while (overlapping) {
+        overlapping = false;
+        let x = random(buffer, this.w - buffer);
+        let y = random(buffer, this.h - buffer);
+        flower = { x: x, y: y, r: radius };
+
+        for (let j = 0; j < this.flowers.length; j++) {
+          let other = this.flowers[j];
+          let d = dist(flower.x, flower.y, other.x, other.y);
+          if (d < flower.r + other.r) {
+            overlapping = true;
+            break;
+          }
+        }
+      }
+      this.flowers.push(new Poppy(flower.x, flower.y, flower.r));
+    }
+  }
+
+  draw() {
+    let xp = -0.5 * this.w;
+    let yp = -0.5 * this.h;
+    while (yp < height + this.h) {
+      while (xp < width + this.w) {
+        push();
+        translate(xp, yp);
+
+        // fill(random(255), 100);
+        // rect(0, 0, this.w, this.h);
+        this.flowers.forEach((flower) => {
+          flower.draw();
+        });
+        pop();
+        xp += this.w;
+      }
+      xp = 0;
+      yp += this.h;
+    }
+  }
 }
 
 class Poppy {
-  constructor(rad) {
+  constructor(x, y, rad) {
+    this.x = x;
+    this.y = y;
+    this.r = rad;
     this.flowerLayers = [];
 
     const radScalars = [1, random(0.2, 0.3), random(0.05, 0.1)];
@@ -52,7 +106,7 @@ class Poppy {
 
   draw() {
     push();
-    translate(width / 2, height / 2);
+    translate(this.x, this.y);
     this.flowerLayers.forEach((flower) => {
       flower.draw();
     });
