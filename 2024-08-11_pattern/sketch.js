@@ -1,35 +1,50 @@
 // Created for the #WCCChallenge
 let gPattern;
 
-// let gPoppyColors = ['#da0500', '#0d0000', '#BC9785'];
-let gFlowerColors = [
-  ['#d6cbbb', '#b87b6a'],
-  ['#b87b6a', '#d6cbbb'],
-  ['#bb343a', '#b87b6a'],
-  ['#bb343a', '#d6cbbb'],
-];
+let gColorPalette = ['#d6cbbb', '#b87b6a', '#bb343a', '#e3d66b'];
 
-let gTestFlower;
+let gFlowerColors = [];
+let gBgColor = '#2f292f';
+
+let gFlowerTypes = [];
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
 
-  noStroke();
+  strokeWeight(3);
+  stroke(gBgColor);
   noLoop();
 
   createPattern();
 }
 
 function draw() {
-  background('#2f292f');
+  background(gBgColor);
 
   gPattern.draw();
 }
 
 function createPattern() {
+  createFlowers();
   const pW = random(0.4, 0.8) * width;
   const pH = random(0.4, 0.8) * height;
   gPattern = new Pattern(pW, pH);
+}
+
+function createFlowers() {
+  gColorPalette = shuffle(gColorPalette);
+  gFlowerColors = [
+    [gColorPalette[0], gColorPalette[1]],
+    [gColorPalette[1], gColorPalette[0]],
+    [gColorPalette[2], gColorPalette[0]],
+    [gColorPalette[2], gColorPalette[1]],
+    [gColorPalette[3]],
+  ];
+
+  gFlowerTypes = [];
+  for (let i = 0; i < gFlowerColors.length; i++) {
+    gFlowerTypes.push(new FlowerType(gFlowerColors[i]));
+  }
 }
 
 function mouseClicked() {
@@ -52,12 +67,17 @@ class Pattern {
   createFlowers() {
     const buffer = 0;
     0.2 * this.unitSize;
+
     for (let i = 0; i < 3 * this.count; i++) {
-      let radius = random(0.3, 0.6) * this.unitSize;
+      let flowerType = random(gFlowerTypes);
+      let typeVar = flowerType.getRandomParameters();
+
+      let radius = typeVar.flowerSize * this.unitSize;
       let flower;
       let overlapping = true;
       let count = 0;
-      while (overlapping || count > 100) {
+
+      while (overlapping || count < 100) {
         count++;
         overlapping = false;
         let x = random(buffer, this.w - buffer);
@@ -73,7 +93,7 @@ class Pattern {
           }
         }
       }
-      this.flowers.push(new Poppy(flower.x, flower.y, flower.r));
+      this.flowers.push(new Flower(flower.x, flower.y, flower.r, typeVar));
     }
   }
 
@@ -84,9 +104,6 @@ class Pattern {
       while (xp < width + this.w) {
         push();
         translate(xp, yp);
-
-        // fill(random(255), 100);
-        // rect(0, 0, this.w, this.h);
         this.flowers.forEach((flower) => {
           flower.draw();
         });
@@ -99,17 +116,17 @@ class Pattern {
   }
 }
 
-class Poppy {
-  constructor(x, y, rad) {
+class Flower {
+  constructor(x, y, rad, type) {
     this.x = x;
     this.y = y;
     this.r = rad;
     this.flowerLayers = [];
 
     const radScalars = [1, random(0.2, 0.3), random(0.05, 0.1)];
-    let flowerColors = random(gFlowerColors);
+    let flowerColors = type.palette;
     for (let i = 0; i < flowerColors.length; i++) {
-      this.flowerLayers.push(new FlowerBase(radScalars[i] * rad, flowerColors[i]));
+      this.flowerLayers.push(new FlowerBase(radScalars[i] * rad, flowerColors[i], type));
     }
   }
 
@@ -123,26 +140,14 @@ class Poppy {
   }
 }
 
-class OregonGrape {
-  constructor() {}
-}
-
-class Bluebonnet {
-  constructor() {}
-}
-
-class OrangeBlossom {
-  constructor() {}
-}
-
 class FlowerBase {
-  constructor(rad, col) {
+  constructor(rad, col, type) {
     this.flowerPoints = [];
     this.color = col;
-    let num = int(random(12, 20));
+    let num = type.pointCount;
     let angleInc = TWO_PI / num;
     this.flowerRadius = rad;
-    let minRad = random(0.3, 0.8);
+    let minRad = type.petalDefinition; //random(0.3, 0.8);
     for (let i = 0; i < num; i++) {
       let angle = i * angleInc;
       let r = map(i % 2 === 0 ? 0 : random(0.1, 0.5), 0, 1, minRad * this.flowerRadius, this.flowerRadius);
@@ -158,5 +163,27 @@ class FlowerBase {
       curveVertex(pt.x, pt.y);
     });
     endShape(CLOSE);
+  }
+}
+
+class FlowerType {
+  constructor(palette) {
+    this.palette = palette;
+    this.count = this.init(12, 20);
+    this.size = this.init(0.3, 0.6);
+    this.petalDef = this.init(0.3, 0.8);
+  }
+
+  init(x, y) {
+    let m = random(x, y);
+    let variance = random(0.02, 0.1);
+    return { min: m - variance, max: m + variance };
+  }
+
+  getRandomParameters() {
+    const count = random(this.count.min, this.count.max);
+    const size = random(this.size.min, this.size.max);
+    const petals = random(this.petalDef.min, this.petalDef.max);
+    return { pointCount: count, flowerSize: size, petalDefinition: petals, palette: this.palette };
   }
 }
