@@ -13,6 +13,7 @@ let gBgColor = '#ffffff';
 let gVhsTapes = [];
 
 let gVhsWidth;
+let gStrokeWeight = 4;
 
 let g90sPalette = ['#00db96', '#49297e', '#90dcff', '#e10086', '#fdfb76'];
 
@@ -33,7 +34,6 @@ let gCoverLayer;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  strokeWeight(3);
 
   gCoverLayer = createGraphics(width, height);
   gCoverLayer.rectMode(CENTER);
@@ -55,7 +55,10 @@ function draw() {
 }
 
 function initialize() {
-  gVhsWidth = 0.2 * width;
+  gCoverLayer.clear();
+  let scalar = random(0.1, 0.2);
+  gVhsWidth = scalar * width;
+  gStrokeWeight = 10 * scalar;
   gSizesVHS.caseH = gVhsWidth * gScalarsVHS.caseH;
   gSizesVHS.windowW = gVhsWidth * gScalarsVHS.windowW;
   gSizesVHS.labelW = gVhsWidth * gScalarsVHS.labelW;
@@ -75,14 +78,15 @@ function initialize() {
 function createVHS() {
   gVhsTapes = [];
 
-  gCount = int(width / (1.1 * gVhsWidth));
-  gBoxWidth = width / gCount;
-  gCountY = floor(height / (1.2 * gSizesVHS.caseH));
+  gCount = int(width / (1.1 * gVhsWidth)) - 1;
+  gBoxWidth = 1.1 * gVhsWidth;
+  gCountY = floor(height / (1.2 * gSizesVHS.caseH)) - 1;
   let offsetY = (height - 1.2 * gSizesVHS.caseH * gCountY) / 2;
+  let offsetX = (width - 1.1 * gVhsWidth * gCount) / 2;
   for (let i = 0; i < gCountY; i++) {
     let y = (0.5 + i) * (1.2 * gSizesVHS.caseH) + offsetY;
     for (let j = 0; j < gCount; j++) {
-      gVhsTapes.push(new VHS((0.5 + j) * gBoxWidth, y));
+      gVhsTapes.push(new VHS((0.5 + j) * gBoxWidth + offsetX, y));
     }
   }
 }
@@ -108,6 +112,7 @@ class VHS {
     gCoverLayer.translate(this.xp, this.yp);
 
     // vhs case
+    gCoverLayer.strokeWeight(gStrokeWeight);
     gCoverLayer.stroke(0);
     gCoverLayer.fill(g90sPalette[0]);
     gCoverLayer.rect(0, 0, gVhsWidth, gSizesVHS.caseH, gSizesVHS.reelD * 0.1);
@@ -116,7 +121,7 @@ class VHS {
 
     // vhs window
     gCoverLayer.noFill();
-    gCoverLayer.strokeWeight(2);
+    gCoverLayer.strokeWeight(gStrokeWeight * 2);
     gCoverLayer.rect(0, 0, gSizesVHS.windowW, 0.95 * gSizesVHS.labelH, gSizesVHS.reelD * 0.2);
     gCoverLayer.erase();
     gCoverLayer.noStroke();
@@ -130,10 +135,21 @@ class VHS {
     gCoverLayer.rect(0, 0, gSizesVHS.labelW + 2, gSizesVHS.labelH);
     gCoverLayer.fill(g90sPalette[0]);
     gCoverLayer.rect(0, 0, gSizesVHS.labelW, gSizesVHS.labelH + 2);
-    gCoverLayer.fill(g90sPalette[1]);
-    gCoverLayer.strokeWeight(1);
+    gCoverLayer.fill(gBgColor); //g90sPalette[1]);
+    gCoverLayer.strokeWeight(gStrokeWeight);
     gCoverLayer.stroke(0);
     gCoverLayer.rect(0, 0, 0.9 * gSizesVHS.labelW, gSizesVHS.labelH, gSizesVHS.reelD * 0.05);
+
+    gCoverLayer.fill(g90sPalette[2]);
+    gCoverLayer.rect(0, -0.35 * gSizesVHS.labelH, 0.9 * gSizesVHS.labelW, 0.3 * gSizesVHS.labelH, gSizesVHS.reelD * 0.05);
+    gCoverLayer.fill(g90sPalette[3]);
+    gCoverLayer.rect(0, -0.25 * gSizesVHS.labelH, 0.9 * gSizesVHS.labelW, 0.15 * gSizesVHS.labelH);
+    gCoverLayer.fill(g90sPalette[1]);
+    gCoverLayer.rect(0, -0.3 * gSizesVHS.labelH, 0.9 * gSizesVHS.labelW, 0.1 * gSizesVHS.labelH);
+
+    for (let i = 0; i < 3; i++) {
+      gCoverLayer.line(-0.3 * gSizesVHS.labelW, i * gSizesVHS.labelH * 0.1, 0.3 * gSizesVHS.labelW, i * gSizesVHS.labelH * 0.1);
+    }
 
     gCoverLayer.pop();
   }
