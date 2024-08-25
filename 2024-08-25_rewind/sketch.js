@@ -74,8 +74,16 @@ function initialize() {
 
 function createVHS() {
   gVhsTapes = [];
-  for (let i = 0; i < 1; i++) {
-    gVhsTapes.push(new VHS(width / 2, height / 2));
+
+  gCount = int(width / (1.1 * gVhsWidth));
+  gBoxWidth = width / gCount;
+  gCountY = floor(height / (1.2 * gSizesVHS.caseH));
+  let offsetY = (height - 1.2 * gSizesVHS.caseH * gCountY) / 2;
+  for (let i = 0; i < gCountY; i++) {
+    let y = (0.5 + i) * (1.2 * gSizesVHS.caseH) + offsetY;
+    for (let j = 0; j < gCount; j++) {
+      gVhsTapes.push(new VHS((0.5 + j) * gBoxWidth, y));
+    }
   }
 }
 
@@ -88,8 +96,8 @@ class VHS {
     this.xp = x;
     this.yp = y;
 
-    this.progress = 0;
-    this.inc = 0.01;
+    this.progress = random();
+    this.inc = random(0.005, 0.01);
 
     this.createCover();
   }
