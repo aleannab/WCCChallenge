@@ -14,6 +14,8 @@ let gVhsTapes = [];
 
 let gVhsWidth;
 
+let g90sPalette = ['#00db96', '#49297e', '#90dcff', '#e10086', '#fdfb76'];
+
 let gScalarsVHS = {
   caseH: 0.57,
   windowW: 0.95,
@@ -71,6 +73,7 @@ function initialize() {
 }
 
 function createVHS() {
+  gVhsTapes = [];
   for (let i = 0; i < 1; i++) {
     gVhsTapes.push(new VHS(width / 2, height / 2));
   }
@@ -92,15 +95,37 @@ class VHS {
   }
 
   createCover() {
+    g90sPalette = shuffle(g90sPalette);
     gCoverLayer.push();
     gCoverLayer.translate(this.xp, this.yp);
 
-    gCoverLayer.fill(100);
-    gCoverLayer.rect(0, 0, gVhsWidth, gSizesVHS.caseH);
+    // vhs case
+    gCoverLayer.stroke(0);
+    gCoverLayer.fill(g90sPalette[0]);
+    gCoverLayer.rect(0, 0, gVhsWidth, gSizesVHS.caseH, gSizesVHS.reelD * 0.1);
+    gCoverLayer.fill(g90sPalette[1]);
+    gCoverLayer.rect(0, -0.5 * gSizesVHS.caseH, 1.01 * gVhsWidth, 0.15 * gSizesVHS.caseH);
+
+    // vhs window
+    gCoverLayer.noFill();
+    gCoverLayer.strokeWeight(2);
+    gCoverLayer.rect(0, 0, gSizesVHS.windowW, 0.95 * gSizesVHS.labelH, gSizesVHS.reelD * 0.2);
     gCoverLayer.erase();
+    gCoverLayer.noStroke();
+    gCoverLayer.fill(0);
     gCoverLayer.rect(0, 0, gSizesVHS.windowW, 0.95 * gSizesVHS.labelH, gSizesVHS.reelD * 0.2);
     gCoverLayer.noErase();
-    gCoverLayer.rect(0, 0, gSizesVHS.labelW, gSizesVHS.labelH);
+    gCoverLayer.noStroke();
+
+    // vhs label
+    gCoverLayer.fill(0);
+    gCoverLayer.rect(0, 0, gSizesVHS.labelW + 2, gSizesVHS.labelH);
+    gCoverLayer.fill(g90sPalette[0]);
+    gCoverLayer.rect(0, 0, gSizesVHS.labelW, gSizesVHS.labelH + 2);
+    gCoverLayer.fill(g90sPalette[1]);
+    gCoverLayer.strokeWeight(1);
+    gCoverLayer.stroke(0);
+    gCoverLayer.rect(0, 0, 0.9 * gSizesVHS.labelW, gSizesVHS.labelH, gSizesVHS.reelD * 0.05);
 
     gCoverLayer.pop();
   }
