@@ -1,21 +1,20 @@
-// Be Kind by Antoinette Bumatay-Chan
+// Be Kind, Rewind by Antoinette Bumatay-Chan
 // Created for the #WCCChallenge - Topic: Rewind
 //
-//
+// Obviously inspired by VHS tapes. :)
 //
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2blet gPattern;
-
-let gColorPalette = ['#d6cbbb', '#b87b6a', '#bb343a', '#e3d66b', '#708087'];
-
-let gBgColor = '#ffffff';
 
 let gVhsTapes = [];
 
 let gVhsWidth;
 let gStrokeWeight = 4;
 
-let g90sPalette = ['#00db96', '#49297e', '#90dcff', '#e10086', '#fdfb76'];
+let gBgColor = '#f5f5f5';
+let g90sPalette = ['#984cea', '#1eeede', '#fcfc0b', '#fb41ae', '#aaf604'];
+
+let gCurrentPalette;
 
 let gScalarsVHS = {
   caseH: 0.57,
@@ -25,7 +24,7 @@ let gScalarsVHS = {
   reelD: 0.4,
   reelSpacing: 0.23,
   spoolD: 0.12,
-  spoolExtra: [1, 0.5],
+  spoolExtra: [0.8, 0.5],
 };
 
 let gSizesVHS = {};
@@ -38,6 +37,7 @@ function setup() {
   gCoverLayer = createGraphics(width, height);
   gCoverLayer.rectMode(CENTER);
   gCoverLayer.noStroke();
+  strokeCap(ROUND);
 
   initialize();
 }
@@ -55,6 +55,8 @@ function draw() {
 }
 
 function initialize() {
+  g90sPalette = shuffle(g90sPalette);
+  gCurrentPalette = [...g90sPalette.slice(0, 3), gBgColor];
   gCoverLayer.clear();
   let scalar = random(0.1, 0.2);
   gVhsWidth = scalar * width;
@@ -70,7 +72,7 @@ function initialize() {
   for (let i = 0; i < gScalarsVHS.spoolExtra.length; i++) {
     gSizesVHS.spoolExtra.push(gScalarsVHS.spoolExtra[i] * gSizesVHS.spoolD);
   }
-  gSizesVHS.topTapePosOffset = gSizesVHS.reelSpacing + gSizesVHS.reelD / 3;
+  gSizesVHS.topTapePosOffset = gSizesVHS.reelSpacing + gSizesVHS.reelD / 3 + 2 * gStrokeWeight;
   gSizesVHS.topTapePosY = -gSizesVHS.caseH / 3;
   createVHS();
 }
@@ -101,22 +103,24 @@ class VHS {
     this.yp = y;
 
     this.progress = random();
-    this.inc = random(0.005, 0.01);
+    this.inc = random(0.001, 0.01);
+    this.hold = random(0.1, 0.5);
 
     this.createCover();
   }
 
   createCover() {
-    g90sPalette = shuffle(g90sPalette);
+    gCurrentPalette = shuffle(gCurrentPalette);
+
     gCoverLayer.push();
     gCoverLayer.translate(this.xp, this.yp);
 
     // vhs case
     gCoverLayer.strokeWeight(gStrokeWeight);
     gCoverLayer.stroke(0);
-    gCoverLayer.fill(g90sPalette[0]);
+    gCoverLayer.fill(gCurrentPalette[0]);
     gCoverLayer.rect(0, 0, gVhsWidth, gSizesVHS.caseH, gSizesVHS.reelD * 0.1);
-    gCoverLayer.fill(g90sPalette[1]);
+    gCoverLayer.fill(gCurrentPalette[1]);
     gCoverLayer.rect(0, -0.5 * gSizesVHS.caseH, 1.01 * gVhsWidth, 0.15 * gSizesVHS.caseH);
 
     // vhs window
@@ -133,18 +137,18 @@ class VHS {
     // vhs label
     gCoverLayer.fill(0);
     gCoverLayer.rect(0, 0, gSizesVHS.labelW + 2, gSizesVHS.labelH);
-    gCoverLayer.fill(g90sPalette[0]);
+    gCoverLayer.fill(gCurrentPalette[0]);
     gCoverLayer.rect(0, 0, gSizesVHS.labelW, gSizesVHS.labelH + 2);
     gCoverLayer.fill(gBgColor); //g90sPalette[1]);
     gCoverLayer.strokeWeight(gStrokeWeight);
     gCoverLayer.stroke(0);
     gCoverLayer.rect(0, 0, 0.9 * gSizesVHS.labelW, gSizesVHS.labelH, gSizesVHS.reelD * 0.05);
 
-    gCoverLayer.fill(g90sPalette[2]);
+    gCoverLayer.fill(gCurrentPalette[2]);
     gCoverLayer.rect(0, -0.35 * gSizesVHS.labelH, 0.9 * gSizesVHS.labelW, 0.3 * gSizesVHS.labelH, gSizesVHS.reelD * 0.05);
-    gCoverLayer.fill(g90sPalette[3]);
+    gCoverLayer.fill(gCurrentPalette[3]);
     gCoverLayer.rect(0, -0.25 * gSizesVHS.labelH, 0.9 * gSizesVHS.labelW, 0.15 * gSizesVHS.labelH);
-    gCoverLayer.fill(g90sPalette[1]);
+    gCoverLayer.fill(gCurrentPalette[1]);
     gCoverLayer.rect(0, -0.3 * gSizesVHS.labelH, 0.9 * gSizesVHS.labelW, 0.1 * gSizesVHS.labelH);
 
     for (let i = 0; i < 3; i++) {
@@ -156,12 +160,12 @@ class VHS {
 
   update(t) {
     this.progress += this.inc;
-    if (this.progress >= 1.0 || this.progress <= 0) this.inc = -this.inc;
+    if (this.progress >= 1 + this.hold || this.progress <= -this.hold) this.inc = -this.inc;
 
-    this.leftTapeD = map(this.progress, 0, 1, gSizesVHS.reelD, gSizesVHS.spoolD);
-    this.rightTapeD = map(this.progress, 0, 1, gSizesVHS.spoolD, gSizesVHS.reelD);
-    this.leftTapeX = -gSizesVHS.reelSpacing - this.leftTapeD / 2;
-    this.rightTapeX = gSizesVHS.reelSpacing + this.rightTapeD / 2;
+    this.leftTapeD = map(this.progress, 0, 1, gSizesVHS.reelD, gSizesVHS.spoolD, true);
+    this.rightTapeD = map(this.progress, 0, 1, gSizesVHS.spoolD, gSizesVHS.reelD, true);
+    this.leftTapeX = -gSizesVHS.reelSpacing - this.leftTapeD / 2 + gStrokeWeight;
+    this.rightTapeX = gSizesVHS.reelSpacing + this.rightTapeD / 2 - gStrokeWeight;
   }
 
   draw() {
@@ -174,16 +178,16 @@ class VHS {
     circle(gSizesVHS.reelSpacing, 0, this.rightTapeD);
 
     stroke(0);
-    strokeWeight(2);
+    strokeWeight(gStrokeWeight * 1.5);
     noFill();
     beginShape();
-    curveVertex(this.leftTapeX, 0);
-    curveVertex(this.leftTapeX, 0);
+    curveVertex(this.leftTapeX, gStrokeWeight);
+    curveVertex(this.leftTapeX, gStrokeWeight);
     curveVertex(-gSizesVHS.topTapePosOffset, gSizesVHS.topTapePosY);
     curveVertex(0, gSizesVHS.topTapePosY);
     curveVertex(gSizesVHS.topTapePosOffset, gSizesVHS.topTapePosY);
-    curveVertex(this.rightTapeX, 0);
-    curveVertex(this.rightTapeX, 0);
+    curveVertex(this.rightTapeX, gStrokeWeight);
+    curveVertex(this.rightTapeX, gStrokeWeight);
     endShape();
 
     fill(255);
