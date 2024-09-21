@@ -27,20 +27,23 @@ function setup() {
 
 function draw() {
   noStroke();
-  background(gBgColor);
+  blendMode(BLEND);
 
-  let crayonChangeCount = 30;
-  for (let i = 0; i < crayonChangeCount; i++) {
-    pickUpNewCrayon();
+  background(gBgColor);
+  blendMode(DARKEST);
+
+  let markerChangeCount = 30;
+  for (let i = 0; i < markerChangeCount; i++) {
+    pickUpNewMarker();
   }
 }
 
-function pickUpNewCrayon() {
+function pickUpNewMarker() {
   stroke(random(gPalette));
   strokeWeight(random(5, 8));
 
   push();
-  translate(random(0.8 * width), random(0.5 * height));
+  translate(random(0.8 * width), random(0.8 * height));
   rotate(random(-45, 45));
   if (randBool()) {
     scribbleLines();
