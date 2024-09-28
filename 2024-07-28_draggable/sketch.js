@@ -12,7 +12,13 @@ let gSelected = null;
 let gOffset = null;
 let gSideLength;
 let gAreaMin;
-let gDifficulty = 2;
+let gDifficulty = 1;
+
+let gIsPuzzleDone = false;
+let gIsWaiting = false;
+let gScaleVar;
+let gAlphaVar;
+let gStart = false;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -28,22 +34,58 @@ function setup() {
 }
 
 function draw() {
+  let puzzleCheck = true;
+  for (let i = 0; i < gTriangles.length; i++) {
+    if (!gTriangles[i].isStatic) {
+      puzzleCheck = false;
+      break;
+    }
+  }
+  if (puzzleCheck) {
+    // setTimeout(() => {
+    gIsPuzzleDone = true;
+    // }, 500);
+  }
   background(95);
   noStroke();
+  push();
+  translate(width / 2, height / 2);
   fill(80);
-  rect(width / 2, height / 2, gSideLength, gSideLength);
+
+  rect(0, 0, gSideLength);
+  if (!gStart) return;
+  if (gIsPuzzleDone) {
+    scale(gScaleVar);
+    gAlphaVar -= 1;
+    gScaleVar += 0.01;
+    if (!gIsWaiting && gAlphaVar <= 0) {
+      gIsWaiting = true;
+      setTimeout(() => {
+        initPuzzle();
+      }, 500);
+    }
+  } else if (gAlphaVar < 100) {
+    gAlphaVar += 2;
+  }
+
   gTriangles.forEach((triangle) => {
     triangle.draw();
   });
+
+  pop();
 }
 
 function initPuzzle() {
+  gIsWaiting = false;
+  gIsPuzzleDone = false;
+  gAlphaVar = -50;
+  gScaleVar = 1;
   let totalArea = gSideLength * gSideLength;
   gAreaMin = totalArea / ++gDifficulty;
   gTriangles = [];
 
-  let xOffset = (windowWidth - gSideLength) / 2;
-  let yOffset = (windowHeight - gSideLength) / 2;
+  let xOffset = -gSideLength / 2; //(windowWidth - gSideLength) / 2;
+  let yOffset = -gSideLength / 2; //(windowHeight - gSideLength) / 2;
 
   // centered square points
   let p1 = createVector(xOffset, yOffset);
@@ -98,24 +140,18 @@ function sign(px, py, p1, p2) {
 }
 
 function mousePressed() {
-  let isPuzzleComplete = true;
-  for (let i = 0; i < gTriangles.length; i++) {
-    if (!gTriangles[i].isStatic) {
-      isPuzzleComplete = false;
-      break;
-    }
-  }
-
-  if (isPuzzleComplete) {
-    initPuzzle();
-  }
-
+  if (!gStart) gStart = true;
+  let offsetX = width / 2;
+  let offsetY = height / 2;
   for (let i = gTriangles.length - 1; i >= 0; i--) {
     if (gTriangles[i].isStatic) continue;
-    if (containsPoint(gTriangles[i], mouseX, mouseY)) {
+    let adjMouseX = mouseX - offsetX;
+    let adjMouseY = mouseY - offsetY;
+
+    if (containsPoint(gTriangles[i], adjMouseX, adjMouseY)) {
       gSelected = gTriangles.splice(i, 1)[0];
       gTriangles.push(gSelected);
-      gOffset = createVector(mouseX, mouseY).sub(createVector(gSelected.cx, gSelected.cy));
+      gOffset = createVector(adjMouseX, adjMouseY).sub(createVector(gSelected.cx, gSelected.cy));
       break;
     }
   }
@@ -123,8 +159,10 @@ function mousePressed() {
 
 function mouseDragged() {
   if (gSelected) {
-    let dx = mouseX - gOffset.x - gSelected.cx;
-    let dy = mouseY - gOffset.y - gSelected.cy;
+    let offsetX = -width / 2;
+    let offsetY = -height / 2;
+    let dx = mouseX - gSelected.cx + offsetX;
+    let dy = mouseY - gSelected.cy + offsetY;
     gSelected.move(dx, dy);
     gOffset = createVector(mouseX, mouseY).sub(createVector(gSelected.cx, gSelected.cy));
   }
@@ -180,12 +218,12 @@ class Triangle {
   }
 
   boundCheck(p1, p2) {
-    return dist(p1.x, p1.y, p2.x, p2.y) < 10;
+    return dist(p1.x, p1.y, p2.x, p2.y) < 50;
   }
 
   draw() {
-    fill(this.color);
-    stroke(0);
+    fill(hue(this.color), saturation(this.color), lightness(this.color), gAlphaVar);
+    stroke(0, gAlphaVar);
 
     triangle(this.p1.x, this.p1.y, this.p2.x, this.p2.y, this.p3.x, this.p3.y);
   }
