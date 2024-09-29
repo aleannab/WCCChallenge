@@ -29,7 +29,7 @@ function drawAll() {
   // placeObjectsRandomly(5, 12, 1); //rects
 
   // placeObjectsRandomly(0, 5, 1.5); //grid
-  placeObjectsRadially(1, 13, 0.5); //circles
+  placeObjectsRadially(1, int(random(1, 11)), 0.5); //circles
 
   // placeObjectsRadially(3, 7, 1); // line
   // placeObjectsRadially(1, 5, 0.8); //circles
@@ -46,7 +46,7 @@ function drawElement(pos, type, scale) {
       drawGrid(pos, scale);
       break;
     case 1:
-      drawCircle(pos, scale);
+      drawPentacles(pos, scale);
       break;
     case 2:
       drawAngle(pos, scale);
@@ -156,28 +156,48 @@ function drawGrid(pos, scale) {
   pop();
 }
 
-function drawCircle(pos, scale) {
+function drawPentacles(pos, scale) {
   push();
   translate(pos.x, pos.y);
   let d = random(0.3, 0.5) * gUnit * scale;
 
-  let isTwo = getRandBool(0.5);
-  if (isTwo) {
+  noStroke();
+  if (getRandBool(0.5)) {
     let c = random(gPalette);
-    noStroke();
-    fill(hue(c), saturation(c), brightness(c), 0.5);
-  } else {
-    setRandStroke(10);
+    // setRandStroke();
     fill(random(gPalette));
+    circle(0, 0, random(1.3, 1.5) * d);
   }
+  setRandStroke(10);
+
+  fill(random(gPalette));
 
   circle(0, 0, d);
-  if (getRandBool(0.1)) {
-    let c = random(gPalette);
-    setRandStroke();
-    fill(random(gPalette));
-    circle(0, 0, random(0.3, 0.6) * d);
+
+  let radius = random(0.25, 0.4) * d;
+  noFill();
+
+  let angle = TWO_PI / 5; // 72 degrees per point
+  let points = [];
+
+  // Calculate the points on the circumference
+  for (let a = -PI / 2; a < TWO_PI - PI / 2; a += angle) {
+    let x = cos(a) * radius;
+    let y = sin(a) * radius;
+    points.push({ x: x, y: y });
   }
+
+  push();
+  rotate(random(360));
+  // Draw the star by connecting every second point
+  beginShape();
+  for (let i = 0; i < points.length; i++) {
+    let nextIndex = (i + 3) % points.length; // Skip one point ahead to create the star
+    vertex(points[i].x, points[i].y);
+    vertex(points[nextIndex].x, points[nextIndex].y);
+  }
+  endShape(CLOSE);
+  pop();
   pop();
 }
 
