@@ -26,7 +26,7 @@ function setup() {
 
 function drawAll() {
   background(gBgColor);
-  // placeObjectsRandomly(5, 12, 1); //rects
+  placeObjectsRandomly(5, 12, 1); //rects
 
   // placeObjectsRandomly(0, 5, 1.5); //grid
   placeObjectsRadially(1, int(random(1, 11)), 0.5); //circles
@@ -58,7 +58,7 @@ function drawElement(pos, type, scale) {
       drawArcs(pos, scale);
       break;
     case 5:
-      drawRect(pos, scale);
+      drawSword(pos, scale);
       break;
   }
 }
@@ -102,7 +102,7 @@ function drawLine(pos, scale) {
   pop();
 }
 
-function drawRect(pos, scale) {
+function drawSword(pos, scale) {
   getRandBool() ? fill(0) : setRandFill();
   push();
   translate(pos.x, pos.y);
@@ -110,7 +110,10 @@ function drawRect(pos, scale) {
   noStroke();
   let length = scale * random(0.25, 1) * gUnit;
   let w = random(0.03, 0.05) * gUnit;
-  rect(0, 0, length, w);
+  circle(0, -length / 2, 2 * w);
+  rect(0, 0, w, length);
+  rect(0, -0.375 * length, 0.158 * length, w);
+  triangle(0.5 * w, 0.5 * length, -0.5 * w, 0.5 * length, 0, 0.6 * length);
   pop();
 }
 
