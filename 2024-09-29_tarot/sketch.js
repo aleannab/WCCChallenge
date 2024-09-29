@@ -33,7 +33,7 @@ function drawAll() {
 
   // placeObjectsRadially(3, 7, 1); // line
   // placeObjectsRadially(1, 5, 0.8); //circles
-  // placeObjectsRadially(4, 3, 0.5); //arcs
+  placeObjectsRadially(4, 3, 0.5); //arcs
 }
 
 function mouseClicked() {
@@ -55,7 +55,7 @@ function drawElement(pos, type, scale) {
       drawLine(pos, scale);
       break;
     case 4:
-      drawArcs(pos, scale);
+      drawCups(pos, scale);
       break;
     case 5:
       drawSword(pos, scale);
@@ -204,7 +204,7 @@ function drawPentacles(pos, scale) {
   pop();
 }
 
-function drawArcs(pos, scale) {
+function drawCups(pos, scale) {
   push();
   translate(pos.x, pos.y);
   randRotate(true);
@@ -212,29 +212,12 @@ function drawArcs(pos, scale) {
   getRandBool() ? fill(1) : noFill();
 
   let d = random(0.2, 0.5) * scale * gUnit;
-  let numArcs = floor(random(3, 5));
-  if (getRandBool()) {
-    noFill();
-    for (let i = 0; i < numArcs; i++) {
-      let offset = 2 * d;
-      push();
-      translate(random(offset), random(offset));
-      arc(0, 0, d, d, PI, TWO_PI, OPEN);
-      pop();
-    }
-  } else {
-    let xp = 0;
-    for (let i = 0; i < numArcs; i++) {
-      arc(xp, 0, d, d, PI, TWO_PI, OPEN);
-      xp += d;
-    }
 
-    if (getRandBool()) {
-      let length = random(0.1) * width;
-      let r = d / 2;
-      line(-r - length, 0, xp - r + length, 0);
-    }
-  }
+  noFill();
+  let offset = 2 * d;
+  arc(0, 0, d, d, PI - 0.2, TWO_PI + 0.2, CHORD);
+  line(0, -0.5 * d, 0, -1.2 * d);
+  line(0.1 * d, -1.2 * d, -0.1 * d, -1.2 * d);
 
   pop();
 }
