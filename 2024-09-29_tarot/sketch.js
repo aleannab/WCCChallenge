@@ -26,14 +26,14 @@ function setup() {
 
 function drawAll() {
   background(gBgColor);
-  placeObjectsRandomly(5, 12, 1); //rects
+  placeObjectsRandomly(5, int(random(1, 11)), 1); //rects
 
   // placeObjectsRandomly(0, 5, 1.5); //grid
   placeObjectsRadially(1, int(random(1, 11)), 0.5); //circles
 
-  // placeObjectsRadially(3, 7, 1); // line
+  placeObjectsRadially(3, 7, 1); // line
   // placeObjectsRadially(1, 5, 0.8); //circles
-  placeObjectsRadially(4, 3, 0.5); //arcs
+  placeObjectsRadially(4, int(random(1, 11)), 0.5); //arcs
 }
 
 function mouseClicked() {
@@ -52,7 +52,7 @@ function drawElement(pos, type, scale) {
       drawAngle(pos, scale);
       break;
     case 3:
-      drawLine(pos, scale);
+      drawWand(pos, scale);
       break;
     case 4:
       drawCups(pos, scale);
@@ -84,21 +84,24 @@ function placeObjectsRandomly(type, num, scale) {
   }
 }
 
-function drawLine(pos, scale) {
+function drawWand(pos, scale) {
   setRandStroke(1.5);
   push();
   translate(pos.x, pos.y);
   randRotate(true);
+  noFill();
   let length = random(0.8, 1.2) * scale * gUnit;
-  line(-length / 2, 0, length / 2, 0);
-  push();
-  let perpLineCount = getRandBool() ? 1 : 2;
-  let perp = random(-0.5, 0.3) * length;
-  for (let i = 0; i < perpLineCount; i++) {
-    line(perp, -20, perp, 20);
-    perp += random(0.01, 0.08) * length;
+  let xVar = 0.02 * scale * gUnit;
+  let num = 10;
+  let inc = length / num;
+  let yp = -length / 2;
+  beginShape();
+  for (let i = 0; i < num; i++) {
+    curveVertex(random(-xVar, xVar), yp + inc * i);
   }
-  pop();
+
+  endShape();
+
   pop();
 }
 
