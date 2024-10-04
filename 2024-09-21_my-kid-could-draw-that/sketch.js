@@ -1,49 +1,55 @@
 // Two by Antoinette Bumatay-Chan
 // Created for the #WCCChallenge - Topic: My Kid Could Draw That
 //
-// This is inspired by my toddler's artwork. He is two. <3
+// This is inspired by my toddler's artwork. He is two. 🖍️💖
 //
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
-let gPalette = ['#ec3113', '#ff6600', '#fef008', '#089109', '#0db9d1', '#0b0ac4', '#d212a9', '#9a20fe', '#1f1f1f'];
+let gMarkerBox = ['#ec3113', '#ff6600', '#fef008', '#089109', '#0db9d1', '#0b0ac4', '#d212a9', '#9a20fe', '#1f1f1f'];
+
+let gPalette = [];
 let gBgColor = '#e7e7e9';
 
-let gStrokeWeight = 15;
+let gStrokeWeight = 10;
 
 let gUnit;
 
 function setup() {
-  let isPortrait = windowWidth < windowHeight;
-  let w = isPortrait ? windowWidth : (3 * windowHeight) / 4;
-  let h = isPortrait ? (4 * windowWidth) / 3 : windowHeight;
-  createCanvas(0.95 * w, 0.95 * h);
+  createCanvas(1080, 1250); //windowWidth, windowHeight);
   noLoop();
   noFill();
 
   angleMode(DEGREES);
-  gUnit = 0.1 * h;
+  gUnit = 0.1 * height;
 }
 
 function draw() {
-  noStroke();
-  blendMode(BLEND);
+  startNewPicture();
 
-  background(gBgColor);
-  blendMode(DARKEST);
-
-  let markerChangeCount = 30;
+  let markerChangeCount = int(random(50, 100));
   for (let i = 0; i < markerChangeCount; i++) {
     pickUpNewMarker();
   }
 }
 
+function startNewPicture() {
+  setPalette();
+  blendMode(BLEND);
+
+  background(gBgColor);
+  blendMode(DARKEST);
+}
+
+function setPalette() {
+  gMarkerBox = shuffle(gMarkerBox);
+  gPalette = gMarkerBox.slice(0, 5);
+}
+
 function pickUpNewMarker() {
   stroke(random(gPalette));
-  strokeWeight(random(5, 8));
-
   push();
-  translate(random(0.8 * width), random(0.8 * height));
+  translate(random(width), random(0.8 * height));
   rotate(random(-45, 45));
   if (randBool()) {
     scribbleLines();
@@ -54,6 +60,8 @@ function pickUpNewMarker() {
 }
 
 function scribble() {
+  strokeWeight(random(0.8, 1.2) * gStrokeWeight);
+
   beginShape();
   curveTightness(random(-1, 0.6));
 
@@ -65,7 +73,7 @@ function scribble() {
 
   let xOffset = 0;
   let yOffset = 0;
-  let r = random(0.5, 1) * gUnit;
+  let r = random(0.5, 2) * gUnit;
 
   for (let i = 0; i < steps; i++) {
     let xPos = r * cos(angle) + xOffset;
@@ -87,7 +95,7 @@ function scribbleLines() {
 
   for (let lineNum = 0; lineNum < lineCount; lineNum++) {
     beginShape();
-    strokeWeight(5, 8);
+    strokeWeight(random(0.8, 1.2) * gStrokeWeight);
 
     let ptCount = int(random(5, 8));
     let pt = createVector(random(gUnit), random(-0.1, 0.8) * gUnit);
@@ -109,6 +117,16 @@ function calculateControlPoints(start, end, offsetX, offsetY) {
 
 function mousePressed() {
   redraw();
+}
+
+function keyPressed() {
+  if (key === 's') {
+    console.log('image saved');
+    let timestamp = year() + '-' + nf(month(), 2) + '-' + nf(day(), 2) + '_' + nf(hour(), 2) + '-' + nf(minute(), 2) + '-' + nf(second(), 2);
+    saveCanvas('my-kid-could' + timestamp);
+  } else if (key === 'r') {
+    redraw();
+  }
 }
 
 function randBool() {

@@ -12,7 +12,7 @@ let gSelected = null;
 let gOffset = null;
 let gSideLength;
 let gAreaMin;
-let gDifficulty = 1;
+let gDifficulty = 2;
 
 let gIsPuzzleDone = false;
 let gIsWaiting = false;
@@ -34,6 +34,7 @@ function setup() {
 }
 
 function draw() {
+  if (gIsWaiting) return;
   let puzzleCheck = true;
   for (let i = 0; i < gTriangles.length; i++) {
     if (!gTriangles[i].isStatic) {
@@ -42,11 +43,12 @@ function draw() {
     }
   }
   if (puzzleCheck) {
-    // setTimeout(() => {
-    gIsPuzzleDone = true;
-    // }, 500);
+    setTimeout(() => {
+      gIsPuzzleDone = true;
+    }, 1000);
   }
   background(95);
+
   noStroke();
   push();
   translate(width / 2, height / 2);
@@ -57,7 +59,7 @@ function draw() {
   if (gIsPuzzleDone) {
     scale(gScaleVar);
     gAlphaVar -= 1;
-    gScaleVar += 0.01;
+    gScaleVar += 0.03;
     if (!gIsWaiting && gAlphaVar <= 0) {
       gIsWaiting = true;
       setTimeout(() => {
@@ -73,6 +75,11 @@ function draw() {
   });
 
   pop();
+  noFill();
+  stroke(0); //mouseIsPressed ? 100 : 0);
+  strokeWeight(mouseIsPressed ? 3 : 1);
+  circle(mouseX, mouseY, 50);
+  strokeWeight(2);
 }
 
 function initPuzzle() {
@@ -81,7 +88,7 @@ function initPuzzle() {
   gAlphaVar = -50;
   gScaleVar = 1;
   let totalArea = gSideLength * gSideLength;
-  gAreaMin = totalArea / ++gDifficulty;
+  gAreaMin = totalArea / gDifficulty;
   gTriangles = [];
 
   let xOffset = -gSideLength / 2; //(windowWidth - gSideLength) / 2;
@@ -100,11 +107,22 @@ function initPuzzle() {
   // set color and move to random position
   let hInc = 100 / gTriangles.length;
   let h = int(random(100));
+  let staticTriangles = [];
+  let nonStaticTriangles = [];
+
   for (let i = 0; i < gTriangles.length; i++) {
     gTriangles[i].color = color(h, 80, 60);
-    gTriangles[i].move();
-    h = (h + hInc) % 100;
+    h = (h + hInc) % 100; // Update hue for colors
+    if (gTriangles[i].isStatic) {
+      staticTriangles.push(gTriangles[i]); // Collect static triangles
+    } else {
+      nonStaticTriangles.push(gTriangles[i]); // Collect non-static triangles
+    }
   }
+
+  // Clear the original array and add static triangles at the beginning
+  gTriangles = [...staticTriangles, ...nonStaticTriangles];
+  gDifficulty += 0.5;
 }
 
 function triangleArea(p1, p2, p3) {
@@ -185,11 +203,12 @@ class Triangle {
     let centroid = createVector((p1.x + p2.x + p3.x) / 3, (p1.y + p2.y + p3.y) / 3);
 
     // Calculate max offsets to keep triangle within the canvas bounds
-    let maxOffsetX = min(centroid.x, 0.8 * width - centroid.x);
-    let maxOffsetY = min(centroid.y, 0.8 * height - centroid.y);
+    let offsetX = random(-width / 8, width / 8);
+    // let maxOffsetY = 3 * min(centroid.y, 0.8 * height - centroid.y);
+    let offsetY = random() < 0.5 ? -height / 4 + (random() < 0.5 ? -50 : 50) : height / 4 + (random() < 0.5 ? -50 : 50);
 
     // Add random offset within bounds
-    let offset = createVector(random(-maxOffsetX, maxOffsetX), random(-maxOffsetY, maxOffsetY));
+    let offset = createVector(offsetX, offsetY);
     this.p1 = p1.copy().add(offset);
     this.p2 = p2.copy().add(offset);
     this.p3 = p3.copy().add(offset);
