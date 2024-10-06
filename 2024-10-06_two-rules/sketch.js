@@ -101,13 +101,16 @@ class Flock {
     this.colInc = 0; //-0.1;
     this.debugCol = color(red(dcVal), green(dcVal), blue(dcVal), 255);
     this.darkerDebugCol = lerpColor(this.debugCol, color(0, 0, 0), 0.5);
+    this.alpha = gAlpha;
   }
 
   run() {
+    let frozenCount = 0;
     for (let boid of this.boids) {
       // Pass the entire list of boids to each boid individually
       boid.run(this.boids);
       boid.neighborCountUpdate(this.boids);
+      if (boid.isFrozen) frozenCount++;
     }
     let colVal = red(this.color) + this.colInc;
     this.color = color(colVal, colVal, colVal, gAlpha);
@@ -123,13 +126,12 @@ class Flock {
   draw() {
     noFill();
     if (gIsDebug) stroke(red(this.color), green(this.color), blue(this.color), 255);
-    else stroke(this.color);
+    else stroke(red(this.color), green(this.color), blue(this.color), this.alpha);
     beginShape();
     for (let boid of this.boids) {
-      curveVertex(boid.position.x, boid.position.y);
+      if (!boid.isFrozen) curveVertex(boid.position.x, boid.position.y);
     }
-    if (gIsDebug) endShape(CLOSE);
-    else endShape();
+    endShape();
 
     if (gIsDebug) {
       for (let boid of this.boids) {
@@ -155,7 +157,7 @@ class Boid {
 
     this.isFrozen = false;
     this.neighborCount = 0;
-    this.desiredCount = int(random(1, 3)); //0.5 * gCurrentFlockLength));
+    this.desiredCount = int(random(1, 0.5 * gCurrentFlockLength));
   }
 
   run(boids) {
