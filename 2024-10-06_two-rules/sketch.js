@@ -2,37 +2,46 @@
 
 let gAllFlocks = [];
 
-let gCurrentFlockLength = 10;
-let gBorder;
+let gCurrentFlockLength = 8;
+let gBorder = 0;
+let gAlpha = 5;
+let gIsDebug = false;
+
+let gDebugColors = ['#3498db', '#db6e34'];
 
 function setup() {
   let l = min(windowWidth, windowHeight);
-  createCanvas(windowWidth, windowHeight);
+  createCanvas(l, l);
 
   gBorder = 0.2 * l;
 
+  gBgColor = 200;
+
   initialize();
   noFill();
+  strokeWeight(5);
   stroke(0, 0, 0, 0.1);
 }
 
 function draw() {
-  // background(255);
+  if (gIsDebug) background(gBgColor);
   generate();
   for (let flock of gAllFlocks) {
     flock.current.run();
-    stroke(flock.color);
+    stroke(flock.current.color);
     flock.current.draw();
   }
 }
 
 function initialize() {
-  background(255);
+  background(gBgColor);
+  gAllFlocks = [];
 
   for (let i = 0; i < 2; i++) {
-    let c = new Flock();
-    let n = new Flock();
     let val = i * 255;
+
+    let c = new Flock(val, gDebugColors[i]);
+    let n = new Flock(val, gDebugColors[i]);
 
     for (let i = 0; i < gCurrentFlockLength; i++) {
       let xp = random(gBorder, width - gBorder);
@@ -41,8 +50,8 @@ function initialize() {
       n.addBoid(new Boid(xp, yp));
     }
     c.run();
-    let col = color(val, val, val, (1 - i) * 50 + 50);
-    gAllFlocks.push({ current: c, next: n, color: col });
+
+    gAllFlocks.push({ current: c, next: n });
   }
 }
 
@@ -50,25 +59,28 @@ function mouseClicked() {
   initialize();
 }
 
+function keyPressed() {
+  if (key === 'd') {
+    background(gBgColor);
+    gIsDebug = !gIsDebug;
+  }
+}
+
 // Create a new generation
 function generate() {
   for (let flock of gAllFlocks) {
-    for (let i = 0; i < flock.current; i++) {
+    for (let i = 0; i < flock.current.boids.length; i++) {
       let neighborCount = flock.current.boids[i].neighborCount;
       let desiredCount = flock.current.boids[i].desiredCount;
 
       // Rules of Life
       // 1. Any boid close to desired neighbor count freezes
       // 2. Any boid who doesn't have enough desired neighbors or too many, moves
-      if (neighborCount <= desiredCount && neighborCount >= desiredCount) {
+      if (neighborCount >= desiredCount && neighborCount <= desiredCount + 1) {
         flock.next.boids[i].isFrozen = true;
       } else {
         flock.next.boids[i].isFrozen = false;
       }
-
-      let temp = flock.current.boids[i].isFrozen;
-      flock.current.boids[i].isFrozen = flock.next.boids[i].isFrozen;
-      flock.next.boids[i].isFrozen = temp;
     }
 
     // Swap the current and next arrays for next generation
@@ -82,10 +94,13 @@ function generate() {
 
 // Flock class to manage the array of all the boids
 class Flock {
-  constructor(col) {
+  constructor(cVal, dcVal) {
     // Initialize the array of boids
     this.boids = [];
-    this.color = col;
+    this.color = color(cVal, cVal, cVal, gAlpha);
+    this.colInc = 0; //-0.1;
+    this.debugCol = color(red(dcVal), green(dcVal), blue(dcVal), 255);
+    this.darkerDebugCol = lerpColor(this.debugCol, color(0, 0, 0), 0.5);
   }
 
   run() {
@@ -93,6 +108,11 @@ class Flock {
       // Pass the entire list of boids to each boid individually
       boid.run(this.boids);
       boid.neighborCountUpdate(this.boids);
+    }
+    let colVal = red(this.color) + this.colInc;
+    this.color = color(colVal, colVal, colVal, gAlpha);
+    if (colVal > 255 || colVal < 0) {
+      this.colInc = -this.colInc;
     }
   }
 
@@ -102,15 +122,22 @@ class Flock {
 
   draw() {
     noFill();
+    if (gIsDebug) stroke(red(this.color), green(this.color), blue(this.color), 255);
+    else stroke(this.color);
     beginShape();
     for (let boid of this.boids) {
       curveVertex(boid.position.x, boid.position.y);
     }
-    endShape();
-    // for (let boid of this.boids) {
-    //   // Pass the entire list of boids to each boid individually
-    //   boid.render();
-    // }
+    if (gIsDebug) endShape(CLOSE);
+    else endShape();
+
+    if (gIsDebug) {
+      for (let boid of this.boids) {
+        fill(boid.isFrozen ? this.darkerDebugCol : this.debugCol);
+        // Pass the entire list of boids to each boid individually
+        boid.render();
+      }
+    }
   }
 }
 
@@ -121,14 +148,14 @@ class Boid {
     this.position = createVector(x, y);
     this.size = 30.0;
 
-    this.maxSpeed = 300;
+    this.maxSpeed = 500;
     this.maxForce = 0.05;
 
     // colorMode(HSB);
 
-    this.isFrozen = random() < 0.5;
+    this.isFrozen = false;
     this.neighborCount = 0;
-    this.desiredCount = int(random(gCurrentFlockLength) / 2);
+    this.desiredCount = int(random(1, 3)); //0.5 * gCurrentFlockLength));
   }
 
   run(boids) {
@@ -140,7 +167,7 @@ class Boid {
   }
 
   neighborCountUpdate(boids) {
-    let desiredSeparation = 100.0;
+    let desiredSeparation = width * 0.1;
     let count = 0;
 
     for (let boid of boids) {
@@ -190,16 +217,9 @@ class Boid {
   }
 
   render() {
-    let theta = this.velocity.heading() + radians(90);
-    fill(this.isFrozen ? 0 : this.color);
     push();
     translate(this.position.x, this.position.y);
-    rotate(theta);
-    beginShape();
-    vertex(0, -this.size * 2);
-    vertex(-this.size, this.size * 2);
-    vertex(this.size, this.size * 2);
-    endShape(CLOSE);
+    circle(0, 0, 50);
     pop();
   }
 
@@ -225,7 +245,7 @@ class Boid {
     }
   }
   separate(boids) {
-    let desiredSeparation = 25.0;
+    let desiredSeparation = 100.0;
     let steer = createVector(0, 0);
     let count = 0;
 
