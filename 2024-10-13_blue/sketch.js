@@ -13,31 +13,25 @@
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
-let world;
-
-let rectangle;
-
-let gUpdateGravityTime = 0;
+let gWorld;
 
 let gGravity;
 
-let gConstraintsCol = [];
+let gAllObstacles = [];
 
-let gRadiusMin = 5;
-let gRadiusMax = 15;
-let gConstraintMin = 1;
-let gConstraintMax = 5;
+let gParticleRadMin = 5;
+let gParticleRadMax = 15;
+let gObstacleRadMin = 1;
+let gObstacleRadMax = 5;
 
 let gColCount;
 let gColPadding = 50;
 let gRowPadding = 100;
-
 let gParticleCount = 175;
 
 let gIsDebug = false;
 
-let gBackgroundColor = '#cccccc';
-let gEraseColor = '#cccccc34';
+let gBackgroundColor = '#CCCCCC';
 gPalette = [
   '#214A644D',
   '#2466864D',
@@ -60,93 +54,78 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSL, 360, 100, 100);
   ellipseMode(RADIUS);
+  strokeWeight(2);
 
-  world = new c2.World(new c2.Rect(0, -height / 2, width, 2 * height));
+  gWorld = new c2.World(new c2.Rect(0, -height / 2, width, 2 * height));
 
   gGravity = new c2.ConstForce(new c2.Vector(0, 1));
-  world.addForce(gGravity);
+  gWorld.addForce(gGravity);
 
   let collision = new c2.Collision();
-  collision.strength = 1; //0.5;
-  world.addInteractionForce(collision);
+  collision.strength = 1;
+  gWorld.addInteractionForce(collision);
 
   gColCount = floor(width / gColPadding) + 1;
-  let adjColPad = floor(width / (gColCount - 1));
-
+  const adjColPad = floor(width / (gColCount - 1));
   gRowCount = floor(height / gRowPadding) + 1;
 
   for (let i = 0; i < gColCount; i++) {
-    let xp = i * adjColPad;
-    gConstraintsCol.push(new ConstraintsColumn(xp));
+    const xp = i * adjColPad;
+    gAllObstacles.push(new ObstaclesColumn(xp));
   }
 
-  createParticleBrushes();
-  strokeWeight(2);
-  background(gBackgroundColor);
+  initialize();
 }
 
-function createParticleBrushes() {
-  world.particles = [];
-  const mainHue = random(160, 220);
-  const hueOffset = random(5, 20);
+function initialize() {
+  gWorld.particles = [];
 
   for (let i = 0; i < gParticleCount; i++) {
-    let x = random(width);
-    let y = -5 * gRadiusMax; //random(-5, -height/2);//height);
-    let p = new c2.Particle(x, y);
-    p.radius = random(gRadiusMin, gRadiusMax);
-    // if (i % 5 === 0) {
-    //   p.color = gEraseColor;
-    // } else {
-    p.color = random(gPalette); //mainHue + random(-hueOffset, hueOffset), random(30, 60), random(20, 100), 0.3);
-    // }
+    const x = random(width);
+    const y = -5 * gParticleRadMax;
+    const p = new c2.Particle(x, y);
+    p.radius = random(gParticleRadMin, gParticleRadMax);
+    p.color = random(gPalette);
     p.mass = random(0.5, 2);
 
-    world.addParticle(p);
+    gWorld.addParticle(p);
   }
+  background(gBackgroundColor);
 }
 
 function draw() {
   // console.log(frameRate());
   if (gIsDebug) background(gBackgroundColor);
 
-  let t = millis() * 0.001;
-  for (let p of world.particles) {
+  const t = millis() * 0.001;
+  for (let p of gWorld.particles) {
     p.radius += random(-1, 1);
-    if (p.radius > gRadiusMax) p.radius = gRadiusMax;
-    if (p.radius < gRadiusMin) p.radius = gRadiusMin;
+    p.radius = constrain(p.radius, gParticleRadMin, gParticleRadMax);
     if (p.position.y > height) {
       p.position.y = 0;
       p.color = random(gPalette);
     }
   }
-  for (let col of gConstraintsCol) {
-    col.update(t);
+
+  for (let obstacle of gAllObstacles) {
+    obstacle.update(t);
   }
 
-  world.update();
+  gWorld.update();
 
   noStroke();
-  for (let i = 0; i < world.particles.length; i++) {
-    let p = world.particles[i];
+  for (let i = 0; i < gWorld.particles.length; i++) {
+    const p = gWorld.particles[i];
     fill(p.color);
-
-    let rad = gIsDebug ? p.radius : map(p.radius, gRadiusMin, gRadiusMax, 0, 10);
+    const rad = gIsDebug ? p.radius : map(p.radius, gParticleRadMin, gParticleRadMax, 0, 10);
     circle(p.position.x, p.position.y, rad);
   }
 
   if (gIsDebug) {
-    for (let col of gConstraintsCol) {
-      col.draw();
+    for (let obstacle of gAllObstacles) {
+      obstacle.draw();
     }
   }
-
-  // let curTime = millis();
-  // if (curTime > gUpdateGravityTime) {
-  //   let randDirection = new c2.Vector(random(-1, 1), random(-1, 1));
-  //   gGravity.force = randDirection.normalize();
-  //   gUpdateGravityTime = curTime + 3000;
-  // }
 }
 
 function keyPressed() {
@@ -159,20 +138,19 @@ function keyPressed() {
 }
 
 function mouseClicked() {
-  background(gBackgroundColor);
-  createParticleBrushes();
+  initialize();
 }
 
-class ConstraintsColumn {
+class ObstaclesColumn {
   constructor(initX) {
     this.data = [];
 
     for (let i = 0; i < gRowCount; i++) {
-      let xp = initX + random(-0.2, 0.2) * gColPadding;
-      let yp = i * gRowPadding + random(-0.5, 0.5) * gRowPadding;
-      let circ = new c2.Circle(xp, yp, random(gConstraintMin, gConstraintMax));
-      let circConstraint = new c2.CircleConstraint(circ);
-      world.addConstraint(circConstraint);
+      const xp = initX + random(-0.2, 0.2) * gColPadding;
+      const yp = i * gRowPadding + random(-0.5, 0.5) * gRowPadding;
+      const circ = new c2.Circle(xp, yp, random(gObstacleRadMin, gObstacleRadMax));
+      const circConstraint = new c2.CircleConstraint(circ);
+      gWorld.addConstraint(circConstraint);
       this.data.push({ constraint: circConstraint, initPos: xp, timeOffset: random(0, TWO_PI) });
     }
     this.timeOffset = random(0, TWO_PI);
@@ -188,7 +166,7 @@ class ConstraintsColumn {
     noFill();
     stroke(50);
     for (let d of this.data) {
-      let curCircle = d.constraint.circle;
+      const curCircle = d.constraint.circle;
       circle(curCircle.p.x, curCircle.p.y, curCircle.r);
     }
   }
