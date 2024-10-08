@@ -1,41 +1,80 @@
-// Created for the #WCCChallenge
+// Duality by Antoinette Bumatay-Chan
+// Created for the #WCCChallenge - Topic: 2 Rules
+//
+// Rules of Duality
+// 1. Any boid close to desired neighbor count freezes
+// 2. Any boid who doesn't have enough desired neighbors unfreezes
+//
+// A curved line is drawn using the boids that are not frozen
+//
+// Press 'd' to get a better idea of what I mean
+//
+// Code is super messy.
+// Did use the p5.js flocking and game of life examples as a starting point
+//
+// See other submissions here: https://openprocessing.org/curation/78544
+// Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 let gAllFlocks = [];
 
 let gCurrentFlockLength = 8;
 let gBorder = 0;
-let gAlpha = 5;
+let gAlpha = 10;
 let gIsDebug = false;
+let gDebugCanvas;
+let gRenderCanvas;
 
 let gDebugColors = ['#3498db', '#db6e34'];
+let gBgColor;
 
 function setup() {
-  let l = min(windowWidth, windowHeight);
-  createCanvas(l, l);
+  let isPortrait = windowWidth < windowHeight;
+  let w = isPortrait ? windowWidth : (3 * windowHeight) / 4;
+  let h = isPortrait ? (4 * windowWidth) / 3 : windowHeight;
+  createCanvas(w, h);
+  console.log(width, height);
 
-  gBorder = 0.2 * l;
+  gDebugCanvas = createGraphics(width, height);
+  gRenderCanvas = createGraphics(width, height);
+
+  let l = min(windowWidth, windowHeight);
+
+  gBorder = 0.1 * l;
 
   gBgColor = 200;
 
   initialize();
-  noFill();
-  strokeWeight(5);
-  stroke(0, 0, 0, 0.1);
+  gRenderCanvas.noFill();
+  gRenderCanvas.strokeWeight(3);
+  gRenderCanvas.stroke(0, 0, 0, 0.1);
+  gDebugCanvas.noFill();
+  gDebugCanvas.strokeWeight(3);
+  gDebugCanvas.stroke(0);
 }
 
 function draw() {
-  if (gIsDebug) background(gBgColor);
   generate();
+  gDebugCanvas.clear();
   for (let flock of gAllFlocks) {
     flock.current.run();
-    stroke(flock.current.color);
+    gRenderCanvas.stroke(flock.current.color);
+    if (gIsDebug) {
+      gDebugCanvas.stroke(red(flock.current.color), green(flock.current.color), blue(flock.current.color), 255);
+    }
     flock.current.draw();
+  }
+  image(gRenderCanvas, 0, 0);
+  if (gIsDebug) {
+    image(gDebugCanvas, 0, 0);
   }
 }
 
 function initialize() {
-  background(gBgColor);
+  // gIsDebug = true;
+  gRenderCanvas.background(gBgColor);
   gAllFlocks = [];
+
+  gCurrentFlockLength = int(random(7, 12));
 
   for (let i = 0; i < 2; i++) {
     let val = i * 255;
@@ -53,6 +92,16 @@ function initialize() {
 
     gAllFlocks.push({ current: c, next: n });
   }
+
+  loop();
+
+  setTimeout(() => {
+    gIsDebug = false;
+    noLoop();
+    // setTimeout(() => {
+    //   initialize();
+    // }, 3000);
+  }, 12000);
 }
 
 function mouseClicked() {
@@ -61,7 +110,7 @@ function mouseClicked() {
 
 function keyPressed() {
   if (key === 'd') {
-    background(gBgColor);
+    //background(gBgColor);
     gIsDebug = !gIsDebug;
   }
 }
@@ -76,7 +125,7 @@ function generate() {
       // Rules of Life
       // 1. Any boid close to desired neighbor count freezes
       // 2. Any boid who doesn't have enough desired neighbors or too many, moves
-      if (neighborCount >= desiredCount && neighborCount <= desiredCount + 1) {
+      if (neighborCount >= desiredCount && neighborCount <= desiredCount) {
         flock.next.boids[i].isFrozen = true;
       } else {
         flock.next.boids[i].isFrozen = false;
@@ -124,18 +173,26 @@ class Flock {
   }
 
   draw() {
-    noFill();
-    if (gIsDebug) stroke(red(this.color), green(this.color), blue(this.color), 255);
-    else stroke(red(this.color), green(this.color), blue(this.color), this.alpha);
-    beginShape();
-    for (let boid of this.boids) {
-      if (!boid.isFrozen) curveVertex(boid.position.x, boid.position.y);
+    gRenderCanvas.noFill();
+    if (gIsDebug) {
+      gDebugCanvas.noFill();
     }
-    endShape();
+    // gRenderCanvas.stroke(red(this.color), green(this.color), blue(this.color), this.alpha);
+    gRenderCanvas.beginShape();
+    if (gIsDebug) gDebugCanvas.beginShape();
+    for (let boid of this.boids) {
+      if (!boid.isFrozen) {
+        gRenderCanvas.curveVertex(boid.position.x, boid.position.y);
+        if (gIsDebug) gDebugCanvas.curveVertex(boid.position.x, boid.position.y);
+      }
+    }
+    gRenderCanvas.endShape();
+    if (gIsDebug) gDebugCanvas.endShape();
 
     if (gIsDebug) {
       for (let boid of this.boids) {
-        fill(boid.isFrozen ? this.darkerDebugCol : this.debugCol);
+        //gDebugCanvas.stroke(255);
+        gDebugCanvas.fill(boid.isFrozen ? this.darkerDebugCol : this.debugCol);
         // Pass the entire list of boids to each boid individually
         boid.render();
       }
@@ -169,7 +226,7 @@ class Boid {
   }
 
   neighborCountUpdate(boids) {
-    let desiredSeparation = width * 0.1;
+    let desiredSeparation = width * 0.2;
     let count = 0;
 
     for (let boid of boids) {
@@ -219,10 +276,10 @@ class Boid {
   }
 
   render() {
-    push();
-    translate(this.position.x, this.position.y);
-    circle(0, 0, 50);
-    pop();
+    gDebugCanvas.push();
+    gDebugCanvas.translate(this.position.x, this.position.y);
+    gDebugCanvas.circle(0, 0, 20);
+    gDebugCanvas.pop();
   }
 
   borders() {
