@@ -1,8 +1,12 @@
-// Created for the #WCCChallenge - Topic: Gravity
+// Created for the #WCCChallenge - Topic: Blue
 //
+// I interpreted this prompt to feeling blue.
+// Tears falling, but there is beauty in the sadness.
+//
+// I repurposed an old sketch (made for a previous challenge: Gravity).
 // This was created using a particle system for the paint strokes.
-// The direction of gravity changes at a set interval.
 // There are moving circular obstacles across the canvas which you can view by pressing 'd' to toggle debug mode.
+// Mouse click to start a new painting.
 //
 // Uses the c2.js library for physics simulations: https://github.com/ren-yuan/c2.js/tree/main
 //
@@ -20,25 +24,44 @@ let gGravity;
 let gConstraintsCol = [];
 
 let gRadiusMin = 5;
-let gRadiusMax = 20;
-let gConstraintMin = 5;
-let gConstraintMax = 40;
+let gRadiusMax = 15;
+let gConstraintMin = 1;
+let gConstraintMax = 5;
 
 let gColCount;
-let gColPadding = 80;
-let gRowPadding = 80;
+let gColPadding = 50;
+let gRowPadding = 100;
+
+let gParticleCount = 175;
 
 let gIsDebug = false;
 
 let gBackgroundColor = '#cccccc';
 let gEraseColor = '#cccccc34';
+gPalette = [
+  '#214A644D',
+  '#2466864D',
+  '#0B121A4D',
+  '#4B585D4D',
+  '#21303A4D',
+  '#1220304D',
+  '#78A4AB4D',
+  '#7DB1C54D',
+  '#4A7C8A4D',
+  '#357A9C4D',
+  '#64787C4D',
+  '#3584B44D',
+  '#328DB54D',
+  '#242C244D',
+  '#8C897F4D',
+];
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   colorMode(HSL, 360, 100, 100);
   ellipseMode(RADIUS);
 
-  world = new c2.World(new c2.Rect(0, 0, width, height));
+  world = new c2.World(new c2.Rect(0, -height / 2, width, 2 * height));
 
   gGravity = new c2.ConstForce(new c2.Vector(0, 1));
   world.addForce(gGravity);
@@ -67,24 +90,24 @@ function createParticleBrushes() {
   const mainHue = random(160, 220);
   const hueOffset = random(5, 20);
 
-  let num = (gColCount > gRowCount ? gColCount : gRowCount) * 2;
-  for (let i = 0; i < num; i++) {
+  for (let i = 0; i < gParticleCount; i++) {
     let x = random(width);
-    let y = random(height);
+    let y = -5 * gRadiusMax; //random(-5, -height/2);//height);
     let p = new c2.Particle(x, y);
     p.radius = random(gRadiusMin, gRadiusMax);
-    if (i % 5 === 0) {
-      p.color = gEraseColor;
-    } else {
-      p.color = color(mainHue + random(-hueOffset, hueOffset), random(30, 60), random(20, 100), 0.3);
-    }
-    p.mass = random(0.1, 1);
+    // if (i % 5 === 0) {
+    //   p.color = gEraseColor;
+    // } else {
+    p.color = random(gPalette); //mainHue + random(-hueOffset, hueOffset), random(30, 60), random(20, 100), 0.3);
+    // }
+    p.mass = random(0.5, 2);
 
     world.addParticle(p);
   }
 }
 
 function draw() {
+  // console.log(frameRate());
   if (gIsDebug) background(gBackgroundColor);
 
   let t = millis() * 0.001;
@@ -92,6 +115,10 @@ function draw() {
     p.radius += random(-1, 1);
     if (p.radius > gRadiusMax) p.radius = gRadiusMax;
     if (p.radius < gRadiusMin) p.radius = gRadiusMin;
+    if (p.position.y > height) {
+      p.position.y = 0;
+      p.color = random(gPalette);
+    }
   }
   for (let col of gConstraintsCol) {
     col.update(t);
@@ -114,22 +141,12 @@ function draw() {
     }
   }
 
-  let curTime = millis();
-  if (curTime > gUpdateGravityTime) {
-    let curForce = gGravity.force.copy();
-    let randDirection = new c2.Vector(random(0, 1), random(0, 1));
-    if (abs(curForce.x) > abs(curForce.y) || random(0, 1) > 0.8) {
-      let oppositeSign = (-1 * curForce.x) / abs(curForce.x);
-      randDirection.x *= oppositeSign;
-      if (random(0, 1) > 0.5) randDirection.y *= -1;
-    } else {
-      let oppositeSign = (-1 * curForce.y) / abs(curForce.y);
-      randDirection.y *= oppositeSign;
-      if (random(0, 1) > 0.5) randDirection.x *= -1;
-    }
-    gGravity.force = randDirection.normalize();
-    gUpdateGravityTime = curTime + random(3000, 5000);
-  }
+  // let curTime = millis();
+  // if (curTime > gUpdateGravityTime) {
+  //   let randDirection = new c2.Vector(random(-1, 1), random(-1, 1));
+  //   gGravity.force = randDirection.normalize();
+  //   gUpdateGravityTime = curTime + 3000;
+  // }
 }
 
 function keyPressed() {
@@ -156,14 +173,14 @@ class ConstraintsColumn {
       let circ = new c2.Circle(xp, yp, random(gConstraintMin, gConstraintMax));
       let circConstraint = new c2.CircleConstraint(circ);
       world.addConstraint(circConstraint);
-      this.data.push({ constraint: circConstraint, initPos: yp, timeOffset: random(0, TWO_PI) });
+      this.data.push({ constraint: circConstraint, initPos: xp, timeOffset: random(0, TWO_PI) });
     }
     this.timeOffset = random(0, TWO_PI);
   }
 
   update(t) {
     for (let d of this.data) {
-      d.constraint.circle.p.y = d.initPos + gColPadding * sin(t + d.timeOffset);
+      d.constraint.circle.p.x = d.initPos + gRowPadding * sin(0.75 * t + d.timeOffset);
     }
   }
 
