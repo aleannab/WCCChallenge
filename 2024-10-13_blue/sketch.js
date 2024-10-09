@@ -14,25 +14,23 @@
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 let gWorld;
-
 let gGravity;
 
+const gParticleCount = 175;
+
 let gAllObstacles = [];
+const gObstacleSpacing = {
+  x: 50,
+  y: 100,
+};
 
-let gParticleRadMin = 5;
-let gParticleRadMax = 15;
-let gObstacleRadMin = 1;
-let gObstacleRadMax = 5;
+const gConstraints = {
+  particle: { min: 5, max: 15 },
+  obstacle: { min: 1, max: 5 },
+};
 
-let gColCount;
-let gColPadding = 50;
-let gRowPadding = 100;
-let gParticleCount = 175;
-
-let gIsDebug = false;
-
-let gBackgroundColor = '#CCCCCC';
-gPalette = [
+const gBackgroundColor = '#CCCCCC';
+const gPalette = [
   '#214A644D',
   '#2466864D',
   '#0B121A4D',
@@ -50,8 +48,16 @@ gPalette = [
   '#8C897F4D',
 ];
 
+let gIsDebug = false;
+
+let gArtCanvas;
+let gDebugCanvas;
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
+  gArtCanvas = createGraphics(width, height);
+  gDebugCanvas = createGraphics(width, height);
+
   colorMode(HSL, 360, 100, 100);
   ellipseMode(RADIUS);
   strokeWeight(2);
@@ -65,13 +71,13 @@ function setup() {
   collision.strength = 1;
   gWorld.addInteractionForce(collision);
 
-  gColCount = floor(width / gColPadding) + 1;
-  const adjColPad = floor(width / (gColCount - 1));
-  gRowCount = floor(height / gRowPadding) + 1;
+  const obstacleColCount = floor(width / gObstacleSpacing.x) + 1;
+  const adjColSpacing = floor(width / (obstacleColCount - 1));
+  const rowCount = floor(height / gObstacleSpacing.y) + 1;
 
-  for (let i = 0; i < gColCount; i++) {
-    const xp = i * adjColPad;
-    gAllObstacles.push(new ObstaclesColumn(xp));
+  for (let i = 0; i < obstacleColCount; i++) {
+    const xp = i * adjColSpacing;
+    gAllObstacles.push(new ObstaclesColumn(xp, rowCount));
   }
 
   initialize();
@@ -82,9 +88,9 @@ function initialize() {
 
   for (let i = 0; i < gParticleCount; i++) {
     const x = random(width);
-    const y = -5 * gParticleRadMax;
+    const y = -5 * gConstraints.particle.max;
     const p = new c2.Particle(x, y);
-    p.radius = random(gParticleRadMin, gParticleRadMax);
+    p.radius = random(gConstraints.particle.min, gConstraints.particle.max);
     p.color = random(gPalette);
     p.mass = random(0.5, 2);
 
@@ -100,7 +106,7 @@ function draw() {
   const t = millis() * 0.001;
   for (let p of gWorld.particles) {
     p.radius += random(-1, 1);
-    p.radius = constrain(p.radius, gParticleRadMin, gParticleRadMax);
+    p.radius = constrain(p.radius, gConstraints.particle.min, gConstraints.particle.max);
     if (p.position.y > height) {
       p.position.y = 0;
       p.color = random(gPalette);
@@ -117,7 +123,7 @@ function draw() {
   for (let i = 0; i < gWorld.particles.length; i++) {
     const p = gWorld.particles[i];
     fill(p.color);
-    const rad = gIsDebug ? p.radius : map(p.radius, gParticleRadMin, gParticleRadMax, 0, 10);
+    const rad = gIsDebug ? p.radius : map(p.radius, gConstraints.particle.min, gConstraints.particle.max, 0, 10);
     circle(p.position.x, p.position.y, rad);
   }
 
@@ -142,13 +148,13 @@ function mouseClicked() {
 }
 
 class ObstaclesColumn {
-  constructor(initX) {
+  constructor(initX, rowCount) {
     this.data = [];
 
-    for (let i = 0; i < gRowCount; i++) {
-      const xp = initX + random(-0.2, 0.2) * gColPadding;
-      const yp = i * gRowPadding + random(-0.5, 0.5) * gRowPadding;
-      const circ = new c2.Circle(xp, yp, random(gObstacleRadMin, gObstacleRadMax));
+    for (let i = 0; i < rowCount; i++) {
+      const xp = initX + random(-0.2, 0.2) * gObstacleSpacing.x;
+      const yp = i * gObstacleSpacing.y + random(-0.5, 0.5) * gObstacleSpacing.y;
+      const circ = new c2.Circle(xp, yp, random(gConstraints.obstacle.min, gConstraints.obstacle.max));
       const circConstraint = new c2.CircleConstraint(circ);
       gWorld.addConstraint(circConstraint);
       this.data.push({ constraint: circConstraint, initPos: xp, timeOffset: random(0, TWO_PI) });
@@ -158,7 +164,7 @@ class ObstaclesColumn {
 
   update(t) {
     for (let d of this.data) {
-      d.constraint.circle.p.x = d.initPos + gRowPadding * sin(0.75 * t + d.timeOffset);
+      d.constraint.circle.p.x = d.initPos + gObstacleSpacing.y * sin(0.75 * t + d.timeOffset);
     }
   }
 
