@@ -20,13 +20,13 @@ const gParticleCount = 175;
 
 let gAllObstacles = [];
 const gObstacleSpacing = {
-  x: 50,
-  y: 100,
+  x: 300,
+  y: 50,
 };
 
 const gConstraints = {
   particle: { min: 5, max: 15 },
-  obstacle: { min: 1, max: 5 },
+  obstacle: { min: 5, max: 6 },
 };
 
 const gBackgroundColor = '#CCCCCC';
@@ -58,9 +58,12 @@ function setup() {
   gArtCanvas = createGraphics(width, height);
   gDebugCanvas = createGraphics(width, height);
 
-  colorMode(HSL, 360, 100, 100);
-  ellipseMode(RADIUS);
-  strokeWeight(2);
+  gArtCanvas.colorMode(HSL, 360, 100, 100);
+  gArtCanvas.ellipseMode(RADIUS);
+  gArtCanvas.strokeWeight(2);
+
+  gDebugCanvas.ellipseMode(RADIUS);
+  gDebugCanvas.strokeWeight(2);
 
   gWorld = new c2.World(new c2.Rect(0, -height / 2, width, 2 * height));
 
@@ -88,7 +91,7 @@ function initialize() {
 
   for (let i = 0; i < gParticleCount; i++) {
     const x = random(width);
-    const y = -5 * gConstraints.particle.max;
+    const y = -random(height / 2);
     const p = new c2.Particle(x, y);
     p.radius = random(gConstraints.particle.min, gConstraints.particle.max);
     p.color = random(gPalette);
@@ -96,12 +99,11 @@ function initialize() {
 
     gWorld.addParticle(p);
   }
-  background(gBackgroundColor);
+  gArtCanvas.background(gBackgroundColor);
 }
 
 function draw() {
-  // console.log(frameRate());
-  if (gIsDebug) background(gBackgroundColor);
+  if (gIsDebug) gDebugCanvas.clear();
 
   const t = millis() * 0.001;
   for (let p of gWorld.particles) {
@@ -119,12 +121,15 @@ function draw() {
 
   gWorld.update();
 
-  noStroke();
+  gArtCanvas.noStroke();
   for (let i = 0; i < gWorld.particles.length; i++) {
     const p = gWorld.particles[i];
-    fill(p.color);
-    const rad = gIsDebug ? p.radius : map(p.radius, gConstraints.particle.min, gConstraints.particle.max, 0, 10);
-    circle(p.position.x, p.position.y, rad);
+    gArtCanvas.fill(p.color);
+    const rad = map(p.radius, gConstraints.particle.min, gConstraints.particle.max, 0, 10);
+    gArtCanvas.circle(p.position.x, p.position.y, rad);
+    gDebugCanvas.stroke('#0000ff');
+    gDebugCanvas.noFill();
+    gDebugCanvas.circle(p.position.x, p.position.y, rad);
   }
 
   if (gIsDebug) {
@@ -132,14 +137,16 @@ function draw() {
       obstacle.draw();
     }
   }
+
+  image(gArtCanvas, 0, 0);
+  if (gIsDebug) {
+    image(gDebugCanvas, 0, 0);
+  }
 }
 
 function keyPressed() {
   if (key == 'd') {
     gIsDebug = !gIsDebug;
-    if (!gIsDebug) {
-      background(gBackgroundColor);
-    }
   }
 }
 
@@ -164,16 +171,16 @@ class ObstaclesColumn {
 
   update(t) {
     for (let d of this.data) {
-      d.constraint.circle.p.x = d.initPos + gObstacleSpacing.y * sin(0.75 * t + d.timeOffset);
+      d.constraint.circle.p.x = d.initPos + 0.5 * gObstacleSpacing.x * sin(t + d.timeOffset);
     }
   }
 
   draw() {
-    noFill();
-    stroke(50);
+    gDebugCanvas.fill('#ff0000');
+    gDebugCanvas.stroke('#ff0000');
     for (let d of this.data) {
       const curCircle = d.constraint.circle;
-      circle(curCircle.p.x, curCircle.p.y, curCircle.r);
+      gDebugCanvas.circle(curCircle.p.x, curCircle.p.y, curCircle.r);
     }
   }
 }
