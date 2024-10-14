@@ -1,12 +1,16 @@
 // Created for the #WCCChallenge - Topic: Blue
 //
 // I interpreted this prompt to feeling blue.
-// Tears falling, but there is beauty in the sadness.
+// Tears are falling, but there is beauty and relief found within the sadness.
 //
-// I repurposed an old sketch (made for a previous challenge: Gravity).
+// I modified an old sketch that was made for a previous challenge: Gravity.
 // This was created using a particle system for the paint strokes.
-// There are moving circular obstacles across the canvas which you can view by pressing 'd' to toggle debug mode.
+// There are moving rectangular obstacles across the canvas which you can view by pressing 'd' to toggle debug mode.
 // Mouse click to start a new painting.
+//
+// Color palette is also taken from Picasso's Blue Period - The Old Guitarist
+// https://colors.dopely.top/inside-colors/wp-content/uploads/2021/12/dopely-Pablo-Picasso-20.jpg
+// ChatGPT helped me write a function that uses each color's percentage to decide how likely it is to be chosen.
 //
 // Uses the c2.js library for physics simulations: https://github.com/ren-yuan/c2.js/tree/main
 //
@@ -20,33 +24,38 @@ const gParticleCount = 175;
 
 let gAllObstacles = [];
 const gObstacleSpacing = {
-  x: 300,
-  y: 50,
+  x: 100,
+  y: 200,
 };
 
 const gConstraints = {
-  particle: { min: 5, max: 15 },
-  obstacle: { min: 5, max: 6 },
+  particleSize: { min: 5, max: 15 },
+  obstacleWidth: { min: 1, max: 5 },
+  obstacleHeight: { min: 10, max: 100 },
 };
 
 const gBackgroundColor = '#CCCCCC';
-const gPalette = [
-  '#214A644D',
-  '#2466864D',
-  '#0B121A4D',
-  '#4B585D4D',
-  '#21303A4D',
-  '#1220304D',
-  '#78A4AB4D',
-  '#7DB1C54D',
-  '#4A7C8A4D',
-  '#357A9C4D',
-  '#64787C4D',
-  '#3584B44D',
-  '#328DB54D',
-  '#242C244D',
-  '#8C897F4D',
+const gPaletteWithPercentages = [
+  { color: '#214A641A', percentage: 23.42 },
+  { color: '#2466861A', percentage: 14.49 },
+  { color: '#0B121A1A', percentage: 13.02 },
+  { color: '#4B585D1A', percentage: 11.72 },
+  { color: '#21303A1A', percentage: 10.24 },
+  { color: '#1220301A', percentage: 9.18 },
+  { color: '#78A4AB1A', percentage: 4.38 },
+  { color: '#7DB1C51A', percentage: 4.06 },
+  { color: '#4A7C8A1A', percentage: 3.78 },
+  { color: '#357A9C1A', percentage: 3.2 },
+  { color: '#64787C1A', percentage: 0.95 },
+  { color: '#3584B41A', percentage: 0.94 },
+  { color: '#328DB51A', percentage: 0.45 },
+  { color: '#242C241A', percentage: 0.14 },
+  { color: '#8C897F1A', percentage: 0.02 },
 ];
+const gDebugObstacleColor = '#FF4500';
+const gDebugParticleColor = '#00FFFF';
+
+let gCumulative = [];
 
 let gIsDebug = false;
 
@@ -83,6 +92,13 @@ function setup() {
     gAllObstacles.push(new ObstaclesColumn(xp, rowCount));
   }
 
+  // Calculate cumulative probabilities
+  let sum = 0;
+  for (let i = 0; i < gPaletteWithPercentages.length; i++) {
+    sum += gPaletteWithPercentages[i].percentage;
+    gCumulative.push(sum);
+  }
+
   initialize();
 }
 
@@ -90,14 +106,7 @@ function initialize() {
   gWorld.particles = [];
 
   for (let i = 0; i < gParticleCount; i++) {
-    const x = random(width);
-    const y = -random(height / 2);
-    const p = new c2.Particle(x, y);
-    p.radius = random(gConstraints.particle.min, gConstraints.particle.max);
-    p.color = random(gPalette);
-    p.mass = random(0.5, 2);
-
-    gWorld.addParticle(p);
+    addParticle(-random(height / 2));
   }
   gArtCanvas.background(gBackgroundColor);
 }
@@ -107,11 +116,11 @@ function draw() {
 
   const t = millis() * 0.001;
   for (let p of gWorld.particles) {
-    p.radius += random(-1, 1);
-    p.radius = constrain(p.radius, gConstraints.particle.min, gConstraints.particle.max);
+    p.radius += random(-1, 1) * 0.75;
+    p.radius = constrain(p.radius, gConstraints.particleSize.min, gConstraints.particleSize.max);
     if (p.position.y > height) {
-      p.position.y = 0;
-      p.color = random(gPalette);
+      gWorld.removeParticle(p);
+      addParticle();
     }
   }
 
@@ -125,9 +134,9 @@ function draw() {
   for (let i = 0; i < gWorld.particles.length; i++) {
     const p = gWorld.particles[i];
     gArtCanvas.fill(p.color);
-    const rad = map(p.radius, gConstraints.particle.min, gConstraints.particle.max, 0, 10);
+    const rad = map(p.radius, gConstraints.particleSize.min, gConstraints.particleSize.max, 0, 10);
     gArtCanvas.circle(p.position.x, p.position.y, rad);
-    gDebugCanvas.stroke('#0000ff');
+    gDebugCanvas.stroke(gDebugParticleColor);
     gDebugCanvas.noFill();
     gDebugCanvas.circle(p.position.x, p.position.y, rad);
   }
@@ -144,6 +153,15 @@ function draw() {
   }
 }
 
+function addParticle(yp = 0) {
+  const newParticle = new c2.Particle(random(width), yp);
+  newParticle.radius = random(gConstraints.particleSize.min, gConstraints.particleSize.max);
+  newParticle.color = getRandomColor(); //random(gPalette);
+  newParticle.mass = random(0.5, 2);
+
+  gWorld.addParticle(newParticle);
+}
+
 function keyPressed() {
   if (key == 'd') {
     gIsDebug = !gIsDebug;
@@ -154,33 +172,56 @@ function mouseClicked() {
   initialize();
 }
 
+// uses probability of colors found in Picasso's Old Guitarist
+function getRandomColor() {
+  let rand = random(100);
+
+  for (let i = 0; i < gCumulative.length; i++) {
+    if (rand < gCumulative[i]) {
+      return gPaletteWithPercentages[i].color;
+    }
+  }
+  return random(gPaletteWithPercentages).color; // Fallback
+}
+
 class ObstaclesColumn {
   constructor(initX, rowCount) {
     this.data = [];
 
     for (let i = 0; i < rowCount; i++) {
-      const xp = initX + random(-0.2, 0.2) * gObstacleSpacing.x;
+      const xp = initX + random(-0.5, 0.5) * gObstacleSpacing.x;
       const yp = i * gObstacleSpacing.y + random(-0.5, 0.5) * gObstacleSpacing.y;
-      const circ = new c2.Circle(xp, yp, random(gConstraints.obstacle.min, gConstraints.obstacle.max));
-      const circConstraint = new c2.CircleConstraint(circ);
-      gWorld.addConstraint(circConstraint);
-      this.data.push({ constraint: circConstraint, initPos: xp, timeOffset: random(0, TWO_PI) });
+      const rect = new c2.Rect(
+        xp,
+        yp,
+        random(gConstraints.obstacleWidth.min, gConstraints.obstacleWidth.max),
+        random(gConstraints.obstacleHeight.min, gConstraints.obstacleHeight.max)
+      );
+      const obRect = new c2.RectConstraint(rect);
+      gWorld.addConstraint(obRect);
+      this.data.push({ obstacle: obRect, initPos: xp, timeOffset: random(0, TWO_PI) });
     }
     this.timeOffset = random(0, TWO_PI);
   }
 
   update(t) {
     for (let d of this.data) {
-      d.constraint.circle.p.x = d.initPos + 0.5 * gObstacleSpacing.x * sin(t + d.timeOffset);
+      d.obstacle.rect.p.x = d.initPos + 0.5 * gObstacleSpacing.x * sin(2 * t + d.timeOffset);
+      d.obstacle.rect.p.y += t * 0.01;
+      if (d.obstacle.rect.p.y > height) {
+        d.obstacle.rect.p.y = 0;
+        d.obstacle.rect.p.w = random(gConstraints.obstacleWidth.min, gConstraints.obstacleWidth.max);
+        d.obstacle.rect.p.h = random(gConstraints.obstacleHeight.min, gConstraints.obstacleHeight.max);
+      }
     }
   }
 
   draw() {
-    gDebugCanvas.fill('#ff0000');
-    gDebugCanvas.stroke('#ff0000');
+    gDebugCanvas.fill(gDebugObstacleColor);
+    gDebugCanvas.stroke(gDebugObstacleColor);
     for (let d of this.data) {
-      const curCircle = d.constraint.circle;
-      gDebugCanvas.circle(curCircle.p.x, curCircle.p.y, curCircle.r);
+      const obRect = d.obstacle.rect;
+      gDebugCanvas.rect(obRect.p.x, obRect.p.y, obRect.w, obRect.h);
     }
   }
 }
