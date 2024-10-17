@@ -74,7 +74,7 @@ function setup() {
   gDebugCanvas.ellipseMode(RADIUS);
   gDebugCanvas.strokeWeight(2);
 
-  gWorld = new c2.World(new c2.Rect(0, -height / 2, width, 2 * height));
+  gWorld = new c2.World(new c2.Rect(-100, -height / 2, width + 200, 2 * height));
 
   gGravity = new c2.ConstForce(new c2.Vector(0, 1));
   gWorld.addForce(gGravity);
@@ -154,7 +154,7 @@ function draw() {
 }
 
 function addParticle(yp = 0) {
-  const newParticle = new c2.Particle(random(width), yp);
+  const newParticle = new c2.Particle(random(-100, width + 100), yp);
   newParticle.radius = random(gConstraints.particleSize.min, gConstraints.particleSize.max);
   newParticle.color = getRandomColor(); //random(gPalette);
   newParticle.mass = random(0.5, 2);
@@ -189,6 +189,7 @@ class ObstaclesColumn {
     this.data = [];
 
     for (let i = 0; i < rowCount; i++) {
+      if (random() < 0.5) continue;
       const xp = initX + random(-0.5, 0.5) * gObstacleSpacing.x;
       const yp = i * gObstacleSpacing.y + random(-0.5, 0.5) * gObstacleSpacing.y;
       const rect = new c2.Rect(
@@ -199,19 +200,30 @@ class ObstaclesColumn {
       );
       const obRect = new c2.RectConstraint(rect);
       gWorld.addConstraint(obRect);
-      this.data.push({ obstacle: obRect, initPos: xp, timeOffset: random(0, TWO_PI) });
+      this.data.push({
+        obstacle: obRect,
+        initPos: xp,
+        timeOffset: random(0, TWO_PI),
+        freq: random(0.2, 2),
+        amp: random(2, 5),
+        tScalar: random(0.01, 0.05),
+      });
     }
     this.timeOffset = random(0, TWO_PI);
   }
 
   update(t) {
     for (let d of this.data) {
-      d.obstacle.rect.p.x = d.initPos + 0.5 * gObstacleSpacing.x * sin(2 * t + d.timeOffset);
-      d.obstacle.rect.p.y += t * 0.01;
+      d.obstacle.rect.p.x = d.initPos + d.amp * gObstacleSpacing.x * noise(d.freq * t + d.timeOffset);
+      d.obstacle.rect.p.y += t * d.tScalar;
       if (d.obstacle.rect.p.y > height) {
-        d.obstacle.rect.p.y = 0;
+        d.obstacle.rect.p.y = -gConstraints.obstacleHeight.max;
         d.obstacle.rect.p.w = random(gConstraints.obstacleWidth.min, gConstraints.obstacleWidth.max);
         d.obstacle.rect.p.h = random(gConstraints.obstacleHeight.min, gConstraints.obstacleHeight.max);
+        d.timeOffset = random(0, TWO_PI);
+        d.freq = random(0.2, 1);
+        d.amp = random(2, 5);
+        d.tScalar = random(0.01, 0.05);
       }
     }
   }
