@@ -4,13 +4,14 @@
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 let gFlock;
-let gLimit = 500;
+let gStartCount = 20;
+let gLimit = 1000;
 let gDesiredSeparation = 600;
 let gNeighborDist = 600;
 let gBuffer = 10;
 
 let gMaxSplitTime = 5000;
-let gMinSplitTime = 500;
+let gMinSplitTime = 1000;
 
 let gProps = {};
 
@@ -30,7 +31,7 @@ function setup() {
 
   gProps = {
     fMax: random(1, 4),
-    sMax: random(1, 4),
+    sMax: random(100, 400),
     sep: 0.005,
     ali: 0.00002,
     coh: 0.0001,
@@ -52,7 +53,7 @@ class Flock {
   constructor(currentTime) {
     this.boids = [];
 
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < gStartCount; i++) {
       const randPosition = createVector(random(width), random(height));
       const randVelocity = createVector(random(width), random(height)).normalize();
       const randColor = random(gPaletteWithPercentages).color;
@@ -92,14 +93,18 @@ class Boid {
     this.vel = direction;
     this.radius = 5;
     this.timeSplit = time + random(500, 3000);
-    this.timeFreeze = this.timeSplit + random(5000, 50000);
+    this.timeFreeze = this.timeSplit + random(1000, 5000);
+    this.maxBranches = 3;
+    this.currentBranchCount = 1;
     this.isFrozen = false;
     this.color = color;
+    this.currentRadius = 5;
   }
 
   run(boids, time) {
     if (this.isFrozen) return;
     if (time > this.timeFreeze) this.isFrozen = true;
+    if (this.currentBranchCount > this.maxBranches) this.isFrozen = true;
     this.flock(boids);
     this.bounds();
     this.draw();
@@ -109,11 +114,13 @@ class Boid {
       this.myFlock.addBoid(this.pos, this.vel, this.color, time, count);
       this.timeSplit += random(gMinSplitTime, gMaxSplitTime);
     }
+    this.currentRadius = map(time / this.timeFreeze, 0, 1, this.radius, 0);
   }
 
   draw() {
+    if (this.isFrozen) return;
     fill(this.color);
-    ellipse(this.pos.x, this.pos.y, this.radius);
+    ellipse(this.pos.x, this.pos.y, this.currentRadius);
   }
 
   flock(boids) {
