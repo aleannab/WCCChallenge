@@ -1,29 +1,23 @@
-// Flocking Base
+// Created for the #WCCChallenge - Topic: Branches
 //
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 let gFlock;
-let gStartCount = 20;
-let gLimit = 1000;
+let gStartCount = 11;
+let gLimit = 150;
 let gDesiredSeparation = 600;
 let gNeighborDist = 600;
 let gBuffer = 10;
 
-let gMaxSplitTime = 5000;
-let gMinSplitTime = 1000;
+let gMaxSplitTime = 500;
+let gMinSplitTime = 200;
 
 let gProps = {};
 
-const gPaletteWithPercentages = [
-  // { color: '#f4f1ea1A', percentage: 0 },
-  { color: '#3567af1A', percentage: 0 },
-  { color: '#c04e821A', percentage: 0 },
-  { color: '#538e471A', percentage: 0 },
-  { color: '#e887401A', percentage: 0 },
-  { color: '#016d6f1A', percentage: 0 },
-  { color: '#e25c431A', percentage: 0 },
-];
+const gBarkColor = ['#2f0e27', '#3a1329', '#200c1f'];
+
+let gSkyColor = '#DAE8EC';
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -37,7 +31,7 @@ function setup() {
     coh: 0.0001,
   };
   makeNewFlock();
-  background(255);
+  background(gSkyColor);
 }
 
 function makeNewFlock() {
@@ -54,10 +48,15 @@ class Flock {
     this.boids = [];
 
     for (let i = 0; i < gStartCount; i++) {
-      const randPosition = createVector(random(width), random(height));
+      let randPosition = createVector(random(width), random(height));
+      if (random() > 0.5) {
+        randPosition.x *= -1;
+      } else {
+        randPosition.y *= -1;
+      }
       const randVelocity = createVector(random(width), random(height)).normalize();
-      const randColor = random(gPaletteWithPercentages).color;
-      this.boids.push(new Boid(this, randPosition, randVelocity, randColor, currentTime));
+      const randColor = random(gBarkColor);
+      this.boids.push(new Boid(this, randPosition, randVelocity, randColor, 30, currentTime));
     }
   }
 
@@ -68,7 +67,7 @@ class Flock {
     }
   }
 
-  addBoid(position, direction, color, time, count) {
+  addBoid(position, direction, color, radius, time, count) {
     if (this.boids.length < gLimit) {
       let currentAngle = atan2(direction.y, direction.x);
 
@@ -80,25 +79,26 @@ class Flock {
         // Add a small random offset to the position to avoid overlap
         let offset = p5.Vector.random2D().mult(random(0.5, 1));
         let newPos = p5.Vector.add(position, offset);
-        this.boids.push(new Boid(this, newPos, newDir, color, time));
+        this.boids.push(new Boid(this, newPos, newDir, color, radius, time));
       }
     }
   }
 }
 
 class Boid {
-  constructor(myFlock, position, direction, color, time) {
+  constructor(myFlock, position, direction, color, radius, time) {
     this.myFlock = myFlock;
     this.pos = position;
     this.vel = direction;
-    this.radius = 5;
+    this.radius = radius;
     this.timeSplit = time + random(500, 3000);
-    this.timeFreeze = this.timeSplit + random(1000, 5000);
+    this.timeFreeze = this.timeSplit + random(100, 3000);
     this.maxBranches = 3;
     this.currentBranchCount = 1;
     this.isFrozen = false;
     this.color = color;
-    this.currentRadius = 5;
+    this.currentRadius = radius;
+    this.radiusMin = random(0.2, 0.5) * radius;
   }
 
   run(boids, time) {
@@ -111,10 +111,10 @@ class Boid {
 
     if (time > this.timeSplit && random() > 0.6) {
       let count = int(random(1, 3));
-      this.myFlock.addBoid(this.pos, this.vel, this.color, time, count);
+      this.myFlock.addBoid(this.pos, this.vel, this.color, this.currentRadius, time, count);
       this.timeSplit += random(gMinSplitTime, gMaxSplitTime);
     }
-    this.currentRadius = map(time / this.timeFreeze, 0, 1, this.radius, 0);
+    this.currentRadius = map(time / this.timeFreeze, 0, 1, this.radius, this.radiusMin);
   }
 
   draw() {
