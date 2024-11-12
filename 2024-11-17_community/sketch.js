@@ -5,17 +5,17 @@
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 let gFlock;
-let gCurrentFlockLength = 8;
+let gCurrentFlockLength = 50;
 let gBorder = 0;
 let gAlpha = 10;
 
 let gBgColor;
 
+let gRadius = 45;
+let gDesiredSeparation = 50;
+
 function setup() {
-  let isPortrait = windowWidth < windowHeight;
-  let w = isPortrait ? windowWidth : (3 * windowHeight) / 4;
-  let h = isPortrait ? (4 * windowWidth) / 3 : windowHeight;
-  createCanvas(w, h);
+  createCanvas(windowWidth, windowHeight);
 
   let l = min(windowWidth, windowHeight);
 
@@ -34,8 +34,6 @@ function draw() {
 }
 
 function initialize() {
-  gCurrentFlockLength = int(random(7, 12));
-
   let c = new Flock();
   let n = new Flock();
 
@@ -70,10 +68,8 @@ function generate() {
     // Rules of Life
     // 1. Any boid close to desired neighbor count freezes
     // 2. Any boid who doesn't have enough desired neighbors or too many, moves
-    if (neighborCount >= desiredCount && neighborCount <= desiredCount) {
+    if (neighborCount >= desiredCount) {
       gFlock.next.boids[i].isFrozen = true;
-    } else {
-      gFlock.next.boids[i].isFrozen = false;
     }
   }
 
@@ -127,16 +123,14 @@ class Boid {
     this.acceleration = createVector(0, 0);
     this.velocity = createVector(random(-1, 1), random(-1, 1));
     this.position = createVector(x, y);
-    this.size = 30.0;
+    this.size = gRadius;
 
     this.maxSpeed = 500;
-    this.maxForce = 0.05;
-
-    // colorMode(HSB);
+    this.maxForce = 0.01;
 
     this.isFrozen = false;
     this.neighborCount = 0;
-    this.desiredCount = int(random(1, 0.5 * gCurrentFlockLength));
+    this.desiredCount = 1; //int(random(1, 0.5 * gCurrentFlockLength));
   }
 
   run(boids) {
@@ -148,17 +142,17 @@ class Boid {
   }
 
   neighborCountUpdate(boids) {
-    let desiredSeparation = width * 0.2;
     let count = 0;
 
     for (let boid of boids) {
       let distanceToNeighbor = p5.Vector.dist(this.position, boid.position);
 
-      if (distanceToNeighbor > 0 && distanceToNeighbor < desiredSeparation) {
+      if (distanceToNeighbor > 0 && distanceToNeighbor < gDesiredSeparation) {
         count++;
       }
     }
     this.neighborCount = count;
+    // if (count == this.desiredCount) this.desiredCount++;
   }
 
   applyForce(force) {
@@ -166,15 +160,15 @@ class Boid {
   }
 
   flock(boids) {
-    let separation = this.separate(boids);
+    // let separation = this.separate(boids);
     let alignment = this.align(boids);
     let cohesion = this.cohesion(boids);
 
-    separation.mult(1.5);
-    alignment.mult(1.0);
-    cohesion.mult(1.0);
+    // separation.mult(0.5);
+    alignment.mult(2.0);
+    cohesion.mult(2.0);
 
-    this.applyForce(separation);
+    // this.applyForce(separation);
     this.applyForce(alignment);
     this.applyForce(cohesion);
   }
@@ -200,7 +194,7 @@ class Boid {
   render() {
     push();
     translate(this.position.x, this.position.y);
-    circle(0, 0, 20);
+    circle(0, 0, gRadius);
     pop();
   }
 
@@ -226,14 +220,13 @@ class Boid {
     }
   }
   separate(boids) {
-    let desiredSeparation = 100.0;
     let steer = createVector(0, 0);
     let count = 0;
 
     for (let boid of boids) {
       let distanceToNeighbor = p5.Vector.dist(this.position, boid.position);
 
-      if (distanceToNeighbor > 0 && distanceToNeighbor < desiredSeparation) {
+      if (distanceToNeighbor > 0 && distanceToNeighbor < gDesiredSeparation) {
         let diff = p5.Vector.sub(this.position, boid.position);
         diff.normalize();
         diff.div(distanceToNeighbor);
@@ -277,19 +270,21 @@ class Boid {
   }
 
   cohesion(boids) {
-    let neighborDistance = 50;
-    let sum = createVector(0, 0);
-    let count = 0;
+    let closestFrozenBoid = null;
+    let minDistance = Infinity;
+
     for (let i = 0; i < boids.length; i++) {
-      let d = p5.Vector.dist(this.position, boids[i].position);
-      if (d > 0 && d < neighborDistance) {
-        sum.add(boids[i].position);
-        count++;
+      if (boids[i].isFrozen) {
+        let d = p5.Vector.dist(this.position, boids[i].position);
+        if (d < minDistance && d > 0) {
+          minDistance = d;
+          closestFrozenBoid = boids[i];
+        }
       }
     }
-    if (count > 0) {
-      sum.div(count);
-      return this.seek(sum);
+
+    if (closestFrozenBoid) {
+      return this.seek(closestFrozenBoid.position);
     } else {
       return createVector(0, 0);
     }
