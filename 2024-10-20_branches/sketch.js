@@ -1,17 +1,24 @@
+// Beneath the Trees by Antoinette Bumatay-Chan
 // Created for the #WCCChallenge - Topic: Branches
+//
+// Inspired by relaxing in nature, looking above,
+// and noticing the intricate patterns of branches against the sky.
+//
+// This code is messssssssy. Might clean it up later.
+// It utilizes a flocking system to assist in making the growth directions more organic.
 //
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 let gFlock;
-let gStartCount = 11;
+let gStartCount = 9;
 let gLimit = 150;
 let gDesiredSeparation = 600;
 let gNeighborDist = 600;
-let gBuffer = 10;
+let gBuffer = 60;
 
-let gMaxSplitTime = 500;
-let gMinSplitTime = 200;
+let gMaxSplitTime = 600;
+let gMinSplitTime = 300;
 
 let gProps = {};
 
@@ -20,15 +27,15 @@ const gBarkColor = ['#2f0e27', '#3a1329', '#200c1f'];
 let gSkyColor = '#DAE8EC';
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  createCanvas(1.778 * windowHeight, windowHeight);
   noStroke();
 
   gProps = {
     fMax: random(1, 4),
-    sMax: random(100, 400),
+    sMax: random(100, 200),
     sep: 0.005,
     ali: 0.00002,
-    coh: 0.0001,
+    coh: 0.001,
   };
   makeNewFlock();
   background(gSkyColor);
@@ -39,8 +46,12 @@ function makeNewFlock() {
 }
 
 function draw() {
-  // background(255);
   gFlock.run(millis());
+}
+
+function mouseClicked() {
+  background(gSkyColor);
+  makeNewFlock();
 }
 
 class Flock {
@@ -56,7 +67,7 @@ class Flock {
       }
       const randVelocity = createVector(random(width), random(height)).normalize();
       const randColor = random(gBarkColor);
-      this.boids.push(new Boid(this, randPosition, randVelocity, randColor, 30, currentTime));
+      this.boids.push(new Boid(this, randPosition, randVelocity, randColor, random(60, 100), currentTime));
     }
   }
 
@@ -91,14 +102,14 @@ class Boid {
     this.pos = position;
     this.vel = direction;
     this.radius = radius;
-    this.timeSplit = time + random(500, 3000);
-    this.timeFreeze = this.timeSplit + random(100, 3000);
+    this.timeSplit = time + random(1000, 6000);
+    this.timeFreeze = this.timeSplit + random(600, 800);
     this.maxBranches = 3;
     this.currentBranchCount = 1;
     this.isFrozen = false;
     this.color = color;
     this.currentRadius = radius;
-    this.radiusMin = random(0.2, 0.5) * radius;
+    this.radiusMin = random(0.4, 0.6) * radius;
   }
 
   run(boids, time) {
@@ -110,7 +121,7 @@ class Boid {
     this.draw();
 
     if (time > this.timeSplit && random() > 0.6) {
-      let count = int(random(1, 3));
+      let count = int(random(1, 4));
       this.myFlock.addBoid(this.pos, this.vel, this.color, this.currentRadius, time, count);
       this.timeSplit += random(gMinSplitTime, gMaxSplitTime);
     }
@@ -125,12 +136,12 @@ class Boid {
 
   flock(boids) {
     let forceS = this.separate(boids).mult(gProps.sep);
-    // let forceA = this.align(boids).mult(gProps.ali);
-    // let forceC = this.cohesion(boids).mult(gProps.coh);
+    let forceA = this.align(boids).mult(gProps.ali);
+    let forceC = this.cohesion(boids).mult(gProps.coh);
 
-    // let a = forceS.add(forceA).add(forceC);
+    let a = forceS.add(forceA).add(forceC);
 
-    this.vel.add(forceS);
+    this.vel.add(a);
     this.vel.limit(gProps.sMax);
     this.pos.add(this.vel);
   }
