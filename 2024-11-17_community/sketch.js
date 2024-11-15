@@ -50,9 +50,9 @@ function setup() {
     let x = random(width);
     let y = random(height);
     let p = new c2.Particle(x, y);
-    p.radius = random(0.03, 0.05) * height;
+    p.radius = random(0.015, 0.03) * height;
     p.color = getRandomColor();
-    p.mass = random(0.5, 1);
+    p.mass = random(2, 5);
 
     world.addParticle(p);
   }
@@ -60,7 +60,7 @@ function setup() {
   let collision = new c2.Collision();
   world.addInteractionForce(collision);
 
-  let pointField = new c2.PointField(new c2.Point(width / 2, height / 2), 0.1);
+  let pointField = new c2.PointField(new c2.Point(width / 2, height / 2), 1);
   world.addForce(pointField);
 }
 
@@ -75,7 +75,7 @@ function draw() {
     // stroke('#333333');
     // strokeWeight(1);
     fill(p.color);
-    circle(p.position.x, p.position.y, p.radius);
+    circle(p.position.x, p.position.y, 0.8 * p.radius);
     // strokeWeight(2);
     // point(p.position.x, p.position.y);
   }
