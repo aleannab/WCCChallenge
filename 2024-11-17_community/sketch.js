@@ -21,6 +21,7 @@ function setup() {
     let p = new c2.Particle(x, y);
     p.radius = random(0.01, 0.02) * height;
     p.color = color(random(0, 8), random(30, 60), random(20, 100));
+    p.mass = random(0.5, 1);
 
     world.addParticle(p);
   }
@@ -28,7 +29,7 @@ function setup() {
   let collision = new c2.Collision();
   world.addInteractionForce(collision);
 
-  let pointField = new c2.PointField(new c2.Point(width / 2, height / 2), 1);
+  let pointField = new c2.PointField(new c2.Point(width / 2, height / 2), 0.1);
   world.addForce(pointField);
 }
 
