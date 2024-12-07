@@ -4,13 +4,15 @@
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
-//Created by Ren Yuan
-
-let world;
-
 let gCumulative = [];
 
-// palette and percentages were made with the help of ChatGPT and random hair color dye swatches I found on google
+let gUnit;
+
+let gCommunity = [];
+
+let gCommunitySize = 100;
+
+// this object was made with the help of ChatGPT and various hair color swatches I found on google image
 const gPaletteWithPercentages = [
   { color: '#e4e1ce', percentage: 2 }, // platinum blonde (very light blonde, often bleached)
   { color: '#998880', percentage: 5 }, // light brown (a common natural color)
@@ -40,44 +42,49 @@ const gPaletteWithPercentages = [
 ];
 
 function setup() {
+  // setup canvas properties
   createCanvas(windowWidth, windowHeight);
   ellipseMode(RADIUS);
   setupColorProbabilities();
+  strokeWeight(2);
 
-  world = new c2.World(new c2.Rect(0, 0, width, height));
+  gUnit = min(windowWidth, windowHeight) * 0.1;
 
-  for (let i = 0; i < 100; i++) {
-    let x = random(width);
-    let y = random(height);
-    let p = new c2.Particle(x, y);
-    p.radius = random(0.015, 0.03) * height;
-    p.color = getRandomColor();
-    p.mass = random(2, 5);
+  gWorld = new c2.World(new c2.Rect(0, 0, width, height));
 
-    world.addParticle(p);
+  for (let i = 0; i < gCommunitySize; i++) {
+    let xp = random(width);
+    let yp = random(height);
+    let person = new Person(xp, yp);
+    gWorld.addParticle(person.p);
+
+    gCommunity.push(person);
   }
 
   let collision = new c2.Collision();
-  world.addInteractionForce(collision);
+  gWorld.addInteractionForce(collision);
 
   let pointField = new c2.PointField(new c2.Point(width / 2, height / 2), 1);
-  world.addForce(pointField);
+  gWorld.addForce(pointField);
 }
 
 function draw() {
   background(255);
 
-  world.update();
+  updateWorld();
 
-  noStroke();
-  for (let i = 0; i < world.particles.length; i++) {
-    let p = world.particles[i];
-    // stroke('#333333');
-    // strokeWeight(1);
-    fill(p.color);
-    circle(p.position.x, p.position.y, 0.8 * p.radius);
-    // strokeWeight(2);
-    // point(p.position.x, p.position.y);
+  for (let person of gCommunity) {
+    person.drawArms();
+  }
+  for (let person of gCommunity) {
+    person.drawHead();
+  }
+}
+
+function updateWorld() {
+  gWorld.update();
+  for (let person of gCommunity) {
+    person.update();
   }
 }
 
@@ -98,4 +105,55 @@ function getRandomColor() {
     }
   }
   return random(gPaletteWithPercentages).color;
+}
+
+class Person {
+  constructor(xp, yp) {
+    this.p = new c2.Particle(xp, yp);
+    this.p.radius = random(0.015, 0.03) * height;
+    this.p.mass = random(2, 5);
+
+    this.xp = xp;
+    this.yp = yp;
+
+    this.distFromCenter = dist(this.xp, this.yp, width / 2, height / 2);
+
+    this.headRad = 0.8 * this.p.radius;
+    this.sizeScalar = 1;
+    this.angle;
+
+    this.color = getRandomColor();
+  }
+
+  update() {
+    this.xp = this.p.position.x;
+    this.yp = this.p.position.y;
+
+    const centerX = width / 2;
+    const centerY = height / 2;
+    this.angle = atan2(centerY - this.yp, centerX - this.xp);
+
+    let d = abs(dist(this.xp, this.yp, centerX, centerY));
+    this.theta = map(d, 0, -this.distFromCenter, 0, PI);
+    this.sizeScalar = map(abs(sin(this.theta)), 0, 1, 0.4, 0.25);
+  }
+
+  drawArms() {
+    push();
+    translate(this.xp, this.yp);
+    rotate(this.angle);
+
+    noFill();
+    stroke(0);
+
+    arc(this.p.radius, 0, 1.2 * this.headRad, 3 * this.headRad, this.sizeScalar * TWO_PI, -this.sizeScalar * TWO_PI);
+    pop();
+  }
+
+  drawHead() {
+    console.log('is this getting hit?');
+    stroke(0);
+    fill(this.color);
+    circle(this.xp, this.yp, this.headRad);
+  }
 }
