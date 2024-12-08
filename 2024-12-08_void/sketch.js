@@ -10,11 +10,13 @@
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 let gVoids = [];
-let gColumnCount = 4; //{ min: 11, max: 15 };
+let gColumnCount = 8; //{ min: 11, max: 15 };
 let gCirclePrecision = 0.4;
 let gCircleOffset = 0.3;
 let gCirclePtCount = 10;
-let gRadiusScale = 0.6;
+let gRadiusScale = 0.5;
+let gBoxWidth;
+let gHoverRadius;
 
 let gBgColor = '#ffffff';
 let gPalette = ['#0A001A'];
@@ -33,23 +35,28 @@ function setup() {
 function draw() {
   background(gBgColor);
 
+  hoverCheck();
+
   for (let c of gVoids) {
     c.draw();
   }
 }
 
 function init() {
-  const boxWidth = width / gColumnCount;
-  const rowCount = floor(height / boxWidth);
-  const radius = (gRadiusScale * boxWidth) / 2;
-  strokeWeight(0.01 * boxWidth);
+  gBoxWidth = width / gColumnCount;
+  const rowCount = floor(height / gBoxWidth);
+  const radius = (gRadiusScale * gBoxWidth) / 2;
+
+  gHoverRadius = 0.4 * gBoxWidth;
+
+  gStrokeWeight = 0.015 * gBoxWidth;
 
   gVoids = [];
 
   for (let col = 1; col < gColumnCount - 1; col++) {
-    const x = (0.5 + col) * boxWidth;
+    const x = (0.5 + col) * gBoxWidth;
     for (let row = 1; row < rowCount - 1; row++) {
-      const y = (0.5 + row) * boxWidth;
+      const y = (0.5 + row) * gBoxWidth;
       let circ = new Cat({
         xp: x,
         yp: y,
@@ -61,6 +68,13 @@ function init() {
       });
       gVoids.push(circ);
     }
+  }
+}
+
+function hoverCheck() {
+  for (let cat of gVoids) {
+    let d = dist(mouseX, mouseY, cat.position.x, cat.position.y);
+    cat.trigger(d < gBoxWidth);
   }
 }
 
@@ -79,9 +93,30 @@ class Cat {
       numPts: gCirclePtCount,
     };
     this.head = new CatHead(this.headData);
+    this.isAnimating = false;
+    this.isOpen = false;
+
+    this.animVal = 0.0;
+  }
+
+  trigger(isOpen) {
+    if (this.isAnimating) return;
+    // playSound();
+    this.isAnimating = true;
+    this.isOpen = isOpen;
+  }
+
+  update() {
+    const inc = this.isOpen ? 0.1 : -0.1;
+    this.animVal = constrain(this.animVal + inc, 0, 1.0);
+
+    if (this.animVal == 0 || this.animVal == 1) {
+      this.isAnimating = false;
+    }
   }
 
   draw() {
+    if (this.isAnimating) this.update();
     push();
     translate(this.position.x, this.position.y);
 
@@ -93,7 +128,7 @@ class Cat {
     rotate(this.headData.rotation);
 
     translate(this.headData.position.x, this.headData.position.y);
-    this.head.draw();
+    this.head.draw(this.animVal);
     pop();
     pop();
   }
@@ -120,7 +155,7 @@ class CatHead {
     this.eyeSize = 0.45 * data.radius;
   }
 
-  draw() {
+  draw(val) {
     this.head.draw();
 
     for (let ear of this.earPositions) {
@@ -132,10 +167,11 @@ class CatHead {
     }
 
     stroke(gEyeColor);
+    strokeWeight(val * gStrokeWeight);
     for (let eyePosition of this.eyePositions) {
       push();
       translate(eyePosition);
-      ellipse(0, 0, this.eyeSize, this.eyeSize);
+      ellipse(0, 0, this.eyeSize, this.eyeSize * val);
       pop();
     }
     noStroke();
