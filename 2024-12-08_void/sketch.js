@@ -10,14 +10,15 @@
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 let gVoids = [];
-let gColumnCount = 5; //{ min: 11, max: 15 };
+let gColumnCount = 4; //{ min: 11, max: 15 };
 let gCirclePrecision = 0.4;
 let gCircleOffset = 0.3;
 let gCirclePtCount = 10;
-let gRadiusScale = 0.5;
+let gRadiusScale = 0.6;
 
 let gBgColor = '#ffffff';
 let gPalette = ['#0A001A'];
+let gEyeColor = '#ddd927';
 
 function setup() {
   const l = 0.95 * (windowWidth < windowHeight ? windowWidth : windowHeight);
@@ -41,6 +42,7 @@ function init() {
   const boxWidth = width / gColumnCount;
   const rowCount = floor(height / boxWidth);
   const radius = (gRadiusScale * boxWidth) / 2;
+  strokeWeight(0.01 * boxWidth);
 
   gVoids = [];
 
@@ -68,8 +70,8 @@ class Cat {
     this.body = new ImperfectCircle(data);
     this.bodyScale = createVector(random(1, 1.5), random(1, 1.5));
     this.headData = {
-      position: createVector(-0.5 * data.radius, -0.5 * data.radius),
-      rotation: random(-30, 30),
+      position: createVector(0.4 * data.radius, -1 * data.radius),
+      rotation: random(360), //-80, 80),
       radius: 0.6 * data.radius,
       precision: 2 * gCirclePrecision,
       offset: 0.5 * gCircleOffset,
@@ -88,8 +90,9 @@ class Cat {
     this.body.draw();
     pop();
     push();
-    translate(this.headData.position.x, this.headData.position.y);
     rotate(this.headData.rotation);
+
+    translate(this.headData.position.x, this.headData.position.y);
     this.head.draw();
     pop();
     pop();
@@ -99,31 +102,43 @@ class Cat {
 class CatHead {
   constructor(data) {
     this.head = new ImperfectCircle(data);
+
     this.earPts = [
       createVector(-0.4 * data.radius, 0), // base0
       createVector(0.4 * data.radius, 0), // base1
       createVector(0, -1.2 * data.radius), // tip
     ];
-    this.earOffset = createVector(-0.5 * data.radius, -0.4 * data.radius);
-    this.earRotation = 20;
+    const earOffset = createVector(-0.5 * data.radius, -0.4 * data.radius);
+    const earRotation = 20;
+    this.earPositions = [
+      { offset: earOffset, rotation: -earRotation }, // Left ear
+      { offset: createVector(-earOffset.x, earOffset.y), rotation: earRotation }, // Right ear
+    ];
+
+    const eyeOffset = createVector(-0.3 * data.radius, -0.2 * data.radius);
+    this.eyePositions = [eyeOffset, createVector(-eyeOffset.x, eyeOffset.y)];
+    this.eyeSize = 0.45 * data.radius;
   }
 
   draw() {
     this.head.draw();
-    // color(255);
-    // Draw left ear
-    push();
-    translate(this.earOffset.x, this.earOffset.y); // Move to the left ear position
-    rotate(-this.earRotation); // Slight rotation for natural ear angle
-    this.drawEar();
-    pop();
 
-    // Draw right ear
-    push();
-    translate(-this.earOffset.x, this.earOffset.y); // Move to the right ear position
-    rotate(this.earRotation); // Slight rotation for natural ear angle
-    this.drawEar();
-    pop();
+    for (let ear of this.earPositions) {
+      push();
+      translate(ear.offset.x, ear.offset.y);
+      rotate(ear.rotation);
+      this.drawEar();
+      pop();
+    }
+
+    stroke(gEyeColor);
+    for (let eyePosition of this.eyePositions) {
+      push();
+      translate(eyePosition);
+      ellipse(0, 0, this.eyeSize, this.eyeSize);
+      pop();
+    }
+    noStroke();
   }
 
   // Function to draw an ear (a triangle)
