@@ -3,8 +3,13 @@
 //
 // SOUND ON!
 //
-// Pretty self-explanatory on how this relates to the topic haha.
-// I definitely giggled a lot making this.
+// Hi all! It's been a minute.
+// Black cats are affectionately called 'voids' by many cat lovers
+// Also, while working on this sketch, I learned that a group of cats is called a 'clowder.'
+//
+// Reused a lot of my code from my Nope sketch: https://openprocessing.org/sketch/2192676
+//
+// Made in honor of Miles, my beloved black cat and favorite 'void,' who will always hold a special place in my heart
 //
 // See other submissions here: https://openprocessing.org/curation/78544
 // Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
@@ -12,15 +17,26 @@
 let gVoids = [];
 let gColumnCount = 8; //{ min: 11, max: 15 };
 let gCirclePrecision = 0.4;
-let gCircleOffset = 0.3;
+let gCircleOffset = 0.2;
 let gCirclePtCount = 10;
 let gRadiusScale = 0.5;
 let gBoxWidth;
-let gHoverRadius;
+
+let gMeows = [];
 
 let gBgColor = '#ffffff';
 let gPalette = ['#0A001A'];
 let gEyeColor = '#ddd927';
+
+function preload() {
+  soundFormats('wav', 'ogg');
+  let meows = ['meow00', 'meow01', 'meow02', 'meow03', 'meow04', 'meow05', 'meow06', 'meow07'];
+  for (let m of meows) {
+    let sound = loadSound(m);
+    sound.setVolume(0.5);
+    gMeows.push(sound);
+  }
+}
 
 function setup() {
   const l = 0.95 * (windowWidth < windowHeight ? windowWidth : windowHeight);
@@ -47,8 +63,6 @@ function init() {
   const rowCount = floor(height / gBoxWidth);
   const radius = (gRadiusScale * gBoxWidth) / 2;
 
-  gHoverRadius = 0.4 * gBoxWidth;
-
   gStrokeWeight = 0.015 * gBoxWidth;
 
   gVoids = [];
@@ -74,7 +88,7 @@ function init() {
 function hoverCheck() {
   for (let cat of gVoids) {
     let d = dist(mouseX, mouseY, cat.position.x, cat.position.y);
-    cat.trigger(d < gBoxWidth);
+    cat.trigger(d < 0.5 * gBoxWidth);
   }
 }
 
@@ -96,12 +110,15 @@ class Cat {
     this.isAnimating = false;
     this.isOpen = false;
 
+    this.meow = random(gMeows);
     this.animVal = 0.0;
   }
 
   trigger(isOpen) {
-    if (this.isAnimating) return;
-    // playSound();
+    // Play sound only if the state changes
+    if (isOpen && this.isOpen !== isOpen && !this.isAnimating) {
+      this.meow.play();
+    }
     this.isAnimating = true;
     this.isOpen = isOpen;
   }
@@ -127,7 +144,7 @@ class Cat {
     push();
     rotate(this.headData.rotation);
 
-    translate(this.headData.position.x, this.headData.position.y);
+    translate(this.animVal * this.headData.position.x, this.animVal * this.headData.position.y);
     this.head.draw(this.animVal);
     pop();
     pop();
@@ -143,7 +160,7 @@ class CatHead {
       createVector(0.4 * data.radius, 0), // base1
       createVector(0, -1.2 * data.radius), // tip
     ];
-    const earOffset = createVector(-0.5 * data.radius, -0.4 * data.radius);
+    const earOffset = createVector(-0.5 * data.radius, -0.3 * data.radius);
     const earRotation = 20;
     this.earPositions = [
       { offset: earOffset, rotation: -earRotation }, // Left ear
@@ -205,6 +222,7 @@ class ImperfectCircle {
   }
 
   draw() {
+    noStroke();
     fill(this.color);
 
     beginShape();
