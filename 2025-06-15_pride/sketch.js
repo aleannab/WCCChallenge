@@ -15,11 +15,11 @@ const gFlagDetails = [
 
 const gBgColor = '#ffffff';
 
-let gFlagStripes = [];
-let gFlagHeight;
-let gStripeSpacing;
-let gStrokeWeight = 20;
+let gAllLines = [];
+let gSpacingScalar = 1.5;
 let gFlagOffset;
+let gFlagLineCount = 20;
+let gWeightScalar = 0.01;
 
 function setup() {
   // keep flag aspect ratio
@@ -33,7 +33,6 @@ function setup() {
 
   createCanvas(w, h);
 
-  strokeWeight(gStrokeWeight);
   noFill();
 
   letsRiot();
@@ -45,45 +44,32 @@ function setup() {
 function letsRiot() {
   let flag = random(gFlagDetails);
 
-  // gFlagHeight =
-  gStripeSpacing = (0.25 * height) / flag.palette.length; // + 0.125 * height;
-  gFlagOffset = (height - gStripeSpacing * flag.palette.length) / 2;
+  let colorCount = flag.palette.length;
+  gStrokeWeight = height * gWeightScalar;
+  let spacing = gSpacingScalar * gStrokeWeight; //(totalLines * gStrokeWeight);
+  gFlagOffset = (height - gFlagLineCount * spacing) / 2;
   let yp = gFlagOffset;
+
+  let lineCount = floor(gFlagLineCount / colorCount);
+
   for (let stripeColor of flag.palette) {
-    gFlagStripes.push(new FlagStripe(yp, stripeColor));
-    yp += gStripeSpacing;
+    yp = addStripe(yp, lineCount, spacing, stripeColor);
   }
+}
+
+function addStripe(yp, lineCount, spacing, col) {
+  for (let i = 0; i < lineCount; i++) {
+    gAllLines.push(new StripeLine(yp, col));
+    yp += spacing;
+  }
+
+  return yp;
 }
 
 function drawFlag() {
-  for (let stripe of gFlagStripes) {
-    stripe.drawLines();
-  }
-}
-
-class FlagStripe {
-  constructor(yp, c) {
-    this.yp = yp;
-    this.stripeColor = c;
-    this.stripeLines = [];
-
-    this.createLines(yp);
-  }
-
-  createLines(yp) {
-    let count = gStripeSpacing / (3 * gStrokeWeight);
-    let inc = gStripeSpacing / count;
-    for (let i = 0; i < count; i++) {
-      this.stripeLines.push(new StripeLine(yp, this.stripeColor));
-      yp += inc;
-    }
-  }
-
-  drawLines() {
-    // stroke(this.stripeColor);
-    for (let line of this.stripeLines) {
-      line.draw();
-    }
+  let shuffledLines = shuffle(gAllLines);
+  for (let line of shuffledLines) {
+    line.draw();
   }
 }
 
@@ -98,9 +84,8 @@ class StripeLine {
     this.points.push(createVector(-gStrokeWeight, yp));
     this.points.push(createVector(-gStrokeWeight, random(height)));
 
-    let xSpacing = (0.5 * width) / 5;
     for (let i = 0; i < 5; i++) {
-      this.points.push(createVector(random((i + random(-0.5, 0.5)) * xSpacing), random(height)));
+      this.points.push(createVector(random(0.5 * width), random(height)));
     }
     this.points.push(createVector(random(0.4, 0.5) * width, random(0.25, 0.75) * height));
     this.points.push(createVector(random(0.5, 0.6) * width, yp));
@@ -110,8 +95,8 @@ class StripeLine {
   }
 
   draw() {
-    this.drawLine(0, 1.5 * gStrokeWeight);
-    this.drawLine(this.color, gStrokeWeight);
+    this.drawLine(0, gStrokeWeight);
+    this.drawLine(this.color, 0.5 * gStrokeWeight);
   }
 
   drawLine(c, w) {
