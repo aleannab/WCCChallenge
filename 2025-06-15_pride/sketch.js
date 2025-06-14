@@ -13,10 +13,13 @@ const gFlagDetails = [
   { palette: ['#FF75A2', '#F5F5F5', '#BE18D6', '#2C2C2C', '#333EBD'], name: 'GENDERFLUID' },
 ];
 
-const gBgColor = '#EAE5F5';
+const gBgColor = '#ffffff';
 
 let gFlagStripes = [];
+let gFlagHeight;
 let gStripeSpacing;
+let gStrokeWeight = 20;
+let gFlagOffset;
 
 function setup() {
   // keep flag aspect ratio
@@ -30,22 +33,22 @@ function setup() {
 
   createCanvas(w, h);
 
-  strokeWeight(10);
+  strokeWeight(gStrokeWeight);
   noFill();
 
   letsRiot();
-}
-
-function draw() {
   background(gBgColor);
+
   drawFlag();
 }
 
 function letsRiot() {
   let flag = random(gFlagDetails);
 
+  // gFlagHeight =
   gStripeSpacing = (0.25 * height) / flag.palette.length; // + 0.125 * height;
-  let yp = (height - gStripeSpacing * flag.palette.length) / 2;
+  gFlagOffset = (height - gStripeSpacing * flag.palette.length) / 2;
+  let yp = gFlagOffset;
   for (let stripeColor of flag.palette) {
     gFlagStripes.push(new FlagStripe(yp, stripeColor));
     yp += gStripeSpacing;
@@ -68,11 +71,16 @@ class FlagStripe {
   }
 
   createLines(yp) {
-    this.stripeLines.push(new StripeLine(yp));
+    let count = gStripeSpacing / (3 * gStrokeWeight);
+    let inc = gStripeSpacing / count;
+    for (let i = 0; i < count; i++) {
+      this.stripeLines.push(new StripeLine(yp, this.stripeColor));
+      yp += inc;
+    }
   }
 
   drawLines() {
-    stroke(this.stripeColor);
+    // stroke(this.stripeColor);
     for (let line of this.stripeLines) {
       line.draw();
     }
@@ -80,27 +88,35 @@ class FlagStripe {
 }
 
 class StripeLine {
-  constructor(yp) {
+  constructor(yp, c) {
     this.points = [];
-
+    this.color = c;
     this.createLine(yp);
   }
 
   createLine(yp) {
-    this.points.push(createVector(0, yp));
-    this.points.push(createVector(0, yp));
+    this.points.push(createVector(-gStrokeWeight, yp));
+    this.points.push(createVector(-gStrokeWeight, random(height)));
 
-    for (let i = 0; i < 10; i++) {
-      this.points.push(createVector(random(0.5 * width), random(height)));
+    let xSpacing = (0.5 * width) / 5;
+    for (let i = 0; i < 5; i++) {
+      this.points.push(createVector(random((i + random(-0.5, 0.5)) * xSpacing), random(height)));
     }
-    this.points.push(createVector(random(0.4, 0.5) * width, yp + 5 * random(-gStripeSpacing, gStripeSpacing)));
+    this.points.push(createVector(random(0.4, 0.5) * width, random(0.25, 0.75) * height));
+    this.points.push(createVector(random(0.5, 0.6) * width, yp));
     this.points.push(createVector(0.6 * width, yp));
-    this.points.push(createVector(0.75 * width, yp));
     this.points.push(createVector(width, yp));
     this.points.push(createVector(width, yp));
   }
 
   draw() {
+    this.drawLine(0, 1.5 * gStrokeWeight);
+    this.drawLine(this.color, gStrokeWeight);
+  }
+
+  drawLine(c, w) {
+    stroke(c);
+    strokeWeight(w);
     beginShape();
     for (let pt of this.points) {
       curveVertex(pt.x, pt.y);
