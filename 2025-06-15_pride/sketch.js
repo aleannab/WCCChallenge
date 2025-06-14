@@ -44,11 +44,11 @@ function draw() {
 function letsRiot() {
   let flag = random(gFlagDetails);
 
-  let stripeSpacing = (0.25 * height) / flag.palette.length; // + 0.125 * height;
-  let yp = (height - stripeSpacing * flag.palette.length) / 2;
+  gStripeSpacing = (0.25 * height) / flag.palette.length; // + 0.125 * height;
+  let yp = (height - gStripeSpacing * flag.palette.length) / 2;
   for (let stripeColor of flag.palette) {
     gFlagStripes.push(new FlagStripe(yp, stripeColor));
-    yp += stripeSpacing;
+    yp += gStripeSpacing;
   }
 }
 
@@ -87,11 +87,14 @@ class StripeLine {
   }
 
   createLine(yp) {
+    this.points.push(createVector(0, yp));
+    this.points.push(createVector(0, yp));
+
     for (let i = 0; i < 10; i++) {
       this.points.push(createVector(random(0.5 * width), random(height)));
     }
-
-    this.points.push(createVector(0.5 * width, yp));
+    this.points.push(createVector(random(0.4, 0.5) * width, yp + 5 * random(-gStripeSpacing, gStripeSpacing)));
+    this.points.push(createVector(0.6 * width, yp));
     this.points.push(createVector(0.75 * width, yp));
     this.points.push(createVector(width, yp));
     this.points.push(createVector(width, yp));
