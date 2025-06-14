@@ -1,6 +1,22 @@
 // Created for the #WCCChallenge
 
+const gFlagDetails = [
+  { palette: ['#E40303', '#FF8C00', '#FFED00', '#008026', '#004DFF', '#750787'], name: 'PRIDE' },
+  { palette: ['#5BCEFA', '#F7A8B8', '#FFFFFF', '#F7A8B8', '#5BCEFA'], name: 'TRANS' },
+  { palette: ['#D60270', '#D60270', '#9B4F96', '#0033A0', '#0033A0'], name: 'BISEXUAL' },
+  { palette: ['#D62900', '#FF9B55', '#FFD780', '#FFFFFF', '#D461A6', '#BC3784', '#A60061'], name: 'LESBIAN' },
+  { palette: ['#FFF433', '#FFFFFF', '#9B59D0', '#000000'], name: 'NONBINARY' },
+  { palette: ['#078D70', '#26CEAA', '#99E8C2', '#FFFFFF', '#7BADE3', '#5049CB', '#3E1A78'], name: 'GAY MEN' },
+  { palette: ['#FF1B8D', '#FFDA00', '#1BB3FF'], name: 'PANSEXUAL' },
+  { palette: ['#000000', '#A3A3A3', '#FFFFFF', '#810082'], name: 'ASEXUAL' },
+  { palette: ['#B57EDC', '#FFFFFF', '#4A8123'], name: 'GENDERQUEER' },
+  { palette: ['#FF75A2', '#F5F5F5', '#BE18D6', '#2C2C2C', '#333EBD'], name: 'GENDERFLUID' },
+];
+
+const gBgColor = '#EAE5F5';
+
 let gFlagStripes = [];
+let gStripeSpacing;
 
 function setup() {
   // keep flag aspect ratio
@@ -14,22 +30,26 @@ function setup() {
 
   createCanvas(w, h);
 
-  strokeWeight(5);
+  strokeWeight(10);
+  noFill();
 
   letsRiot();
 }
 
 function draw() {
-  background(255);
+  background(gBgColor);
   drawFlag();
 }
 
 function letsRiot() {
-  createFlagStripe(color(0));
-}
+  let flag = random(gFlagDetails);
 
-function createFlagStripe(col) {
-  gFlagStripes.push(new FlagStripe(col));
+  let stripeSpacing = (0.25 * height) / flag.palette.length; // + 0.125 * height;
+  let yp = (height - stripeSpacing * flag.palette.length) / 2;
+  for (let stripeColor of flag.palette) {
+    gFlagStripes.push(new FlagStripe(yp, stripeColor));
+    yp += stripeSpacing;
+  }
 }
 
 function drawFlag() {
@@ -39,18 +59,20 @@ function drawFlag() {
 }
 
 class FlagStripe {
-  constructor(c) {
+  constructor(yp, c) {
+    this.yp = yp;
     this.stripeColor = c;
     this.stripeLines = [];
 
-    this.createLines();
+    this.createLines(yp);
   }
 
-  createLines() {
-    this.stripeLines.push(new StripeLine(0));
+  createLines(yp) {
+    this.stripeLines.push(new StripeLine(yp));
   }
 
   drawLines() {
+    stroke(this.stripeColor);
     for (let line of this.stripeLines) {
       line.draw();
     }
@@ -64,15 +86,15 @@ class StripeLine {
     this.createLine(yp);
   }
 
-  createLine() {
+  createLine(yp) {
     for (let i = 0; i < 10; i++) {
       this.points.push(createVector(random(0.5 * width), random(height)));
     }
 
-    this.points.push(createVector(0.5 * width, 0.5 * height));
-    // this.points.push(createVector(0.5 * width, 0.5 * height));
-    this.points.push(createVector(width, 0.5 * height));
-    this.points.push(createVector(width, 0.5 * height));
+    this.points.push(createVector(0.5 * width, yp));
+    this.points.push(createVector(0.75 * width, yp));
+    this.points.push(createVector(width, yp));
+    this.points.push(createVector(width, yp));
   }
 
   draw() {
