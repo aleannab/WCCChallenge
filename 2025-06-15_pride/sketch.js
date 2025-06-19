@@ -1,4 +1,28 @@
-// Created for the #WCCChallenge
+// The First Was A Riot by Antoinette Bumatay-Chan
+// Created for the #WCCChallenge - Topic: Pride
+//
+// Hi! It's been forever and a half. Life got a little wild (as it does), but I'm back!
+// I'm hoping to have more time for creative code challenges.
+// It's nice to be making things for myself again. :)
+//
+//
+// Anywho - about the sketch! This challenge was motivating for me to join
+// because of this devastating political climate and the rise of anti-LGBTQ+ legislation in the US.
+//
+// It is inspired by the origin of Pride.
+//
+// "The Stonewall Riots, also called the Stonewall Uprising,
+// began in the early hours of June 28, 1969 when New York City police
+// raided the Stonewall Inn, a gay club located in New York City.
+// The raid sparked a riot among bar patrons and neighborhood residents
+// as police roughly hauled employees and patrons out of the bar,
+// leading to six days of protests and violent clashes with law enforcement ...
+// The Stonewall Riots served as a catalyst for the gay rights movement
+// in the United States and around the world."
+// - https://www.history.com/articles/the-stonewall-riots
+//
+// See other submissions here: https://openprocessing.org/curation/78544
+// Join the Birb's Nest Discord community!  https://discord.gg/S8c7qcjw2b
 
 const gFlagDetails = [
   { palette: ['#E40303', '#FF8C00', '#FFED00', '#008026', '#004DFF', '#750787'], name: 'PRIDE' },
@@ -17,13 +41,15 @@ const gFlagDetails = [
   { palette: ['#203856', '#62AEDC', '#FFFFFF', '#ECCD00', '#E28C00'], name: 'ARO & ACE' },
 ];
 
-const gBgColor = '#ffffff';
+const gBgColor = '#F1F1F1';
 
 let gAllLines = [];
 let gSpacingScalar = 1.5;
 let gFlagLineCount = 20;
 let gWeightScalar = 0.01;
 let gControlPointCount = 5;
+
+let gFlagIndex = 0;
 
 function setup() {
   // keep flag aspect ratio
@@ -35,32 +61,33 @@ function setup() {
     w = h * flagAspect;
   }
 
-  createCanvas(w, h);
+  createCanvas(0.9 * w, 0.9 * h);
 
   noFill();
+  noLoop();
 
   letsRiot();
-  background(gBgColor);
-
-  drawFlag();
 }
 
 function letsRiot() {
-  let flag = random(gFlagDetails);
+  gAllLines = [];
+  let flag = gFlagDetails[gFlagIndex];
 
   gStrokeWeight = height * gWeightScalar;
 
   let colorCount = flag.palette.length;
-  let lineCount = floor(gFlagLineCount / colorCount);
+  let lineCount = floor(random(1, 3)); //constrain(floor(gFlagLineCount / colorCount), 1, 3);
 
   let spacing = gSpacingScalar * gStrokeWeight;
-  let flagOffset = random(0.2, 0.6) * height;
+  let flagOffset = random(0.2, 0.8) * height;
 
   let yp = flagOffset;
 
   for (let stripeColor of flag.palette) {
     yp = addStripe(yp, lineCount, spacing, stripeColor);
   }
+
+  drawFlag();
 }
 
 function addStripe(yp, lineCount, spacing, col) {
@@ -73,10 +100,18 @@ function addStripe(yp, lineCount, spacing, col) {
 }
 
 function drawFlag() {
+  background(gBgColor);
+  colorMode(HSB);
   let shuffledLines = shuffle(gAllLines);
   for (let line of shuffledLines) {
     line.draw();
   }
+  colorMode(RGB);
+}
+
+function mouseClicked() {
+  gFlagIndex = (gFlagIndex + 1) % gFlagDetails.length;
+  letsRiot();
 }
 
 class StripeLine {
@@ -97,17 +132,17 @@ class StripeLine {
     // random points
     let randOffset = random(0.6);
     for (let i = 0; i < gControlPointCount; i++) {
-      let xp = random(i * 0.1, 0.6) * width;
-      let yp = (random(i * 0.1, 0.6) + randOffset) * height;
+      let xp = random(i * 0.1, 0.5) * width;
+      let yp = (random(i * 0.1, 0.5) + randOffset) * height;
       yp = constrain(yp, minHeight, maxHeight);
       this.points.push(createVector(xp, yp));
     }
 
     // transition points
-    this.points.push(createVector(random(0.4, 0.7) * width, yp));
+    this.points.push(createVector(random(0.5, 0.6) * width, yp));
 
     // final horizontal line
-    this.points.push(createVector(0.7 * width, yp));
+    this.points.push(createVector(0.6 * width, yp));
     this.points.push(createVector(width, yp));
     this.points.push(createVector(width, yp));
   }
@@ -115,8 +150,8 @@ class StripeLine {
   draw() {
     curveTightness(random(-5, 0));
 
-    this.drawLine(0, gStrokeWeight);
-    this.drawLine(this.color, 0.5 * gStrokeWeight);
+    this.drawLine(this.darkenAndSaturateHex(this.color), gStrokeWeight);
+    this.drawLine(this.color, 0.6 * gStrokeWeight);
   }
 
   drawLine(c, w) {
@@ -127,5 +162,18 @@ class StripeLine {
       curveVertex(pt.x, pt.y);
     }
     endShape();
+  }
+
+  darkenAndSaturateHex(hex, darkenFactor = 0.5, saturateFactor = 2) {
+    let col = color(hex);
+
+    let h = hue(col);
+    let s = saturation(col);
+    let b = brightness(col);
+
+    s = constrain(s + s * saturateFactor, 0, 100);
+    b = constrain(b - b * darkenFactor, 0, 100);
+
+    return color(h, s, b);
   }
 }
